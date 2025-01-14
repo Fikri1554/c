@@ -887,7 +887,8 @@ class Contract extends CI_Controller {
 
 				if (in_array($val->certname, $specificCerts)) {
 					$tempData['specific'][$val->certname] = $certData;
-				} elseif (stripos($val->certname, "ENDORSEMENT") !== false) {
+				} 
+				elseif (stripos($val->certname, "ENDORSEMENT") !== false) {
 					if ($val->kdnegara == '021') { 
 						$tempData['panama'][$keyNo] = $certData;
 					} else {
@@ -897,21 +898,22 @@ class Contract extends CI_Controller {
 				}
 			}
 
-			// Format data sertifikat spesifik
-			foreach ($tempData['specific'] as $name => $val) {
-				$issDate = $dataContext->convertReturnName($val['issDate']);
-				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$dataOut[$name] = "<label>".$name.":<br>&nbsp;(Iss. Date: ".$issDate.", Exp. Date: ".$expDate.")</label>";
+			foreach ($specificCerts as $cert) {
+				if (isset($tempData['specific'][$cert])) {
+					$issDate = $dataContext->convertReturnName($tempData['specific'][$cert]['issDate']);
+					$expDate = $dataContext->convertReturnName($tempData['specific'][$cert]['expDate']);
+					$dataOut[$cert] = "<label>".$cert.":<br>&nbsp;(Iss. Date: ".$issDate.", Exp. Date: ".$expDate.")</label>";
+				} else {
+					$dataOut[$cert] = "<label>".$cert.":<br>&nbsp;No Data</label>";
+				}
 			}
 
-			// Format data Panama
 			foreach ($tempData['panama'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
 				$certPanama .= "<br>&nbsp<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
 			}
 
-			// Format data Other
 			foreach ($tempData['other'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
@@ -924,6 +926,7 @@ class Contract extends CI_Controller {
 
 		return $dataOut;
 	}
+
 
 
 	
