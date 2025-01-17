@@ -132,7 +132,9 @@
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery-ui-1.9.2.custom.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
     <script type="text/javascript">
     $(document).ready(function() {
@@ -150,7 +152,7 @@
     function topFunction() {
         $('html, body').animate({
             scrollTop: 0
-        }, 'smooth'); //fast,smooth,slow
+        }, 'smooth');
     }
     </script>
 </body>

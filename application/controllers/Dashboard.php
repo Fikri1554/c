@@ -159,7 +159,6 @@ class Dashboard extends CI_Controller {
 		print json_encode($dataOut);
 	}
 
-
 	function getDetailCrewOnLeave()
 	{
 		$dataContext = new DataContext();
@@ -233,7 +232,6 @@ class Dashboard extends CI_Controller {
 		
 		print json_encode($data);
 	}
-
 
 	function getCrewNonAktif()
 	{
@@ -373,6 +371,174 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
+
+	function crewPieChart()
+	{
+		$onboard = $this->getCrewOnboard();
+		$onleave = $this->getCrewOnLeave();
+
+		$data = array(
+			'onboard' => $onboard,
+			'onleave' => $onleave
+		);
+
+		print json_encode($data);
+	}
+
+	function rankBarChart()
+	{
+		$sql = "
+			SELECT 
+				A.kdrank, 
+				A.nmrank,
+                onboard.total_onboard,
+				onleave.total_onleave
+			FROM 
+				mstrank A
+			LEFT JOIN (
+				SELECT 
+					B.signonrank AS kdrank, 
+					COUNT(DISTINCT A.idperson) AS total_onboard
+				FROM 
+					mstpersonal A
+				LEFT JOIN tblcontract B ON A.idperson = B.idperson
+				WHERE 
+					A.deletests = '0' 
+					AND B.deletests = '0' 
+					AND B.signoffdt = '0000-00-00' 
+					AND A.inAktif = '0' 
+					AND A.inBlacklist = '0'
+				GROUP BY 
+					B.signonrank
+			) onboard ON A.kdrank = onboard.kdrank
+			LEFT JOIN (
+				SELECT 
+					B.signonrank AS kdrank, 
+					COUNT(DISTINCT A.idperson) AS total_onleave 
+				FROM 
+					mstpersonal A
+				LEFT JOIN tblcontract B ON A.idperson = B.idperson
+				WHERE 
+					A.deletests = '0' 
+					AND B.deletests = '0' 
+					AND A.inAktif = '0' 
+					AND A.inBlacklist = '0'
+					AND B.idcontract IN (
+						SELECT MAX(idcontract) 
+						FROM tblcontract 
+						WHERE idperson = B.idperson 
+						AND deletests = 0
+					)
+					AND (B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE())
+				GROUP BY 
+					B.signonrank
+			) onleave ON A.kdrank = onleave.kdrank
+			WHERE 
+				deletests= '0' 
+				AND nmrank != ''
+				AND (COALESCE(onboard.total_onboard, 0) > 0 OR COALESCE(onleave.total_onleave, 0) > 0)
+			ORDER BY 
+				urutan ASC
+			LIMIT 51
+		";
+
+		$result = $this->MCrewscv->getDataQuery($sql);
+
+		$data = array();
+
+		foreach ($result as $row) {
+			$data[] = array(
+				'rank_name' => $row->nmrank,
+				'total_onboard' => (int) $row->total_onboard,
+				'total_onleave' => (int) $row->total_onleave
+			);
+		}
+
+		print json_encode($data);
+	}
+
+	function shipDemograph()
+	{
+		$sql = "SELECT 
+					D.nmvsl AS nama_kapal, 
+					COUNT(A.idperson) AS jumlah_crew_onboard,
+					SUM(CASE WHEN A.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
+					SUM(CASE WHEN A.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
+					AVG(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS rata_rata_umur
+				FROM 
+					mstpersonal A
+				LEFT JOIN 
+					tblcontract B ON A.idperson = B.idperson
+				LEFT JOIN 
+					tblkota C ON A.pob = C.KdKota
+				LEFT JOIN 
+					mstvessel D ON D.kdvsl = B.signonvsl 
+				WHERE 
+					A.deletests = '0' 
+					AND B.deletests = '0' 
+					AND B.signoffdt = '0000-00-00' 
+					AND A.inaktif = '0' 
+					AND D.deletests = '0' 
+					AND D.nmvsl IN (
+						'MV. ANDHIKA ALISHA', 
+						'MV. ANDHIKA ATHALIA', 
+						'MT. ANDHIKA VIDYANATA', 
+						'MV. ANDHIKA KANISHKA', 
+						'MV. ANDHIKA PARAMESTI', 
+						'MV. ANDHIKA SHAKILLA', 
+						'MV. BULK HALMAHERA', 
+						'MV. BULK BATAVIA', 
+						'MV. BULK NUSANTARA'
+					)
+				GROUP BY 
+					D.nmvsl";
+		
+		$result = $this->MCrewscv->getDataQuery($sql);
+
+		$data = array();
+		$categories = array();
+		$crewCounts = array();
+		$maleCounts = array();
+		$femaleCounts = array();
+		$avgAges = array();
+
+		foreach ($result as $value) {
+			$categories[] = $value->nama_kapal;
+			$crewCounts[] = (int)$value->jumlah_crew_onboard;
+			$maleCounts[] = (int)$value->total_male;
+			$femaleCounts[] = (int)$value->total_female;
+			$avgAges[] = round($value->rata_rata_umur, 1);
+		}
+
+		$chartData = array(
+			'categories' => $categories,
+			'series' => array(
+				array(
+					'name' => 'Jumlah Crew Onboard',
+					'data' => $crewCounts
+				),
+				array(
+					'name' => 'Male',
+					'data' => $maleCounts
+				),
+				array(
+					'name' => 'Female',
+					'data' => $femaleCounts
+				),
+				array(
+					'name' => 'Rata-rata Umur',
+					'data' => $avgAges,
+					'type' => 'line',
+					'yAxis' => 1 // Menggunakan sumbu Y kedua untuk umur
+				)
+			)
+		);
+
+		print json_encode($chartData);
+	}
+
+
+
 	
 	function getDetailCrewNewApplicent()
 	{

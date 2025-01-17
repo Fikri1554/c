@@ -196,6 +196,303 @@
     function resetCursor(element) {
         element.style.cursor = 'default';
     }
+
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/crewPieChart'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                Highcharts.chart('idDivOverall', {
+                    chart: {
+                        type: 'pie',
+                        backgroundColor: null,
+                        height: 500,
+                        width: 500
+                    },
+                    title: {
+                        text: 'Crew Distribution: Onboard vs Onleave',
+                        style: {
+                            fontSize: '15px',
+                        }
+                    },
+                    subtitle: {
+                        text: null
+                    },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                    },
+                    accessibility: {
+                        point: {
+                            valueSuffix: '%'
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                distance: 30,
+                                format: '{point.name}: {point.y}',
+                                style: {
+                                    fontSize: '13px',
+                                    color: 'black',
+                                },
+                                connectorShape: 'crookedLine',
+                                connectorWidth: 1.5,
+                                connectorColor: '#333'
+                            }
+                        }
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    exporting: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Jumlah Kru',
+                        colorByPoint: true,
+                        data: [{
+                                name: 'Onboard',
+                                y: data.onboard,
+                                sliced: true,
+                                selected: true
+                            },
+                            {
+                                name: 'Onleave',
+                                y: data.onleave
+                            }
+                        ]
+                    }]
+
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', error);
+                alert('Gagal mengambil data kru. Silakan coba lagi.');
+            }
+        });
+    });
+
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/rankBarChart'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                var rank = data.map(item => item.rank_name);
+                var onboardData = data.map(item => item.total_onboard);
+                var onleaveData = data.map(item => item.total_onleave);
+
+
+                Highcharts.chart('idDivBarChartRank', {
+                    chart: {
+                        type: 'column',
+                        backgroundColor: null,
+                        height: 800,
+                        width: 1100
+                    },
+                    title: {
+                        text: 'Crew Distribution: Onboard vs Onleave by Rank',
+                        style: {
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }
+                    },
+                    xAxis: {
+                        categories: rank,
+                        crosshair: true,
+                        labels: {
+                            rotation: -45,
+                            style: {
+                                fontSize: '12px',
+                                color: '#333'
+                            }
+                        },
+                        accessibility: {
+                            description: 'Ranks'
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Number of Crew',
+                            style: {
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: '#333'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '12px',
+                                color: '#333'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        valueSuffix: ' people',
+                        style: {
+                            fontSize: '12px',
+                            color: '#333'
+                        }
+                    },
+                    plotOptions: {
+                        column: {
+                            pointPadding: 0.1,
+                            groupPadding: 0.1,
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                style: {
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    color: '#333'
+                                },
+                                formatter: function() {
+                                    return this.y;
+                                }
+                            }
+                        }
+                    },
+                    series: [{
+                            name: 'Onboard',
+                            data: onboardData,
+                            color: '#007bff'
+                        },
+                        {
+                            name: 'Onleave',
+                            data: onleaveData,
+                            color: '#28a745'
+                        }
+                    ],
+                    legend: {
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        itemStyle: {
+                            fontSize: '14px',
+                            fontWeight: 'normal',
+                            color: '#333',
+                            textDecoration: 'none'
+                        },
+                        itemHoverStyle: {
+                            color: '#333'
+                        },
+                        useHTML: false
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    exporting: {
+                        enabled: true
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching rankBarChart data:', error);
+            }
+        });
+    });
+
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/shipDemograph'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                Highcharts.chart('idTotalCrewByKapal', {
+                    chart: {
+                        type: 'bar',
+                        backgroundColor: null,
+                        height: 500,
+                        width: 800
+                    },
+                    title: {
+                        text: 'Crew Distribution by Ship',
+                        align: 'center',
+                        style: {
+                            fontSize: '18px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        categories: data.categories,
+                        title: {
+                            text: 'Nama Kapal',
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '12px'
+                            }
+                        }
+                    },
+                    yAxis: [{
+                        min: 0,
+                        title: {
+                            text: 'Jumlah Crew',
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '12px'
+                            }
+                        }
+                    }, {
+                        opposite: true,
+                        title: {
+                            text: 'Rata-rata Umur',
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '12px'
+                            }
+                        }
+                    }],
+                    legend: {
+                        reversed: false,
+                        itemStyle: {
+                            fontSize: '12px'
+                        }
+                    },
+                    plotOptions: {
+                        series: {
+                            stacking: 'normal',
+                            dataLabels: {
+                                enabled: true,
+                                style: {
+                                    fontSize: '12px',
+                                    fontWeight: 'normal'
+                                }
+                            }
+                        }
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    series: data.series
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', error);
+                $('#idTotalCrewByKapal').html('<p>Unable to load data.</p>');
+            }
+        });
+    });
     </script>
 </head>
 
@@ -215,93 +512,117 @@
                     <label style="font-size:18px;font-weight:bold;color:#067780;">Total : <?php echo $totalCrew; ?>
                         Person (On Board & On Leave)</label>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#16839B;color:#FFFFFF;border:2px solid #000000;cursor:pointer;border-radius:30px;"
                         onclick="displayOnBoard();">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
-                                <i class="fa fa-anchor fa-5x"></i>
+                                <i class="fa fa-anchor fa-3x"></i>
                             </div>
                             <div class="col-xs-9">
-                                <p style="font-size:46px;text-align:center;"><?php echo $onBoard; ?></p>
-                                <p style="font-size:20px;text-align:center;font-weight:bold;">On Board</p>
+                                <p style="font-size:30px;text-align:center;"><?php echo $onBoard; ?></p>
+                                <p style="font-size:12px;text-align:center;font-weight:bold;">On Board</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#078415;color:#FFFFFF;border:2px solid #000000;cursor: pointer;border-radius:30px;"
                         onclick="displayOnLeave();">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
-                                <i class="fa fa-user-circle fa-5x"></i>
+                                <i class="fa fa-user-circle fa-3x"></i>
                             </div>
                             <div class="col-xs-9">
-                                <p style="font-size:46px;text-align:center;"><?php echo $onLeave; ?></p>
-                                <p style="font-size:20px;text-align:center;font-weight:bold;">On Leave</p>
+                                <p style="font-size:30px;text-align:center;"><?php echo $onLeave; ?></p>
+                                <p style="font-size:12px;text-align:center;font-weight:bold;">On Leave</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#E47100;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
-                                <i class="fa fa-user-circle-o fa-5x"></i>
+                                <i class="fa fa-user-circle-o fa-3x"></i>
                             </div>
                             <div class="col-xs-9">
-                                <p style="font-size:46px;text-align:center;"><?php echo $nonAktif; ?></p>
-                                <p style="font-size:20px;text-align:center;font-weight:bold;">Non Aktif</p>
+                                <p style="font-size:30px;text-align:center;"><?php echo $nonAktif; ?></p>
+                                <p style="font-size:12px;text-align:center;font-weight:bold;">Non Aktif</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#C80000;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
-                                <i class="fa fa-user-secret fa-5x"></i>
+                                <i class="fa fa-user-secret fa-3x"></i>
                             </div>
                             <div class="col-xs-9">
-                                <p style="font-size:46px;text-align:center;"><?php echo $notForEmp; ?></p>
-                                <p style="font-size:18px;text-align:center;font-weight:bold;">Not for Employeed</p>
+                                <p style="font-size:32px;text-align:center;"><?php echo $notForEmp; ?></p>
+                                <p style="font-size:10px;text-align:center;font-weight:bold;">Not for Employeed</p>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row" style="margin-top:10px;">
-                <div class="col-lg-3 col-6"></div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#66007A;color:#FFFFFF;border:2px solid #000000;border-radius:30px;cursor:pointer;"
                         onclick="displayNewApplicent();">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
-                                <i class="fa fa fa-user-plus fa-5x"></i>
+                                <i class="fa fa fa-user-plus fa-3x"></i>
                             </div>
                             <div class="col-xs-9">
-                                <p style="font-size:46px;text-align:center;"><?php echo $newApplicent; ?></p>
-                                <p style="font-size:18px;text-align:center;font-weight:bold;">New Applicent</p>
+                                <p style="font-size:30px;text-align:center;"><?php echo $newApplicent; ?></p>
+                                <p style="font-size:12px;text-align:center;font-weight:bold;">New Applicent</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#7A1A00;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
-                                <i class="fa fa fa-child fa-5x"></i>
+                                <i class="fa fa fa-child fa-3x"></i>
                             </div>
                             <div class="col-xs-9">
-                                <p style="font-size:46px;text-align:center;"><?php echo $cadetOnBoard; ?></p>
-                                <p style="font-size:18px;text-align:center;font-weight:bold;">Cadet On Board</p>
+                                <p style="font-size:30px;text-align:center;"><?php echo $cadetOnBoard; ?></p>
+                                <p style="font-size:11px;text-align:center;font-weight:bold;">Cadet On Board</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6" style="margin-top: 10px;">
+                    <div id="idDivOverall">
+                    </div>
+                </div>
+                <div class="col-md-6" style="margin-top: 10px;  ">
+                    <div id="idTotalCrewByKapal">
+
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+
+                </div>
+                <div class="col-md-6">
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div>
+                        <div id="idDivBarChartRank">
                         </div>
                     </div>
                 </div>

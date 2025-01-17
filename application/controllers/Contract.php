@@ -172,7 +172,6 @@ class Contract extends CI_Controller {
 			if($status == "onleave"  OR $status == "all")
 			{
 				$tempTr = "";
-				$dataTemp = array(); 
 				$no =1;
 
 				$sql = "SELECT A.idcontract,A.idperson,D.inAktif,D.inBlacklist,TRIM(CONCAT(D.fname,' ',D.mname,' ' ,D.lname)) AS fullName,D.usecertdoc,D.dob,A.kdcmprec,A.signondt,A.signoffdt,A.estsignoffdt,A.signonrank,B.nmrank,A.signonvsl,C.nmvsl,A.lastvsl,A.signondesc,F.NmNegara
