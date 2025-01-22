@@ -578,7 +578,7 @@
             dataType: 'json',
             success: function(data) {
                 const heatmapData = data.map((item, index) => {
-                    let color;
+                    var color;
                     if (item.total_onleave > 15) {
                         color = 'green';
                     } else if (item.total_onleave >= 11) {
@@ -600,7 +600,6 @@
                         type: 'heatmap',
                         plotBorderWidth: 1,
                         height: 500,
-
                         backgroundColor: null,
                     },
                     title: {
@@ -630,8 +629,8 @@
                     },
                     tooltip: {
                         formatter: function() {
-                            let categoryLabel = '';
-                            let categoryColor = '';
+                            var categoryLabel = '';
+                            var categoryColor = '';
                             if (this.point.value > 15) {
                                 categoryLabel = 'Strong';
                                 categoryColor = '#28a745';
@@ -643,10 +642,9 @@
                                 categoryColor = '#dc3545';
                             }
 
-                            // Properly format the string
                             return `<b>Rank: ${this.point.rank}</b><br>
-                            Crew On Leave: ${this.point.value}<br>
-                            Category: <span style="color: ${categoryColor}; font-weight: bold;">${categoryLabel}</span>`;
+                                Crew On Leave: ${this.point.value}<br>
+                                Category: <span style="color: ${categoryColor}; font-weight: bold;">${categoryLabel}</span>`;
                         },
                     },
 
