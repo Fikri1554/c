@@ -29,27 +29,6 @@
     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/style.css">
     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/responsive.css">
     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/jquery-ui.css">
-    <style type="text/css">
-    #myBtnToOnTop {
-        display: none;
-        position: fixed;
-        bottom: 20px;
-        right: 30px;
-        z-index: 99;
-        font-size: 24px;
-        border: none;
-        outline: none;
-        background-color: red;
-        color: white;
-        cursor: pointer;
-        padding: 10px;
-        border-radius: 22px;
-    }
-
-    #myBtnToOnTop:hover {
-        background-color: #555;
-    }
-    </style>
 </head>
 
 <body style="background-color:#d1e9ef;">
@@ -115,6 +94,9 @@
             </div>
             <!--/.menubar -->
         </div><!-- /.container -->
+        <button id="myBtnToOnTop" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 99;">
+        </button>
+
     </section>
 
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery.js"></script>
@@ -130,30 +112,12 @@
     <!-- <script type="text/javascript" src="assets/js/jak-menusearch.js"></script> -->
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/custom.js"></script>
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery-ui-1.9.2.custom.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/heatmap.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
     <script type="text/javascript">
-    $(document).ready(function() {
-        $(".wrapper-sticky").css('height', '50');
-
-        window.onscroll = function() {
-            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-                document.getElementById("myBtnToOnTop").style.display = "block";
-            } else {
-                document.getElementById("myBtnToOnTop").style.display = "none";
-            }
-        };
-    });
-
-    function topFunction() {
-        $('html, body').animate({
-            scrollTop: 0
-        }, 'smooth');
-    }
     </script>
 </body>
 

@@ -226,13 +226,6 @@ class Dashboard extends CI_Controller {
 		print json_encode($dataOut);
 	}
 
-	function getCadanganData() {
-		$query = "SELECT nmrank, cadangan FROM mstrank ORDER BY urutan";
-		$data = $this->MCrewscv->getDataQuery($query);
-		
-		print json_encode($data);
-	}
-
 	function getCrewNonAktif()
 	{
 		$total = 0;
@@ -332,6 +325,7 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
+
 
 	function getDetailCrewOnBoard()
 	{
@@ -460,6 +454,7 @@ class Dashboard extends CI_Controller {
 	function shipDemograph()
 	{
 		$sql = "SELECT 
+					D.kdvsl AS kode_kapal, 
 					D.nmvsl AS nama_kapal, 
 					COUNT(A.idperson) AS jumlah_crew_onboard,
 					SUM(CASE WHEN A.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
@@ -491,7 +486,8 @@ class Dashboard extends CI_Controller {
 						'MV. BULK NUSANTARA'
 					)
 				GROUP BY 
-					D.nmvsl";
+					D.kdvsl, D.nmvsl
+				";
 		
 		$result = $this->MCrewscv->getDataQuery($sql);
 
@@ -501,45 +497,167 @@ class Dashboard extends CI_Controller {
 		$maleCounts = array();
 		$femaleCounts = array();
 		$avgAges = array();
-
+		$kdvslList = array();
+		
 		foreach ($result as $value) {
 			$categories[] = $value->nama_kapal;
 			$crewCounts[] = (int)$value->jumlah_crew_onboard;
 			$maleCounts[] = (int)$value->total_male;
 			$femaleCounts[] = (int)$value->total_female;
 			$avgAges[] = round($value->rata_rata_umur, 1);
+			$kdvslList[] = $value->kode_kapal; 
 		}
 
 		$chartData = array(
 			'categories' => $categories,
+			'kdvsl' => $kdvslList, 
 			'series' => array(
-				array(
-					'name' => 'Jumlah Crew Onboard',
-					'data' => $crewCounts
-				),
-				array(
-					'name' => 'Male',
-					'data' => $maleCounts
-				),
-				array(
-					'name' => 'Female',
-					'data' => $femaleCounts
-				),
-				array(
-					'name' => 'Rata-rata Umur',
-					'data' => $avgAges,
-					'type' => 'line',
-					'yAxis' => 1 // Menggunakan sumbu Y kedua untuk umur
-				)
-			)
+				array('name' => 'Jumlah Crew Onboard', 'data' => $crewCounts),
+				array('name' => 'Male', 'data' => $maleCounts),
+				array('name' => 'Female', 'data' => $femaleCounts),
+				array('name' => 'Rata-rata Umur', 'data' => $avgAges),
+			),
 		);
 
 		print json_encode($chartData);
 	}
 
-
+	function getSchool() {
+		$sql = "SELECT 
+					T.namescl AS nama_sekolah,
+					COUNT(T.idperson) AS jumlah_crew
+				FROM 
+					tblscl T
+				LEFT JOIN 
+					mstpersonal A ON T.idperson = A.idperson
+				WHERE 
+					A.deletests = '0' 
+					AND T.Deletests = '0'
+				GROUP BY 
+					T.namescl
+				ORDER BY 
+					jumlah_crew DESC
+				LIMIT 10";
 
 	
+		$result = $this->MCrewscv->getDataQuery($sql);
+
+		$data = array();
+		foreach ($result as $row) {
+			$data[] = array(
+				'school' => $row->nama_sekolah,
+				'count' => (int) $row->jumlah_crew,
+			);
+		}
+
+		echo json_encode($data);
+	}
+
+	function getCadangan()
+	{
+		$sql = "SELECT 
+					RANK.kdrank, 
+					RANK.nmrank, 
+					COUNT(A.idperson) AS total_onleave
+				FROM 
+					mstrank RANK
+				LEFT JOIN tblcontract B ON RANK.kdrank = B.signonrank
+				LEFT JOIN mstpersonal A ON A.idperson = B.idperson
+				WHERE 
+					RANK.deletests = '0' 
+					AND RANK.nmrank != '' 
+					AND A.deletests = '0' 
+					AND B.deletests = '0' 
+					AND A.inAktif = '0' 
+					AND A.inBlacklist = '0' 
+					AND B.idcontract IN (
+						SELECT MAX(idcontract) 
+						FROM tblcontract 
+						WHERE idperson = B.idperson 
+						AND deletests = 0
+					)
+					AND (B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE())  
+				GROUP BY 
+					RANK.kdrank, RANK.nmrank
+				ORDER BY 
+					RANK.urutan ASC
+				LIMIT 51";
+
+		$result = $this->MCrewscv->getDataQuery($sql);
+
+		$data = array();
+		foreach ($result as $row) {
+			if ($row->total_onleave > 15) {
+				$category = 'Strong';
+				$color = 'green';
+			} elseif ($row->total_onleave >= 11 && $row->total_onleave <= 15) {
+				$category = 'Medium';
+				$color = 'yellow';
+			} else {
+				$category = 'Low';
+				$color = 'red';
+			}
+
+			$data[] = array(
+				'rank' => $row->nmrank, 
+				'total_onleave' => $row->total_onleave,
+				'category' => $category,
+				'color' => $color
+			);
+		}
+
+		header('Content-Type: application/json');
+		echo json_encode($data);
+	}
+
+	function getCrewDetailsWithRanks()
+	{
+		$dataOut = array();
+
+		$sql = "SELECT 
+					D.nmvsl AS nama_kapal,
+					COUNT(A.idperson) AS jumlah_crew_onboard,
+					GROUP_CONCAT(CONCAT(TRIM(CONCAT(A.fname, ' ', A.mname, ' ', A.lname)), ' (', E.nmrank, ')') SEPARATOR ', ') AS daftar_crew_dengan_rank
+				FROM 
+					mstpersonal A
+				LEFT JOIN 
+					tblcontract B ON A.idperson = B.idperson
+				LEFT JOIN 
+					tblkota C ON A.pob = C.KdKota
+				LEFT JOIN 
+					mstvessel D ON D.kdvsl = B.signonvsl
+				LEFT JOIN 
+					mstrank E ON E.kdrank = B.signonrank AND E.deletests = '0'
+				WHERE 
+					A.deletests = '0'
+					AND B.deletests = '0'
+					AND B.signoffdt = '0000-00-00'
+					AND A.inaktif = '0'
+					AND D.deletests = '0'
+					AND D.nmvsl IN (
+						'MV. ANDHIKA ALISHA', 
+						'MV. ANDHIKA ATHALIA', 
+						'MT. ANDHIKA VIDYANATA', 
+						'MV. ANDHIKA KANISHKA', 
+						'MV. ANDHIKA PARAMESTI', 
+						'MV. ANDHIKA SHAKILLA', 
+						'MV. BULK HALMAHERA', 
+						'MV. BULK BATAVIA', 
+						'MV. BULK NUSANTARA'
+					)
+				GROUP BY 
+					D.nmvsl
+				ORDER BY 
+					D.nmvsl ASC";
+
+		$result = $this->db->query($sql)->result();
+
+		$dataOut['details'] = $result;
+
+		echo json_encode($dataOut);
+	}
+
+
 	function getDetailCrewNewApplicent()
 	{
 		$dataOut = array();

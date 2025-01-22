@@ -31,7 +31,6 @@
                 $("#idBodyTotalCrewOnLeave").append(data.trNya);
                 $("#idLblModalTotalCrew").text(data.totalCrew);
                 $('#modalTotalCrewOnLeave').modal('show');
-                loadCadanganChart();
             } else {
                 alert("Gagal memuat data. Silakan coba lagi.");
             }
@@ -39,84 +38,6 @@
         }, "json").fail(function() {
             alert("Terjadi kesalahan. Silakan coba lagi.");
             $("#idLoading").hide();
-        });
-    }
-
-    function loadCadanganChart() {
-        $.getJSON('<?php echo base_url("dashboard/getCadanganData"); ?>', function(data) {
-
-            var filteredData = data.filter(item => parseInt(item.cadangan) > 0);
-
-            var labels = filteredData.map(item => item.nmrank);
-            var values = filteredData.map(item => parseInt(item.cadangan));
-
-            var backgroundColors = values.map(value => value >= 18 ? 'rgba(0, 128, 0, 0.7)' :
-                'rgba(255, 0, 0, 0.7)');
-            var borderColors = values.map(value => value >= 18 ? 'rgba(0, 128, 0, 1)' : 'rgba(255, 0, 0, 1)');
-
-            var ctx = document.getElementById('cadanganBarChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: backgroundColors,
-                        borderColor: borderColors,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 1,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            enabled: true
-                        },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'start',
-                            color: '#000',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            },
-                            formatter: function(value, context) {
-                                return value;
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    layout: {
-                        padding: 10
-                    }
-                },
-                plugins: [ChartDataLabels]
-            });
-
-            var noteContainer = document.getElementById('chartNote');
-            if (noteContainer) {
-                noteContainer.innerHTML = `
-                <p>
-                    <span style="color: rgba(255, 0, 0, 1); font-weight: bold;">Merah:</span>
-                    Jumlah orang yang kurang dicadangkan.
-                </p>
-                <p>
-                    <span style="color: rgba(0, 128, 0, 1); font-weight: bold;">Hijau:</span>
-                    Jumlah orang yang melebihi atau siap dicadangkan.
-                </p>
-            `;
-            }
-        }).fail(function() {
-            alert("Gagal memuat data cadangan.");
         });
     }
 
@@ -206,67 +127,66 @@
                 Highcharts.chart('idDivOverall', {
                     chart: {
                         type: 'pie',
-                        backgroundColor: null,
-                        height: 500,
-                        width: 500
+                        backgroundColor: null
                     },
                     title: {
-                        text: 'Crew Distribution: Onboard vs Onleave',
-                        style: {
-                            fontSize: '15px',
-                        }
+                        text: 'Crew Distribution: Onboard vs Onleave'
                     },
                     subtitle: {
                         text: null
                     },
                     tooltip: {
+                        valueSuffix: '%',
                         pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
                     },
-                    accessibility: {
-                        point: {
-                            valueSuffix: '%'
-                        }
-                    },
                     plotOptions: {
-                        pie: {
+                        series: {
                             allowPointSelect: true,
                             cursor: 'pointer',
-                            dataLabels: {
-                                enabled: true,
-                                distance: 30,
-                                format: '{point.name}: {point.y}',
-                                style: {
-                                    fontSize: '13px',
-                                    color: 'black',
+                            dataLabels: [{
+                                    enabled: true,
+                                    distance: 20,
+                                    format: '{point.name}: {point.y}',
+                                    style: {
+                                        fontSize: '16px',
+                                    }
                                 },
-                                connectorShape: 'crookedLine',
-                                connectorWidth: 1.5,
-                                connectorColor: '#333'
-                            }
+                                {
+                                    enabled: true,
+                                    distance: -40,
+                                    format: '{point.percentage:.1f}%',
+                                    style: {
+                                        fontSize: '1.2em',
+                                        textOutline: 'none',
+                                        opacity: 0.7
+                                    }
+                                }
+                            ]
                         }
                     },
                     credits: {
                         enabled: false
                     },
-                    exporting: {
-                        enabled: false
+                    legend: {
+                        enabled: true
+
                     },
                     series: [{
                         name: 'Jumlah Kru',
-                        colorByPoint: true,
                         data: [{
                                 name: 'Onboard',
                                 y: data.onboard,
                                 sliced: true,
-                                selected: true
+                                selected: true,
+                                color: '#0000FF'
                             },
                             {
                                 name: 'Onleave',
-                                y: data.onleave
+                                y: data.onleave,
+                                color: '#008000'
                             }
                         ]
                     }]
-
                 });
             },
             error: function(xhr, status, error) {
@@ -400,7 +320,7 @@
 
     $(document).ready(function() {
         $.ajax({
-            url: '<?php echo base_url('dashboard/shipDemograph'); ?>',
+            url: '<?php echo base_url("dashboard/shipDemograph"); ?>',
             method: 'GET',
             dataType: 'json',
             success: function(data) {
@@ -409,7 +329,7 @@
                         type: 'bar',
                         backgroundColor: null,
                         height: 500,
-                        width: 800
+                        width: 500
                     },
                     title: {
                         text: 'Crew Distribution by Ship',
@@ -420,7 +340,7 @@
                         }
                     },
                     xAxis: {
-                        categories: data.categories,
+                        categories: data.categories, // Nama kapal
                         title: {
                             text: 'Nama Kapal',
                             style: {
@@ -434,10 +354,10 @@
                             }
                         }
                     },
-                    yAxis: [{
+                    yAxis: {
                         min: 0,
                         title: {
-                            text: 'Jumlah Crew',
+                            text: 'Jumlah Crew / Umur',
                             style: {
                                 fontSize: '14px',
                                 fontWeight: 'bold'
@@ -448,21 +368,7 @@
                                 fontSize: '12px'
                             }
                         }
-                    }, {
-                        opposite: true,
-                        title: {
-                            text: 'Rata-rata Umur',
-                            style: {
-                                fontSize: '14px',
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labels: {
-                            style: {
-                                fontSize: '12px'
-                            }
-                        }
-                    }],
+                    },
                     legend: {
                         reversed: false,
                         itemStyle: {
@@ -476,21 +382,302 @@
                                 enabled: true,
                                 style: {
                                     fontSize: '12px',
-                                    fontWeight: 'normal'
+                                    fontWeight: 'normal',
+                                    color: '#fff'
+                                }
+                            },
+                            point: {
+                                events: {
+                                    click: function() {
+                                        if (!data.kdvsl || !Array.isArray(data.kdvsl) ||
+                                            typeof data.kdvsl[this.index] ===
+                                            'undefined') {
+                                            console.error('Invalid kdvsl data:', data
+                                                .kdvsl);
+                                            alert(
+                                                'Vessel code not found. Please check the data.'
+                                            );
+                                            return;
+                                        }
+
+                                        const vslcode = data.kdvsl[this.index];
+                                        const vesselName = this.category;
+
+                                        $("#idLoadingModal").show();
+
+                                        $.ajax({
+                                            url: '<?php echo base_url("dashboard/getDetailCrewOnBoard"); ?>',
+                                            method: 'POST',
+                                            data: {
+                                                vslCode: vslcode
+                                            },
+                                            dataType: 'json',
+                                            success: function(data) {
+                                                $("#idBodyModalCrewDetailByOwnShip")
+                                                    .empty();
+                                                $("#idBodyModalCrewDetailByOwnShip")
+                                                    .append(data.trNya);
+                                                $("#idLblModalVesselDetailByOwnShip")
+                                                    .text(data.vessel);
+                                                $("#idModalCrewByOwnShip")
+                                                    .modal('show');
+                                                $("#idLoadingModal").hide();
+                                            },
+                                            error: function(xhr, status,
+                                                error) {
+                                                console.error(
+                                                    'Error fetching crew details:',
+                                                    error);
+                                                alert(
+                                                    'Failed to load crew details. Please try again.'
+                                                );
+                                                $("#idLoadingModal").hide();
+                                            }
+                                        });
+                                    }
                                 }
                             }
+
+
                         }
                     },
                     credits: {
                         enabled: false
                     },
-                    series: data.series
+                    exporting: {
+                        enabled: true
+                    },
+                    series: [{
+                            name: 'Jumlah Crew Onboard',
+                            data: data.series[0].data,
+                            color: '#007bff'
+                        },
+                        {
+                            name: 'Male',
+                            data: data.series[1].data,
+                            color: '#28a745'
+                        },
+                        {
+                            name: 'Female',
+                            data: data.series[2].data,
+                            color: '#dc3545'
+                        },
+                        {
+                            name: 'Rata-rata Umur',
+                            data: data.series[3].data,
+                            color: '#fd7e14',
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y:.1f}',
+                                style: {
+                                    color: '#000000'
+                                }
+                            }
+                        }
+                    ]
                 });
             },
             error: function(xhr, status, error) {
                 console.error('Error fetching data:', error);
                 $('#idTotalCrewByKapal').html('<p>Unable to load data.</p>');
             }
+        });
+    });
+
+
+
+
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/getSchool'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                const categories = data.map(item => item.school);
+                const seriesData = data.map(item => item.count);
+
+                Highcharts.chart('idDivtotalSchool', {
+                    chart: {
+                        type: 'bar',
+                        backgroundColor: null
+                    },
+                    title: {
+                        text: 'Distribution Crew by School',
+                        style: {
+                            fontSize: '18px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        categories: categories,
+                        title: {
+                            text: 'Nama Sekolah',
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        gridLineWidth: 1,
+                        lineWidth: 0
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Jumlah Crew',
+                            align: 'high',
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        gridLineWidth: 0
+                    },
+                    tooltip: {
+                        valueSuffix: ' crew',
+                        style: {
+                            fontSize: '12px'
+                        }
+                    },
+                    plotOptions: {
+                        bar: {
+                            dataLabels: {
+                                enabled: true,
+                                style: {
+                                    fontSize: '12px'
+                                }
+                            },
+                            groupPadding: 0.1
+                        }
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Jumlah Crew',
+                        data: seriesData
+                    }]
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', error);
+            }
+        });
+    });
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/getCadangan'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                const heatmapData = data.map((item, index) => {
+                    let color;
+                    if (item.total_onleave > 15) {
+                        color = 'green';
+                    } else if (item.total_onleave >= 11) {
+                        color = 'yellow';
+                    } else {
+                        color = 'red';
+                    }
+                    return {
+                        x: index % 5,
+                        y: Math.floor(index / 5),
+                        value: item.total_onleave,
+                        rank: item.rank,
+                        color: color || item.color,
+                    };
+                });
+
+                Highcharts.chart('idDivHeatMap', {
+                    chart: {
+                        type: 'heatmap',
+                        plotBorderWidth: 1,
+                        height: 500,
+
+                        backgroundColor: null,
+                    },
+                    title: {
+                        text: 'Cadangan Kapal per Rank (Heatmap)',
+                        align: 'center',
+                    },
+                    xAxis: {
+                        labels: {
+                            enabled: false,
+                        },
+                        title: null,
+                    },
+                    yAxis: {
+                        labels: {
+                            enabled: false,
+                        },
+                        title: null,
+                    },
+                    colorAxis: {
+                        stops: [
+                            [0, '#dc3545'],
+                            [0.5, '#ffc107'],
+                            [1, '#28a745'],
+                        ],
+                        min: 0,
+                        max: 20,
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            let categoryLabel = '';
+                            let categoryColor = '';
+                            if (this.point.value > 15) {
+                                categoryLabel = 'Strong';
+                                categoryColor = '#28a745';
+                            } else if (this.point.value >= 11) {
+                                categoryLabel = 'Medium';
+                                categoryColor = '#ffc107';
+                            } else {
+                                categoryLabel = 'Low';
+                                categoryColor = '#dc3545';
+                            }
+
+                            // Properly format the string
+                            return `<b>Rank: ${this.point.rank}</b><br>
+                            Crew On Leave: ${this.point.value}<br>
+                            Category: <span style="color: ${categoryColor}; font-weight: bold;">${categoryLabel}</span>`;
+                        },
+                    },
+
+                    series: [{
+                        name: 'Cadangan Kapal',
+                        borderWidth: 1,
+                        data: heatmapData.map(item => ({
+                            x: item.x,
+                            y: item.y,
+                            value: item.value,
+                            rank: item.rank,
+                            color: item.color,
+                        })),
+                        dataLabels: {
+                            enabled: true,
+                            color: '#000000',
+                            format: '{point.value}',
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                            },
+                        },
+                    }],
+                    credits: {
+                        enabled: false,
+                    },
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', status, error);
+            },
         });
     });
     </script>
@@ -601,25 +788,28 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-6" style="margin-top: 10px;">
+                <div class="col-md-6" style="margin-top: 12px;">
                     <div id="idDivOverall">
                     </div>
                 </div>
-                <div class="col-md-6" style="margin-top: 10px;  ">
+                <div class="col-md-6" style="margin-top: 12px;">
                     <div id="idTotalCrewByKapal">
 
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6">
-
-                </div>
-                <div class="col-md-6">
-
+            <div class="row" style="margin-top: 12px;">
+                <div class="col-md-12">
+                    <div id="idDivHeatMap"></div>
                 </div>
             </div>
-            <div class="row">
+
+            <div class="row" style="margin-top: 12px;">
+                <div class="col-md-12">
+                    <div id="idDivtotalSchool"></div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 12px;">
                 <div class="col-md-12">
                     <div>
                         <div id="idDivBarChartRank">
@@ -632,6 +822,45 @@
 </body>
 
 </html>
+
+<div class="modal fade" id="idModalCrewByOwnShip" tabindex="-1" role="dialog"
+    aria-labelledby="idModalCrewByOwnShipLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 10px;background-color:#16839B;">
+                <h5 class=" modal-title" id="idModalCrewByOwnShipLabel" style="color: white;">Crew Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <legend style="text-align: left; margin-bottom: 10px;">
+                    <label>Vessel: <span id="idLblModalVesselDetailByOwnShip"></span></label>
+                </legend>
+                <div class="table-responsive">
+                    <table
+                        class="table table-border table-striped table-bordered table-condensed table-advance table-hover">
+                        <thead>
+                            <tr style="background-color: #16839B; color: #FFF; height: 40px;">
+                                <th style="text-align: center; width: 5%;">No</th>
+                                <th style="text-align: center; width: 60%;">Crew Name</th>
+                                <th style="text-align: center; width: 35%;">Position</th>
+                            </tr>
+                        </thead>
+                        <tbody id="idBodyModalCrewDetailByOwnShip">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 <div class="modal fade" id="modalReqDetail" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -756,14 +985,6 @@
                             </div>
 
                         </div>
-                    </div>
-                    <br>
-                    <div id="chartContainer" style="margin-top: 10px; text-align: center;">
-                        <h4 style="margin-bottom: 10px;">Cadangan Chart</h4>
-                        <canvas id="cadanganBarChart"
-                            style="width: 100%; max-width: 200px; height: auto; max-height: 200px;">
-                        </canvas>
-                        <div id="chartNote" style="margin-top: 15px; font-size: 14px;"></div>
                     </div>
                 </div>
             </div>
