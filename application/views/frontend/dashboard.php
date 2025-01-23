@@ -571,6 +571,7 @@
             }
         });
     });
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url('dashboard/getCadangan'); ?>',
