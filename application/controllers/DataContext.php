@@ -78,29 +78,8 @@ class DataContext extends CI_Controller {
 		return !empty($rsl) ? $rsl : array();
 	}
 
-	function getCrewOnLeaveByRank() 
-	{
-		$sqlRanks = "SELECT kdrank, nmrank
-					FROM mstrank 
-					WHERE Deletests = '0' 
-					AND nmrank != ''  
-					ORDER BY urutan ASC 
-					LIMIT 51"; 
-		$ranks = $this->MCrewscv->getDataQuery($sqlRanks);
-
-		$rankCodes = array();
-		foreach ($ranks as $rank) {
-			$rankCodes[] = $rank->kdrank;
-		}
-
-		if (empty($rankCodes)) {
-			return array(); 	
-		}
-
-		$rankPlaceholders = implode(',', $rankCodes);  
-		
-		$sqlCrewOnLeave = "SELECT A.idperson, 
-							CONCAT(A.fname, ' ', IFNULL(A.mname, ''), ' ', A.lname) AS crew_name, 
+	function getCrewOnLeaveByRank() {
+		$sqlCrewOnLeave = "SELECT A.idperson, CONCAT(A.fname, ' ', IFNULL(A.mname, ''), ' ', A.lname) AS crew_name, 
 							RANK.nmrank
 						FROM mstpersonal A
 						LEFT JOIN tblcontract B ON A.idperson = B.idperson
@@ -115,11 +94,9 @@ class DataContext extends CI_Controller {
 							WHERE idperson = B.idperson 
 							AND deletests = 0
 						)
-						AND (B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE())  -- Hanya crew yang selesai kontrak
-						AND RANK.kdrank IN ($rankPlaceholders) 
-						ORDER BY FIELD(RANK.kdrank, $rankPlaceholders)"; 
-
-		return $this->MCrewscv->getDataQuery($sqlCrewOnLeave);  
+						AND (B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE())
+						ORDER BY RANK.urutan ASC";
+		return $this->MCrewscv->getDataQuery($sqlCrewOnLeave);
 	}
 
 	function getFormatDate($date)
