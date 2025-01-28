@@ -205,7 +205,7 @@
                 const months = Object.keys(groupedData);
                 const crewCounts = months.map(month => groupedData[month].totalCrew);
 
-                // Membuat chart
+
                 Highcharts.chart('idDivBarChartRank', {
                     chart: {
                         type: 'column',
@@ -268,12 +268,12 @@
                             events: {
                                 click: function(event) {
                                     const index = Math.round(event.point
-                                        .index); // Ambil indeks bar yang diklik
+                                        .index);
                                     const selectedMonth = months[index];
                                     const crewDetails = groupedData[selectedMonth]
                                         .crewDetails;
 
-                                    // Menampilkan data crew dalam modal
+
                                     let modalBody = '';
                                     crewDetails.forEach((item, i) => {
                                         modalBody += `
@@ -348,7 +348,7 @@
                     chart: {
                         type: 'bar',
                         backgroundColor: null,
-                        height: 750,
+                        height: 800,
                         width: 500
                     },
                     title: {
@@ -436,7 +436,7 @@
 
                                         if (status === "Properly Manned") {
                                             $("#idLblVesselStatus").append(
-                                                '<br><span style="font-size: 14px; color: green;">Kapal memenuhi persyaratan jumlah kru minimum untuk pelayaran yang aman (≥ 22 kru).</span>'
+                                                '<br><span style="font-size: 14px; color: green;">The vessel meets the minimum crew number requirements for safe sailing (≥ 22 crew).</span>'
                                             );
                                         }
 
@@ -484,19 +484,22 @@
 
     $(document).ready(function() {
         $.ajax({
-            url: '<?php echo base_url('dashboard/getSchool'); ?>',
+            url: '<?php echo base_url("dashboard/getSchool"); ?>',
             method: 'GET',
             dataType: 'json',
             success: function(data) {
                 const categories = data.map(item => item.school);
-                const seriesData = data.map(item => ({
-                    y: item.count,
+                const seriesDataTotal = data.map(item => ({
+                    y: item.total_crew
                 }));
+                const seriesDataOnboard = data.map(item => item.onboard_crew);
+                const seriesDataOnleave = data.map(item => item.onleave_crew);
 
                 Highcharts.chart('idDivtotalSchool', {
                     chart: {
                         type: 'bar',
-                        backgroundColor: null
+                        backgroundColor: null,
+                        height: 800
                     },
                     title: {
                         text: 'Distribution Crew by School',
@@ -538,7 +541,15 @@
                         gridLineWidth: 0
                     },
                     tooltip: {
-                        valueSuffix: ' crew',
+                        formatter: function() {
+                            const schoolData = data[this.point.index];
+                            return `
+                            <b>${schoolData.school}</b><br>
+                            Total Crew: ${schoolData.total_crew}<br>
+                            Onboard: ${schoolData.onboard_crew}<br>
+                            Onleave: ${schoolData.onleave_crew}
+                        `;
+                        },
                         style: {
                             fontSize: '12px'
                         }
@@ -556,22 +567,58 @@
                             point: {
                                 events: {
                                     click: function() {
-                                        const school = categories[this.index];
-                                        const crewDetails = data[this.index].crew_names;
+                                        const index = this.index;
+                                        const seriesName = this.series.name;
+                                        const school = categories[index];
+                                        let crewDetails = [];
+                                        let modalColor = '#16839B'; // Default color
 
+                                        if (seriesName === 'Total Crew') {
+                                            crewDetails = data[index].crew_names.split(
+                                                ', ');
+                                            modalColor = '#16839B'; // Green
+                                        } else if (seriesName === 'Onboard') {
+                                            crewDetails = data[index]
+                                                .onboard_crew_names ?
+                                                data[index].onboard_crew_names.split(
+                                                    ', ') : [];
+                                            modalColor = '#5DADE2'; // Blue
+                                        } else if (seriesName === 'Onleave') {
+                                            crewDetails = data[index]
+                                                .onleave_crew_names ?
+                                                data[index].onleave_crew_names.split(
+                                                    ', ') : [];
+                                            modalColor = '#F5B041'; // Orange
+                                        }
 
-                                        const crewArray = crewDetails.split(', ').map((
-                                            name, index) => `
-                                        <tr>
-                                            <td style="text-align: center;">${index + 1}</td>
-                                            <td>${name.trim()}</td>
-                                        </tr>
-                                    `);
-
+                                        // Update modal title and header background color
                                         $('#modalTitle').text(
-                                            `Detail Crew for ${school}`);
-                                        $('#idBodyModalCrewDetailByInstitution').html(
-                                            crewArray.join(''));
+                                            `Detail Crew for ${school} (${seriesName})`
+                                        );
+                                        $('.modal-header').css('background-color',
+                                            modalColor);
+
+                                        // Populate modal table body
+                                        const tbody = $(
+                                            '#idBodyModalCrewDetailByInstitution');
+                                        tbody.empty();
+                                        if (crewDetails.length > 0) {
+                                            crewDetails.forEach((crew, i) => {
+                                                tbody.append(`
+                                                    <tr>
+                                                        <td style="text-align: center;">${i + 1}</td>
+                                                        <td>${crew}</td>
+                                                    </tr>
+                                                `);
+                                            });
+                                        } else {
+                                            tbody.append(`
+                                                <tr>
+                                                    <td colspan="2" style="text-align: center;">No crew data available.</td>
+                                                </tr>
+                                            `);
+                                        }
+                                        // Show modal
                                         $('#detailModal').modal('show');
                                     }
                                 }
@@ -582,24 +629,29 @@
                         enabled: false
                     },
                     series: [{
-                        name: 'Jumlah Crew',
-                        data: seriesData
-                    }]
+                            name: 'Total Crew',
+                            data: seriesDataTotal,
+                            color: '#16839B' // Green
+                        },
+                        {
+                            name: 'Onboard',
+                            data: seriesDataOnboard,
+                            color: '#5DADE2' // Blue
+                        },
+                        {
+                            name: 'Onleave',
+                            data: seriesDataOnleave,
+                            color: '#F5B041' // Orange
+                        }
+                    ]
                 });
             },
             error: function(xhr, status, error) {
-
-                const responseText = xhr.responseText;
-                console.error('Error fetching data:', responseText || error);
-
-                // Optionally, display an error message to the user
+                console.error('Error fetching data:', xhr.responseText || error);
                 alert(`Failed to load data: ${xhr.status} - ${xhr.statusText}`);
             }
         });
     });
-
-
-
 
 
 
@@ -622,6 +674,7 @@
                         x: index % 5,
                         y: Math.floor(index / 5),
                         value: item.total_onleave,
+                        onboard: item.total_onboard,
                         rank: item.rank,
                         color: color || item.color,
                     };
@@ -672,6 +725,7 @@
 
                             return `
                             Crew On Leave: ${this.point.value}<br>
+                            Crew Onboard: ${this.point.onboard}<br>
                             Category: <b>${categoryLabel}</b>`;
                         },
                     },
@@ -682,18 +736,19 @@
                             x: item.x,
                             y: item.y,
                             value: item.value,
+                            onboard: item
+                                .onboard,
                             rank: item.rank,
                             color: item.color,
                         })),
                         dataLabels: {
                             enabled: true,
                             formatter: function() {
-                                return this.point
-                                    .rank;
+                                return this.point.rank;
                             },
                             color: '#fff',
                             style: {
-                                fontSize: '12px'
+                                fontSize: '12px',
                             },
                         },
                     }],
@@ -756,7 +811,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-2 col-6">
+                <!-- <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#E47100;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
@@ -812,7 +867,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
             <div class="row">
                 <div class="col-md-6" style="margin-top: 12px;">
@@ -1008,8 +1063,8 @@
 <div class="modal fade" id="modalTotalCrewOnLeave" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header" style="padding: 10px;background-color:#078415;">
-                <button type="button" class="close" data-dismiss="modal"
+            <div class="modal-header" style="padding: 10px; background-color:#078415">
+                <button type=" button" class="close" data-dismiss="modal"
                     style="opacity:unset;text-shadow:none;color:#FFF;">&times;</button>
                 <h4 class="modal-title" style="color:#FFFFFF;"><i>:: Crew On Leave ::</i></h4>
             </div>
@@ -1051,7 +1106,7 @@
                                 <table
                                     class="table table-border table-striped table-bordered table-condensed table-advance table-hover">
                                     <thead>
-                                        <tr style="background-color:#078415;; color: #FFF; height: 50%;">
+                                        <tr style="background-color:#078415; color: #FFF; height: 50%;">
                                             <th
                                                 style="vertical-align: middle; width: 5%; text-align: center; padding: 10px;">
                                                 No</th>

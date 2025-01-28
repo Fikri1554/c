@@ -534,21 +534,45 @@ class Dashboard extends CI_Controller {
 	}
 
 	function getSchool() {
-		
-		$this->db->query("SET SESSION group_concat_max_len = 1000000");
+		$this->db->query("SET SESSION group_concat_max_len = 1000000000");
 
 		$sql = "
 			SELECT 
 				T.namescl AS nama_sekolah,
-				COUNT(T.idperson) AS jumlah_crew,
-				GROUP_CONCAT(CONCAT_WS(' ', A.fname, A.mname, A.lname) SEPARATOR ', ') AS nama_crew
+				COUNT(DISTINCT T.idperson) AS jumlah_crew,
+				SUM(
+					CASE 
+						WHEN B.signoffdt = '0000-00-00' THEN 1 
+						ELSE 0 
+					END
+				) AS jumlah_onboard,
+				SUM(
+					CASE 
+						WHEN B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE() THEN 1 
+						ELSE 0 
+					END
+				) AS jumlah_onleave,
+				GROUP_CONCAT(DISTINCT CONCAT_WS(' ', A.fname, A.mname, A.lname) SEPARATOR ', ') AS nama_crew,
+				GROUP_CONCAT(DISTINCT 
+					CASE 
+						WHEN B.signoffdt = '0000-00-00' THEN CONCAT_WS(' ', A.fname, A.mname, A.lname) 
+						ELSE NULL 
+					END SEPARATOR ', ') AS onboard_crew_names,
+				GROUP_CONCAT(DISTINCT 
+					CASE 
+						WHEN B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE() THEN CONCAT_WS(' ', A.fname, A.mname, A.lname) 
+						ELSE NULL 
+					END SEPARATOR ', ') AS onleave_crew_names
 			FROM 
 				tblscl T
 			LEFT JOIN 
 				mstpersonal A ON T.idperson = A.idperson
+			LEFT JOIN 
+				tblcontract B ON A.idperson = B.idperson
 			WHERE 
 				A.deletests = '0' 
-				AND T.Deletests = '0'
+				AND T.deletests = '0'
+				AND B.deletests = '0'
 			GROUP BY 
 				T.namescl
 			ORDER BY 
@@ -564,8 +588,12 @@ class Dashboard extends CI_Controller {
 			$data = array_map(function($row) {
 				return array(
 					'school' => $row->nama_sekolah,
-					'count' => (int)$row->jumlah_crew,
-					'crew_names' => $row->nama_crew
+					'total_crew' => (int)$row->jumlah_crew,
+					'onboard_crew' => (int)$row->jumlah_onboard,
+					'onleave_crew' => (int)$row->jumlah_onleave,
+					'crew_names' => $row->nama_crew,
+					'onboard_crew_names' => $row->onboard_crew_names,
+					'onleave_crew_names' => $row->onleave_crew_names
 				);
 			}, $rsl);
 			echo json_encode($data);
@@ -575,15 +603,23 @@ class Dashboard extends CI_Controller {
 			echo json_encode(array('error' => $e->getMessage()));
 		}
 	}
-
-
-
+	
 	function getCadangan()
 	{
 		$sql = "SELECT 
 					RANK.kdrank, 
 					RANK.nmrank, 
-					COUNT(A.idperson) AS total_onleave
+					COUNT(A.idperson) AS total_onleave,
+					(SELECT COUNT(P.idperson)
+					FROM mstpersonal P
+					LEFT JOIN tblcontract Q ON P.idperson = Q.idperson
+					WHERE 
+						P.deletests = '0' AND 
+						Q.deletests = '0' AND 
+						Q.signoffdt = '0000-00-00' AND 
+						P.inaktif = '0' AND 
+						Q.signonrank = RANK.kdrank
+					) AS total_onboard
 				FROM 
 					mstrank RANK
 				LEFT JOIN tblcontract B ON RANK.kdrank = B.signonrank
@@ -627,6 +663,7 @@ class Dashboard extends CI_Controller {
 			$data[] = array(
 				'rank' => $row->nmrank, 
 				'total_onleave' => $row->total_onleave,
+				'total_onboard' => $row->total_onboard,
 				'category' => $category,
 				'color' => $color
 			);
@@ -635,6 +672,7 @@ class Dashboard extends CI_Controller {
 		header('Content-Type: application/json');
 		echo json_encode($data);
 	}
+
 
 	function getCrewDetailsWithRanks()
 	{
