@@ -539,7 +539,6 @@ class Dashboard extends CI_Controller {
 		$sql = "
 			SELECT 
 				T.namescl AS nama_sekolah,
-				COUNT(DISTINCT T.idperson) AS jumlah_crew,
 				SUM(
 					CASE 
 						WHEN B.signoffdt = '0000-00-00' THEN 1 
@@ -552,17 +551,21 @@ class Dashboard extends CI_Controller {
 						ELSE 0 
 					END
 				) AS jumlah_onleave,
-				GROUP_CONCAT(DISTINCT CONCAT_WS(' ', A.fname, A.mname, A.lname) SEPARATOR ', ') AS nama_crew,
-				GROUP_CONCAT(DISTINCT 
+				SUM(
+					CASE 
+						WHEN B.signoffdt = '0000-00-00' THEN 1 
+						WHEN B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE() THEN 1 
+						ELSE 0 
+					END
+				) AS total_crew,
+				GROUP_CONCAT(
 					CASE 
 						WHEN B.signoffdt = '0000-00-00' THEN CONCAT_WS(' ', A.fname, A.mname, A.lname) 
 						ELSE NULL 
-					END SEPARATOR ', ') AS onboard_crew_names,
-				GROUP_CONCAT(DISTINCT 
-					CASE 
-						WHEN B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE() THEN CONCAT_WS(' ', A.fname, A.mname, A.lname) 
-						ELSE NULL 
-					END SEPARATOR ', ') AS onleave_crew_names
+					END
+					ORDER BY A.fname
+					SEPARATOR ', '
+				) AS nama_crew_onboard
 			FROM 
 				tblscl T
 			LEFT JOIN 
@@ -576,26 +579,26 @@ class Dashboard extends CI_Controller {
 			GROUP BY 
 				T.namescl
 			ORDER BY 
-				jumlah_crew DESC
-			LIMIT 10
+				total_crew DESC
+			LIMIT 10;
 		";
 
 		try {
-			$rsl = $this->MCrewscv->getDataQuery($sql);
-			if (!$rsl) {
+			$result = $this->db->query($sql)->result();
+			if (!$result) {
 				throw new Exception("No data returned from the database.");
 			}
+
 			$data = array_map(function($row) {
 				return array(
 					'school' => $row->nama_sekolah,
-					'total_crew' => (int)$row->jumlah_crew,
+					'total_crew' => (int)$row->total_crew,
 					'onboard_crew' => (int)$row->jumlah_onboard,
 					'onleave_crew' => (int)$row->jumlah_onleave,
-					'crew_names' => $row->nama_crew,
-					'onboard_crew_names' => $row->onboard_crew_names,
-					'onleave_crew_names' => $row->onleave_crew_names
+					'onboard_crew_names' => $row->nama_crew_onboard
 				);
-			}, $rsl);
+			}, $result);
+
 			echo json_encode($data);
 
 		} catch (Exception $e) {
@@ -603,6 +606,7 @@ class Dashboard extends CI_Controller {
 			echo json_encode(array('error' => $e->getMessage()));
 		}
 	}
+
 	
 	function getCadangan()
 	{

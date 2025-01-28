@@ -130,7 +130,12 @@
                         backgroundColor: null
                     },
                     title: {
-                        text: 'Crew Distribution by Company'
+                        text: 'Crew Distribution by Company',
+                        style: {
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }
                     },
                     tooltip: {
                         pointFormat: '{series.name}: <b>{point.y} Crew</b>'
@@ -182,7 +187,6 @@
                     "July", "August", "September", "October", "November", "December"
                 ];
 
-                // Mengelompokkan data berdasarkan bulan
                 const groupedData = {};
                 data.forEach(item => {
                     const [year, month] = item.month.split('-');
@@ -204,7 +208,6 @@
 
                 const months = Object.keys(groupedData);
                 const crewCounts = months.map(month => groupedData[month].totalCrew);
-
 
                 Highcharts.chart('idDivBarChartRank', {
                     chart: {
@@ -267,21 +270,19 @@
                             cursor: 'pointer',
                             events: {
                                 click: function(event) {
-                                    const index = Math.round(event.point
-                                        .index);
+                                    const index = Math.round(event.point.index);
                                     const selectedMonth = months[index];
                                     const crewDetails = groupedData[selectedMonth]
                                         .crewDetails;
 
-
                                     let modalBody = '';
                                     crewDetails.forEach((item, i) => {
                                         modalBody += `
-                                        <tr>
-                                            <td style="text-align: center;">${i + 1}</td>
-                                            <td style="text-align: left;">${item.crew_name}</td>
-                                            <td style="text-align: center;">${item.estimated_signoff_date}</td>
-                                        </tr>`;
+                                    <tr>
+                                        <td style="text-align: center;">${i + 1}</td>
+                                        <td style="text-align: left;">${item.crew_name}</td>
+                                        <td style="text-align: center;">${item.estimated_signoff_date}</td>
+                                    </tr>`;
                                     });
 
                                     // Update isi modal dan tampilkan
@@ -290,7 +291,12 @@
                                     $('#detailModalCrewSignoff').modal('show');
                                 }
                             }
-                        },
+                        }
+                    },
+                    series: [{
+                        name: 'Crew Count',
+                        data: crewCounts,
+                        color: '#007bff',
                         dataLabels: {
                             enabled: true,
                             style: {
@@ -302,11 +308,6 @@
                                 return this.y;
                             }
                         }
-                    },
-                    series: [{
-                        name: 'Crew Count',
-                        data: crewCounts,
-                        color: '#007bff'
                     }],
                     legend: {
                         layout: 'horizontal',
@@ -338,6 +339,7 @@
     });
 
 
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url("dashboard/shipDemograph"); ?>',
@@ -348,14 +350,14 @@
                     chart: {
                         type: 'bar',
                         backgroundColor: null,
-                        height: 800,
+                        height: 900,
                         width: 500
                     },
                     title: {
-                        text: 'Crew Distribution by Ship',
+                        text: 'Crew Distribution by Owned Ship',
                         align: 'center',
                         style: {
-                            fontSize: '18px',
+                            fontSize: '20px',
                             color: 'black'
                         }
                     },
@@ -377,7 +379,7 @@
                     yAxis: {
                         min: 0,
                         title: {
-                            text: 'Jumlah Crew / Umur',
+                            text: 'Total Crew / Age',
                             style: {
                                 fontSize: '15px',
                                 fontWeight: 'bold'
@@ -390,7 +392,7 @@
                         }
                     },
                     series: [{
-                            name: 'Jumlah Crew Onboard',
+                            name: 'Total Crew Onboard',
                             data: data.map(item => item.jumlah_crew_onboard),
                             color: '#007bff'
                         },
@@ -405,7 +407,7 @@
                             color: '#dc3545'
                         },
                         {
-                            name: 'Rata-rata Umur',
+                            name: 'Average Age',
                             data: data.map(item => item.rata_rata_umur),
                             color: '#fd7e14'
                         }
@@ -462,11 +464,20 @@
                                     }
                                 }
                             }
-
                         }
                     },
                     bar: {
-                        groupPadding: 0.1 // Tambahkan jarak antar bar
+                        groupPadding: 0.1
+                    },
+                    legend: {
+                        enabled: true,
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        itemStyle: {
+                            fontSize: '13px',
+                            color: '#000'
+                        },
                     },
                     credits: {
                         enabled: false
@@ -482,6 +493,7 @@
         });
     });
 
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url("dashboard/getSchool"); ?>',
@@ -489,9 +501,7 @@
             dataType: 'json',
             success: function(data) {
                 const categories = data.map(item => item.school);
-                const seriesDataTotal = data.map(item => ({
-                    y: item.total_crew
-                }));
+                const seriesDataTotal = data.map(item => item.total_crew);
                 const seriesDataOnboard = data.map(item => item.onboard_crew);
                 const seriesDataOnleave = data.map(item => item.onleave_crew);
 
@@ -502,10 +512,11 @@
                         height: 800
                     },
                     title: {
-                        text: 'Distribution Crew by School',
+                        text: 'Distribution Crew by School / Institution',
                         style: {
-                            fontSize: '18px',
-                            fontWeight: 'bold'
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: '#333'
                         }
                     },
                     xAxis: {
@@ -527,7 +538,7 @@
                     yAxis: {
                         min: 0,
                         title: {
-                            text: 'Jumlah Crew',
+                            text: 'Total Crew',
                             align: 'high',
                             style: {
                                 fontSize: '14px'
@@ -570,59 +581,59 @@
                                         const index = this.index;
                                         const seriesName = this.series.name;
                                         const school = categories[index];
+                                        const schoolData = data[index];
                                         let crewDetails = [];
-                                        let modalColor = '#16839B'; // Default color
+                                        let modalColor = '#16839B';
 
-                                        if (seriesName === 'Total Crew') {
-                                            crewDetails = data[index].crew_names.split(
-                                                ', ');
-                                            modalColor = '#16839B'; // Green
-                                        } else if (seriesName === 'Onboard') {
-                                            crewDetails = data[index]
+                                        if (seriesName === 'On-Dutty') {
+                                            crewDetails = schoolData
                                                 .onboard_crew_names ?
-                                                data[index].onboard_crew_names.split(
+                                                schoolData.onboard_crew_names.split(
                                                     ', ') : [];
-                                            modalColor = '#5DADE2'; // Blue
-                                        } else if (seriesName === 'Onleave') {
-                                            crewDetails = data[index]
-                                                .onleave_crew_names ?
-                                                data[index].onleave_crew_names.split(
-                                                    ', ') : [];
-                                            modalColor = '#F5B041'; // Orange
+                                            modalColor = '#5DADE2';
                                         }
 
-                                        // Update modal title and header background color
                                         $('#modalTitle').text(
                                             `Detail Crew for ${school} (${seriesName})`
                                         );
                                         $('.modal-header').css('background-color',
                                             modalColor);
 
-                                        // Populate modal table body
                                         const tbody = $(
                                             '#idBodyModalCrewDetailByInstitution');
                                         tbody.empty();
+
                                         if (crewDetails.length > 0) {
                                             crewDetails.forEach((crew, i) => {
                                                 tbody.append(`
-                                                    <tr>
-                                                        <td style="text-align: center;">${i + 1}</td>
-                                                        <td>${crew}</td>
-                                                    </tr>
-                                                `);
+                                                <tr>
+                                                    <td style="text-align: center;">${i + 1}</td>
+                                                    <td>${crew}</td>
+                                                </tr>
+                                            `);
                                             });
                                         } else {
                                             tbody.append(`
-                                                <tr>
-                                                    <td colspan="2" style="text-align: center;">No crew data available.</td>
-                                                </tr>
-                                            `);
+                                            <tr>
+                                                <td colspan="2" style="text-align: center;">No crew data available.</td>
+                                            </tr>
+                                        `);
                                         }
-                                        // Show modal
+
                                         $('#detailModal').modal('show');
                                     }
                                 }
                             }
+                        }
+                    },
+                    legend: {
+                        enabled: true,
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        itemStyle: {
+                            fontSize: '14px',
+                            color: '#000'
                         }
                     },
                     credits: {
@@ -631,17 +642,17 @@
                     series: [{
                             name: 'Total Crew',
                             data: seriesDataTotal,
-                            color: '#16839B' // Green
+                            color: '#16839B'
                         },
                         {
-                            name: 'Onboard',
+                            name: 'On-Dutty',
                             data: seriesDataOnboard,
-                            color: '#5DADE2' // Blue
+                            color: '#5DADE2'
                         },
                         {
-                            name: 'Onleave',
+                            name: 'Off-Dutty',
                             data: seriesDataOnleave,
-                            color: '#F5B041' // Orange
+                            color: '#F5B041'
                         }
                     ]
                 });
@@ -655,6 +666,7 @@
 
 
 
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url('dashboard/getCadangan'); ?>',
@@ -664,11 +676,11 @@
                 const heatmapData = data.map((item, index) => {
                     var color;
                     if (item.total_onleave > 15) {
-                        color = 'rgba(72, 239, 128, 0.8)';
+                        color = 'rgba(0, 255, 85, 0.8)';
                     } else if (item.total_onleave >= 11) {
-                        color = 'rgba(255, 223, 107, 0.8)';
+                        color = 'rgb(251, 255, 10)';
                     } else {
-                        color = 'rgba(255, 107, 107, 0.8)';
+                        color = 'rgba(255, 0, 0, 0.8)';
                     }
                     return {
                         x: index % 5,
@@ -688,8 +700,13 @@
                         backgroundColor: null,
                     },
                     title: {
-                        text: 'Cadangan Kapal per Rank (Heatmap)',
+                        text: 'Ship Reserves per Rank (Heatmap)',
                         align: 'center',
+                        style: {
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }
                     },
                     xAxis: {
                         labels: {
@@ -724,8 +741,8 @@
                             }
 
                             return `
-                            Crew On Leave: ${this.point.value}<br>
-                            Crew Onboard: ${this.point.onboard}<br>
+                            Crew Off-Duty: ${this.point.value}<br>
+                            Crew On-Dutty: ${this.point.onboard}<br>
                             Category: <b>${categoryLabel}</b>`;
                         },
                     },
@@ -811,7 +828,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- <div class="col-lg-2 col-6">
+                <div class="col-lg-2 col-6">
                     <div class="panel-heading"
                         style="background-color:#E47100;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
@@ -867,7 +884,7 @@
                             </div>
                         </div>
                     </div>
-                </div> -->
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6" style="margin-top: 12px;">
@@ -985,7 +1002,7 @@
                         <thead>
                             <tr style="background-color: #16839B; color: #FFF; height: 40px;">
                                 <th style="text-align: center; width: 5%;">No</th>
-                                <th style="text-align: center; width: 60%;">Crew Name</th>
+                                <th style="text-align: left; width: 60%;">Crew Name</th>
                                 <th style="text-align: center; width: 60%;">Estimated Signoff Date</th>
                             </tr>
                         </thead>
