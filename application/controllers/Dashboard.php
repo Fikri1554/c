@@ -437,7 +437,7 @@ class Dashboard extends CI_Controller {
 			GROUP BY 
 				DATE_FORMAT(B.estsignoffdt, '%Y-%m'), B.estsignoffdt, A.idperson
 			ORDER BY 
-				Month ASC, EstimatedSignOffDate ASC;
+				Month ASC, CrewName, EstimatedSignOffDate ASC;
 		";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
