@@ -830,29 +830,29 @@
                                                 Sign Off</th>
                                             <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
                                                 Est. Sign Off</th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
-                                                Seaman Book</th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
-                                                Passport</th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
-                                                SSBT
+                                            <th style="vertical-align:middle;text-align:center;" colspan="2">Seaman Book
+                                            </th>
+                                            <th style="vertical-align:middle;text-align:center;" colspan="2">Passport
                                             </th>
                                             <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
-                                                OTCBHS
-                                            </th>
+                                                SSBT</th>
                                             <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
-                                                CTCBHS
-                                            </th>
+                                                OTCBHS</th>
                                             <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
-                                                ERST
+                                                CTCBHS</th>
+                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                                ERST</th>
+                                            <th style="vertical-align:middle;text-align:center;" colspan="2">Endorsement
                                             </th>
-                                            <th style="vertical-align:middle;text-align:center;" colspan="2"
-                                                id="idTDCertOnboard">Endorsment</th>
                                             <th style="width:5%;vertical-align:middle;width:50px;text-align:center;"
                                                 rowspan="2">Action</th>
                                         </tr>
-                                        <tr style="background-color:#067780;color:#FFF;height:30px;"
-                                            id="idTRCertOnboard">
+                                        <tr style="background-color:#067780;color:#FFF;height:30px;">
+                                            <th style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                            <th style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+                                            <th style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                            <th style="vertical-align:middle;width:20%;text-align:center;">Exp Date
+                                            </th>
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Panama</th>
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Other</th>
                                         </tr>

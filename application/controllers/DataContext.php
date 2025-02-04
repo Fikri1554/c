@@ -85,6 +85,7 @@ class DataContext extends CI_Controller {
 						LEFT JOIN tblcontract B ON A.idperson = B.idperson
 						LEFT JOIN mstrank RANK ON B.signonrank = RANK.kdrank
 						WHERE A.deletests = '0' 
+						AND RANK.urutan > 0
 						AND B.deletests = '0' 
 						AND A.inAktif = '0' 
 						AND A.inBlacklist = '0'

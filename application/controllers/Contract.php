@@ -143,8 +143,10 @@ class Contract extends CI_Controller {
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val['signondt'])."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val['signoffdt'])."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val['estsignoffdt'])."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['certSeaman']."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['certPassport']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDateSeaman']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateSeaman']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDatePassport']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDatePassport']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['SSBT']) ? "" : "")."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['OTCBHS']) ? "" : "")."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['CTCBHS']) ? "" : "")."</td>";
@@ -161,7 +163,7 @@ class Contract extends CI_Controller {
 				}
 
 				$trNya .= "<tr>";
-					$trNya .= "<td style=\"background-color:#5bc0de;\" colspan=\"18\">";
+					$trNya .= "<td style=\"background-color:#5bc0de;\" colspan=\"20\">";
 						$trNya .= "<b><i>:: ON BOARD ::</i> ( ".number_format($no-1,0)." Data ) || </b>";
 						$trNya .= "<label style=\"color:#E10303;\">* (Will expire), ** (Over due)</label>";
 					$trNya .= "</td>";
@@ -220,7 +222,7 @@ class Contract extends CI_Controller {
 					$no++;
 				}
 
-				$trNya .= "<tr><td style=\"background-color:#5CB85C;color:#FFF;\" colspan=\"18\"><b><i>:: ON LEAVE ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
+				$trNya .= "<tr><td style=\"background-color:#5CB85C;color:#FFF;\" colspan=\"20\"><b><i>:: ON LEAVE ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
 				$trNya .= $tempTr;
 			}
 			if($status == "nonaktif" OR $status == "all")
@@ -276,7 +278,7 @@ class Contract extends CI_Controller {
 					$no++;
 				}
 
-				$trNya .= "<tr><td style=\"background-color:#F0AD4E;\" colspan=\"10\"><b><i>:: NON AKTIF ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
+				$trNya .= "<tr><td style=\"background-color:#F0AD4E;\" colspan=\"20\"><b><i>:: NON AKTIF ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
 				$trNya .= $tempTr;
 			}
 			if($status == "notforemp"  OR $status == "all")
@@ -332,12 +334,12 @@ class Contract extends CI_Controller {
 					$no++;
 				}
 
-				$trNya .= "<tr><td style=\"background-color:#D9534F;color:#FFF;\" colspan=\"10\"><b><i>:: NOT FOR EMP ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
+				$trNya .= "<tr><td style=\"background-color:#D9534F;color:#FFF;\" colspan=\"20\"><b><i>:: NOT FOR EMP ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
 				$trNya .= $tempTr;
 			}			
 			
 		}else{
-			$trNya = "<tr><td style=\"text-align:center;font-weight:bold;\" colspan=\"18\">- Select Status -</td></tr>";
+			$trNya = "<tr><td style=\"text-align:center;font-weight:bold;\" colspan=\"20\">- Select Status -</td></tr>";
 		}
 
 		$dataOut['trNya'] = $trNya;
@@ -866,10 +868,16 @@ class Contract extends CI_Controller {
 		$tempData = array();
 		$keyNo = 0;
 
+		
 		$certSeaman = "";
 		$certPassport = "";
 		$certPanama = "";
 		$certOther = "";
+
+		$dataOut['issDateSeaman'] = "";
+		$dataOut['expDateSeaman'] = "";
+		$dataOut['issDatePassport'] = "";
+		$dataOut['expDatePassport'] = "";
 
 		$tempData['panama'] = array();
 		$tempData['other'] = array();
@@ -906,28 +914,31 @@ class Contract extends CI_Controller {
 			foreach ($tempData['seaman book'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$certSeaman .= "<br>&nbsp<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
+				$dataOut['issDateSeaman'] = $issDate;
+				$dataOut['expDateSeaman'] = $expDate;
 			}
 
 			foreach ($tempData['passport'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$certPassport .= "<br>&nbsp<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
+				$dataOut['issDatePassport'] = $issDate;
+				$dataOut['expDatePassport'] = $expDate;
 			}
 
 			foreach ($tempData['panama'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$certPanama .= "<br>&nbsp<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
+				$certPanama .= "<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
 			}
 
 			foreach ($tempData['other'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$certOther .= "<br>&nbsp<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
+				$certOther .= "<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
 			}
 		}
 
+		
 		$dataOut['certSeaman'] = $certSeaman;
 		$dataOut['certPassport'] = $certPassport;
 		$dataOut['certPanama'] = $certPanama;
@@ -935,6 +946,7 @@ class Contract extends CI_Controller {
 
 		return $dataOut;
 	}
+
 
 	
 	function printData($status = "",$company = "",$vessel = "",$rank = "")

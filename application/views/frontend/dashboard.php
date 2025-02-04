@@ -120,52 +120,163 @@
 
     $(document).ready(function() {
         $.ajax({
-            url: '<?php echo base_url('dashboard/crewPieChart'); ?>', // URL ke fungsi PHP
+            url: '<?php echo base_url('dashboard/crewBarChart'); ?>',
             method: 'GET',
             dataType: 'json',
             success: function(data) {
+                let categories = [];
+                let crewCounts = [];
+                let maleCounts = [];
+                let femaleCounts = [];
+                let avgAges = [];
+
+                data.forEach(function(item) {
+                    categories.push(item.ship);
+                    crewCounts.push(item.crew_count);
+                    maleCounts.push(item.male);
+                    femaleCounts.push(item.female);
+                    avgAges.push(item.avg_age);
+                });
+
                 Highcharts.chart('idDivOverall', {
                     chart: {
-                        type: 'pie',
-                        backgroundColor: null
+                        type: 'bar',
+                        height: 900,
+                        backgroundColor: null,
                     },
                     title: {
-                        text: 'Crew Distribution by Company',
+                        text: `Crew Distribution by Client Ship (Total: ${crewCounts.reduce((sum, num) => sum + num, 0).toLocaleString()})`,
                         style: {
-                            fontSize: '20px',
+                            fontSize: '22px',
                             fontWeight: 'bold',
                             color: '#333'
                         }
                     },
-                    tooltip: {
-                        pointFormat: '{series.name}: <b>{point.y} Crew</b>'
+                    xAxis: {
+                        categories: categories,
+                        title: {
+                            text: 'Ships',
+                            style: {
+                                fontSize: '20px',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '16px'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Number of Crew',
+                            style: {
+                                fontSize: '18px',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                fontSize: '16px'
+                            }
+                        }
                     },
                     plotOptions: {
-                        pie: {
-                            allowPointSelect: true,
-                            cursor: 'pointer',
+                        bar: {
                             dataLabels: {
                                 enabled: true,
-                                format: '<b>{point.name}</b>: {point.y}',
                                 style: {
                                     fontSize: '14px',
-                                    textOutline: 'none',
                                     color: 'black'
+                                }
+                            },
+                            cursor: 'pointer',
+                            events: {
+                                click: function(event) {
+                                    let shipIndex = event.point.index;
+                                    let shipData = data[shipIndex];
+                                    let clickedSeries = event.point.series.name;
+                                    let modalBody = $(
+                                        '#idBodyModalCrewDetailByClientShip');
+                                    modalBody.empty();
+
+                                    let maleCrew = [];
+                                    let femaleCrew = [];
+
+                                    shipData.crew_names.forEach((name, index) => {
+                                        let rank = shipData.crew_ranks[index] ||
+                                            '-';
+                                        if (index < shipData.male) {
+                                            maleCrew.push({
+                                                name,
+                                                rank
+                                            });
+                                        } else {
+                                            femaleCrew.push({
+                                                name,
+                                                rank
+                                            });
+                                        }
+                                    });
+
+                                    let filteredCrew = clickedSeries === 'Male Crew' ?
+                                        maleCrew : femaleCrew;
+
+                                    if (filteredCrew.length > 0) {
+                                        filteredCrew.forEach((crew, index) => {
+                                            modalBody.append(`
+                                            <tr>
+                                                <td>${index + 1}</td>
+                                                <td>${crew.name}</td>
+                                                <td>${crew.rank}</td>
+                                            </tr>
+                                        `);
+                                        });
+                                    } else {
+                                        modalBody.append(
+                                            '<tr><td colspan="3" style="text-align: center; font-weight: bold;">No Crew Data Available</td></tr>'
+                                        );
+                                    }
+
+                                    $('#detailModalClientShip').modal('show');
                                 }
                             }
                         }
                     },
-                    credits: {
-                        enabled: false
-                    },
-                    legend: {
-                        enabled: true
-                    },
                     series: [{
-                        name: 'Jumlah Kru',
-                        colorByPoint: true,
-                        data: data
-                    }]
+                            name: 'Total Crew',
+                            data: crewCounts,
+                            color: '#0073e6',
+                            dataLabels: {
+                                enabled: true
+                            }
+                        },
+                        {
+                            name: 'Male Crew',
+                            data: maleCounts,
+                            color: '#28a745',
+                            dataLabels: {
+                                enabled: true
+                            }
+                        },
+                        {
+                            name: 'Female Crew',
+                            data: femaleCounts,
+                            color: '#e63946',
+                            dataLabels: {
+                                enabled: true
+                            }
+                        },
+                        {
+                            name: 'Average Age',
+                            data: avgAges,
+                            color: '#f39c12',
+                            dataLabels: {
+                                enabled: true
+                            }
+                        }
+                    ]
                 });
             },
             error: function(xhr, status, error) {
@@ -175,46 +286,37 @@
         });
     });
 
-
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url('dashboard/contractBarChart'); ?>',
             method: 'GET',
             dataType: 'json',
-            success: function(data) {
-                const monthNames = [
-                    "January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"
-                ];
+            success: function(response) {
+                const crewData = response.crewData;
+                const rankSummary = response.rankSummary;
 
-                const groupedData = {};
-                data.forEach(item => {
-                    const [year, month] = item.month.split('-');
-                    const monthName = monthNames[parseInt(month) - 1];
+                const months = Object.keys(rankSummary);
+                const rankCategories = [...new Set(crewData.map(item => item.rank_name))];
 
-                    if (!groupedData[monthName]) {
-                        groupedData[monthName] = {
-                            totalCrew: 0,
-                            crewDetails: []
-                        };
-                    }
+                console.log("Months: ", months);
+                console.log("Rank Categories: ", rankCategories);
+                console.log("Rank Summary: ", rankSummary);
 
-                    groupedData[monthName].totalCrew += item.total_crew;
-                    groupedData[monthName].crewDetails.push({
-                        crew_name: item.crew_name,
-                        estimated_signoff_date: item.estimated_signoff_date
-                    });
-                });
+                let seriesData = rankCategories.map(rank => ({
+                    name: rank,
+                    data: months.map(month => (rankSummary[month] && rankSummary[month][
+                        rank
+                    ]) ? rankSummary[month][rank] : 0)
+                }));
 
-                const months = Object.keys(groupedData);
-                const crewCounts = months.map(month => groupedData[month].totalCrew);
+                console.log("Series Data: ", seriesData);
 
                 Highcharts.chart('idDivBarChartRank', {
                     chart: {
                         type: 'column',
                         backgroundColor: null,
-                        height: 800,
-                        width: 1100
+                        height: 1000,
+                        width: 1150
                     },
                     title: {
                         text: 'Crew Contract Expiry: Monthly Distribution in 2025',
@@ -230,7 +332,7 @@
                         labels: {
                             rotation: -45,
                             style: {
-                                fontSize: '12px',
+                                fontSize: '14px',
                                 color: '#333'
                             }
                         },
@@ -250,42 +352,58 @@
                         },
                         labels: {
                             style: {
-                                fontSize: '12px',
+                                fontSize: '14px',
                                 color: '#333'
+                            }
+                        },
+                        stackLabels: {
+                            enabled: true,
+                            style: {
+                                fontWeight: 'bold',
+                                color: '#333',
+                                fontSize: '15px'
                             }
                         }
                     },
                     tooltip: {
-                        valueSuffix: ' crew members',
-                        style: {
-                            fontSize: '12px',
-                            color: '#333'
-                        }
+                        shared: true,
+                        valueSuffix: ' crew members'
                     },
                     plotOptions: {
                         column: {
+                            stacking: 'normal',
                             pointPadding: 0.1,
                             groupPadding: 0.1,
                             borderWidth: 0,
                             cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                color: '#FFFFFF',
+                                style: {
+                                    fontWeight: 'bold',
+                                    textOutline: '1px contrast',
+                                    fontSize: '13px'
+                                }
+                            },
                             events: {
                                 click: function(event) {
                                     const index = Math.round(event.point.index);
                                     const selectedMonth = months[index];
-                                    const crewDetails = groupedData[selectedMonth]
-                                        .crewDetails;
+                                    const crewDetails = crewData.filter(item => item
+                                        .month === selectedMonth);
 
-                                    let modalBody = '';
-                                    crewDetails.forEach((item, i) => {
-                                        modalBody += `
-                                    <tr>
+                                    let modalBody = crewDetails.map((item, i) =>
+                                        `<tr>
                                         <td style="text-align: center;">${i + 1}</td>
                                         <td style="text-align: left;">${item.crew_name}</td>
-                                        <td style="text-align: center;">${item.estimated_signoff_date}</td>
-                                    </tr>`;
-                                    });
+                                        <td style="text-align: left;">${item.rank_name}</td>
+                                        <td style="text-align: left;">${item.sign_on_date}</td>
+                                        <td style="text-align: left;">${item.estimated_signoff_date}</td>
+                                    </tr>`
+                                    ).join('');
 
-                                    // Update isi modal dan tampilkan
+                                    $('#modalTitle').text(
+                                        `Crew Distribution for ${selectedMonth}`);
                                     $('#idBodyModalCrewDetailByEstimatedSignOff').html(
                                         modalBody);
                                     $('#detailModalCrewSignoff').modal('show');
@@ -293,22 +411,7 @@
                             }
                         }
                     },
-                    series: [{
-                        name: 'Crew Count',
-                        data: crewCounts,
-                        color: '#007bff',
-                        dataLabels: {
-                            enabled: true,
-                            style: {
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                color: '#333'
-                            },
-                            formatter: function() {
-                                return this.y;
-                            }
-                        }
-                    }],
+                    series: seriesData,
                     legend: {
                         layout: 'horizontal',
                         align: 'center',
@@ -316,13 +419,8 @@
                         itemStyle: {
                             fontSize: '14px',
                             fontWeight: 'normal',
-                            color: '#333',
-                            textDecoration: 'none'
-                        },
-                        itemHoverStyle: {
                             color: '#333'
-                        },
-                        useHTML: false
+                        }
                     },
                     credits: {
                         enabled: false
@@ -340,12 +438,16 @@
 
 
 
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url("dashboard/shipDemograph"); ?>',
             method: 'GET',
             dataType: 'json',
             success: function(data) {
+                let totalCrewOnboard = data.reduce((sum, item) => sum + item.jumlah_crew_onboard,
+                    0);
+
                 Highcharts.chart('idTotalCrewByKapal', {
                     chart: {
                         type: 'bar',
@@ -354,7 +456,7 @@
                         width: 500
                     },
                     title: {
-                        text: 'Crew Distribution by Owned Ship',
+                        text: `Crew Distribution by Owned Ship (Total: ${totalCrewOnboard.toLocaleString()})`,
                         align: 'center',
                         style: {
                             fontSize: '20px',
@@ -418,7 +520,7 @@
                                 enabled: true,
                                 style: {
                                     fontSize: '15px',
-                                    color: '#fff'
+                                    color: 'black'
                                 }
                             },
                             pointWidth: 10,
@@ -475,8 +577,8 @@
                         align: 'center',
                         verticalAlign: 'bottom',
                         itemStyle: {
-                            fontSize: '13px',
-                            color: '#000'
+                            fontSize: '16px',
+                            fontWeight: 'bold'
                         },
                     },
                     credits: {
@@ -494,6 +596,7 @@
     });
 
 
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url("dashboard/getSchool"); ?>',
@@ -501,9 +604,7 @@
             dataType: 'json',
             success: function(data) {
                 const categories = data.map(item => item.school);
-                const seriesDataTotal = data.map(item => item.total_crew);
                 const seriesDataOnboard = data.map(item => item.onboard_crew);
-                const seriesDataOnleave = data.map(item => item.onleave_crew);
 
                 Highcharts.chart('idDivtotalSchool', {
                     chart: {
@@ -512,7 +613,7 @@
                         height: 800
                     },
                     title: {
-                        text: 'Distribution Crew by School / Institution',
+                        text: 'Top 10 Schools by Onboard Crew',
                         style: {
                             fontSize: '20px',
                             fontWeight: 'bold',
@@ -522,47 +623,30 @@
                     xAxis: {
                         categories: categories,
                         title: {
-                            text: 'Nama Sekolah',
-                            style: {
-                                fontSize: '14px'
-                            }
+                            text: 'Nama Sekolah'
                         },
                         labels: {
                             style: {
                                 fontSize: '14px'
                             }
                         },
-                        gridLineWidth: 1,
-                        lineWidth: 0
+                        gridLineWidth: 1
                     },
                     yAxis: {
                         min: 0,
                         title: {
-                            text: 'Total Crew',
-                            align: 'high',
-                            style: {
-                                fontSize: '14px'
-                            }
+                            text: 'Onboard Crew'
                         },
                         labels: {
                             style: {
-                                fontSize: '14px'
+                                fontSize: '16px'
                             }
-                        },
-                        gridLineWidth: 0
+                        }
                     },
                     tooltip: {
                         formatter: function() {
-                            const schoolData = data[this.point.index];
-                            return `
-                            <b>${schoolData.school}</b><br>
-                            Total Crew: ${schoolData.total_crew}<br>
-                            Onboard: ${schoolData.onboard_crew}<br>
-                            Onleave: ${schoolData.onleave_crew}
-                        `;
-                        },
-                        style: {
-                            fontSize: '12px'
+                            return `<b>${data[this.point.index].school}</b><br>
+                                Onboard Crew: ${data[this.point.index].onboard_crew}`;
                         }
                     },
                     plotOptions: {
@@ -570,7 +654,8 @@
                             dataLabels: {
                                 enabled: true,
                                 style: {
-                                    fontSize: '12px'
+                                    fontSize: '16px',
+                                    color: 'black',
                                 }
                             },
                             groupPadding: 0.1,
@@ -578,26 +663,14 @@
                             point: {
                                 events: {
                                     click: function() {
-                                        const index = this.index;
-                                        const seriesName = this.series.name;
-                                        const school = categories[index];
-                                        const schoolData = data[index];
-                                        let crewDetails = [];
-                                        let modalColor = '#16839B';
-
-                                        if (seriesName === 'On-Dutty') {
-                                            crewDetails = schoolData
-                                                .onboard_crew_names ?
-                                                schoolData.onboard_crew_names.split(
-                                                    ', ') : [];
-                                            modalColor = '#5DADE2';
-                                        }
+                                        const schoolData = data[this.index];
+                                        const crewDetails = schoolData.crew_details ?
+                                            schoolData.crew_details.split(', ') : [];
 
                                         $('#modalTitle').text(
-                                            `Detail Crew for ${school} (${seriesName})`
-                                        );
+                                            `Detail Crew for ${schoolData.school}`);
                                         $('.modal-header').css('background-color',
-                                            modalColor);
+                                            '#078415');
 
                                         const tbody = $(
                                             '#idBodyModalCrewDetailByInstitution');
@@ -626,35 +699,11 @@
                             }
                         }
                     },
-                    legend: {
-                        enabled: true,
-                        layout: 'horizontal',
-                        align: 'center',
-                        verticalAlign: 'bottom',
-                        itemStyle: {
-                            fontSize: '14px',
-                            color: '#000'
-                        }
-                    },
-                    credits: {
-                        enabled: false
-                    },
                     series: [{
-                            name: 'Total Crew',
-                            data: seriesDataTotal,
-                            color: '#16839B'
-                        },
-                        {
-                            name: 'On-Dutty',
-                            data: seriesDataOnboard,
-                            color: '#5DADE2'
-                        },
-                        {
-                            name: 'Off-Dutty',
-                            data: seriesDataOnleave,
-                            color: '#F5B041'
-                        }
-                    ]
+                        name: 'Onboard Crew',
+                        data: seriesDataOnboard,
+                        color: '#5DADE2'
+                    }]
                 });
             },
             error: function(xhr, status, error) {
@@ -664,33 +713,21 @@
         });
     });
 
-
-
-
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url('dashboard/getCadangan'); ?>',
             method: 'GET',
             dataType: 'json',
             success: function(data) {
-                const heatmapData = data.map((item, index) => {
-                    var color;
-                    if (item.total_onleave > 15) {
-                        color = 'rgba(0, 255, 85, 0.8)';
-                    } else if (item.total_onleave >= 11) {
-                        color = 'rgb(251, 255, 10)';
-                    } else {
-                        color = 'rgba(255, 0, 0, 0.8)';
-                    }
-                    return {
-                        x: index % 5,
-                        y: Math.floor(index / 5),
-                        value: item.total_onleave,
-                        onboard: item.total_onboard,
-                        rank: item.rank,
-                        color: color || item.color,
-                    };
-                });
+                const heatmapData = data.map((item, index) => ({
+                    x: index % 5,
+                    y: Math.floor(index / 5),
+                    value: item.total_onleave,
+                    onboard: item.total_onboard,
+                    rank: item.rank,
+                    category: item.category,
+                    color: item.color
+                }));
 
                 Highcharts.chart('idDivHeatMap', {
                     chart: {
@@ -710,40 +747,33 @@
                     },
                     xAxis: {
                         labels: {
-                            enabled: false,
+                            enabled: false
                         },
                         title: null,
                     },
                     yAxis: {
                         labels: {
-                            enabled: false,
+                            enabled: false
                         },
                         title: null,
                     },
                     colorAxis: {
                         stops: [
-                            [0, 'rgba(255, 107, 107, 0.8)'],
-                            [0.5, 'rgba(255, 223, 107, 0.8)'],
-                            [1, 'rgba(72, 239, 128, 0.8)'],
+                            [0, 'rgba(255, 0, 0, 0.8)'],
+                            [0.5, 'rgba(255, 255, 0, 0.8)'],
+                            [1, 'rgba(0, 255, 0, 0.8)']
                         ],
                         min: 0,
-                        max: 20,
+                        max: Math.max(...data.map(item => item
+                            .total_onleave))
                     },
                     tooltip: {
                         formatter: function() {
-                            var categoryLabel = '';
-                            if (this.point.value > 15) {
-                                categoryLabel = 'Strong';
-                            } else if (this.point.value >= 11) {
-                                categoryLabel = 'Medium';
-                            } else {
-                                categoryLabel = 'Low';
-                            }
-
                             return `
-                            Crew Off-Duty: ${this.point.value}<br>
-                            Crew On-Dutty: ${this.point.onboard}<br>
-                            Category: <b>${categoryLabel}</b>`;
+                        <b>${this.point.rank}</b><br>
+                        Crew Off-Duty: ${this.point.value}<br>
+                        Crew On-Duty: ${this.point.onboard}<br>
+                        Category: <b style="color:${this.point.color}">${this.point.category}</b>`;
                         },
                     },
                     series: [{
@@ -753,10 +783,10 @@
                             x: item.x,
                             y: item.y,
                             value: item.value,
-                            onboard: item
-                                .onboard,
+                            onboard: item.onboard,
                             rank: item.rank,
-                            color: item.color,
+                            color: item
+                                .color
                         })),
                         dataLabels: {
                             enabled: true,
@@ -926,7 +956,7 @@
     aria-labelledby="idModalCrewByOwnShipLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header" style="padding: 10px;background-color:#16839B;">
+            <div class="modal-header" style="padding: 10px;background-color:#078415;">
                 <h5 class=" modal-title" id="idModalCrewByOwnShipLabel" style="color: white;">Crew Details</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                         aria-hidden="true">&times;</span></button>
@@ -943,7 +973,7 @@
                     <table
                         class="table table-border table-striped table-bordered table-condensed table-advance table-hover">
                         <thead>
-                            <tr style="background-color: #16839B; color: #FFF; height: 40px;">
+                            <tr style="background-color:#078415; color: #FFF; height: 40px;">
                                 <th style="text-align: center; width: 5%;">No</th>
                                 <th style="text-align: center; width: 60%;">Crew Name</th>
                                 <th style="text-align: center; width: 35%;">Position</th>
@@ -971,9 +1001,9 @@
                     <table
                         class="table table-border table-striped table-bordered table-condensed table-advance table-hover">
                         <thead>
-                            <tr style="background-color: #16839B; color: #FFF; height: 40px;">
+                            <tr style="background-color:#078415; color: #FFF; height: 40px;">
                                 <th style="text-align: center; width: 5%;">No</th>
-                                <th style="text-align: center; width: 60%;">Crew Name</th>
+                                <th style="text-align: left; width: 60%;">Crew Name & Rank / Position</th>
 
                             </tr>
                         </thead>
@@ -988,28 +1018,59 @@
     </div>
 </div>
 
-<div class="modal fade" id="detailModalCrewSignoff" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+<div class="modal fade" id="detailModalClientShip" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header" style="padding: 10px;background-color:#16839B;">
-                <h5 class="modal-title" id="modalTitle" style="color: white;">Crew Distribution By Estimated Sign Off
-                </h5>
+                <h5 class="modal-title" id="modalTitle" style="color: white;">Crew Distribution By Client Ship</h5>
             </div>
             <div class="modal-body">
                 <div class="table-responsive">
                     <table
                         class="table table-border table-striped table-bordered table-condensed table-advance table-hover">
                         <thead>
-                            <tr style="background-color: #16839B; color: #FFF; height: 40px;">
+                            <tr style="background-color:#078415; color: #FFF; height: 40px;">
                                 <th style="text-align: center; width: 5%;">No</th>
                                 <th style="text-align: left; width: 60%;">Crew Name</th>
-                                <th style="text-align: center; width: 60%;">Estimated Signoff Date</th>
+                                <th style="text-align: left; width: 35%;">Position</th>
+                            </tr>
+                        </thead>
+                        <tbody id="idBodyModalCrewDetailByClientShip"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detailModalCrewSignoff" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 10px;background-color:#078415;">
+                <h5 class="modal-title" id="modalTitle" style="color: white;">Crew Distribution By Estimated Sign Off
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p id="idRankSummary" style="font-weight: bold; font-size: 16px; margin-bottom: 10px;"></p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-hover">
+                        <thead>
+                            <tr style="background-color: #078415; color: #FFF; height: 45px;">
+                                <th style="width: 5%;">No</th>
+                                <th style="width: 30%;">Crew Name</th>
+                                <th style="width: 25%;">Rank Name</th>
+                                <th style="width: 20%;">Sign On Date</th>
+                                <th style="width: 20%;">Estimated Signoff Date</th>
                             </tr>
                         </thead>
                         <tbody id="idBodyModalCrewDetailByEstimatedSignOff"></tbody>
                     </table>
                 </div>
             </div>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
