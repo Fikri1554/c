@@ -138,14 +138,15 @@
                     avgAges.push(item.avg_age);
                 });
 
+                let totalCrewOnboard = crewCounts.reduce((sum, num) => sum + num, 0);
+
                 Highcharts.chart('idDivOverall', {
                     chart: {
                         type: 'bar',
-                        height: 900,
-                        backgroundColor: null,
+                        height: 900
                     },
                     title: {
-                        text: `Crew Distribution by Client Ship (Total: ${crewCounts.reduce((sum, num) => sum + num, 0).toLocaleString()})`,
+                        text: `Crew Distribution by Ship Client (Total: ${totalCrewOnboard.toLocaleString()})`,
                         style: {
                             fontSize: '22px',
                             fontWeight: 'bold',
@@ -182,6 +183,13 @@
                             }
                         }
                     },
+                    tooltip: {
+                        shared: true,
+                        style: {
+                            fontSize: '14px'
+                        },
+                        pointFormat: '<b> {series.name}: {point.y}</b>'
+                    },
                     plotOptions: {
                         bar: {
                             dataLabels: {
@@ -191,52 +199,46 @@
                                     color: 'black'
                                 }
                             },
+                            groupPadding: 0.01,
+                            pointPadding: 1.5,
+                            pointWidth: 5.5,
                             cursor: 'pointer',
                             events: {
                                 click: function(event) {
                                     let shipIndex = event.point.index;
                                     let shipData = data[shipIndex];
-                                    let clickedSeries = event.point.series.name;
+
+                                    console.log("Ship Data:", shipData);
+
                                     let modalBody = $(
                                         '#idBodyModalCrewDetailByClientShip');
                                     modalBody.empty();
 
-                                    let maleCrew = [];
-                                    let femaleCrew = [];
+                                    if (shipData.crew_names && shipData.crew_names
+                                        .length > 0) {
+                                        shipData.crew_names.forEach((name, index) => {
+                                            let rank = shipData.crew_ranks &&
+                                                shipData.crew_ranks[index] ?
+                                                shipData.crew_ranks[index] :
+                                                '-';
+                                            console.log(
+                                                `Crew ${index + 1}: ${name} - ${rank}`
+                                            );
 
-                                    shipData.crew_names.forEach((name, index) => {
-                                        let rank = shipData.crew_ranks[index] ||
-                                            '-';
-                                        if (index < shipData.male) {
-                                            maleCrew.push({
-                                                name,
-                                                rank
-                                            });
-                                        } else {
-                                            femaleCrew.push({
-                                                name,
-                                                rank
-                                            });
-                                        }
-                                    });
-
-                                    let filteredCrew = clickedSeries === 'Male Crew' ?
-                                        maleCrew : femaleCrew;
-
-                                    if (filteredCrew.length > 0) {
-                                        filteredCrew.forEach((crew, index) => {
                                             modalBody.append(`
                                             <tr>
-                                                <td>${index + 1}</td>
-                                                <td>${crew.name}</td>
-                                                <td>${crew.rank}</td>
+                                                <td style="text-align: center;">${index + 1}</td>
+                                                <td>${name}</td>
+                                                <td>${rank}</td>
                                             </tr>
                                         `);
                                         });
                                     } else {
-                                        modalBody.append(
-                                            '<tr><td colspan="3" style="text-align: center; font-weight: bold;">No Crew Data Available</td></tr>'
-                                        );
+                                        modalBody.append(`
+                                        <tr>
+                                            <td colspan="3" style="text-align: center; font-weight: bold;">No Crew Data Available</td>
+                                        </tr>
+                                    `);
                                     }
 
                                     $('#detailModalClientShip').modal('show');
@@ -244,37 +246,35 @@
                             }
                         }
                     },
+                    credits: {
+                        enabled: false
+                    },
+                    legend: {
+                        enabled: true,
+                        itemStyle: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
+                    },
                     series: [{
                             name: 'Total Crew',
                             data: crewCounts,
-                            color: '#0073e6',
-                            dataLabels: {
-                                enabled: true
-                            }
+                            color: '#0073e6'
                         },
                         {
                             name: 'Male Crew',
                             data: maleCounts,
-                            color: '#28a745',
-                            dataLabels: {
-                                enabled: true
-                            }
+                            color: '#28a745'
                         },
                         {
                             name: 'Female Crew',
                             data: femaleCounts,
-                            color: '#e63946',
-                            dataLabels: {
-                                enabled: true
-                            }
+                            color: '#e63946'
                         },
                         {
                             name: 'Average Age',
                             data: avgAges,
-                            color: '#f39c12',
-                            dataLabels: {
-                                enabled: true
-                            }
+                            color: '#f39c12'
                         }
                     ]
                 });
@@ -285,6 +285,9 @@
             }
         });
     });
+
+
+
 
     $(document).ready(function() {
         $.ajax({
@@ -314,7 +317,7 @@
                 Highcharts.chart('idDivBarChartRank', {
                     chart: {
                         type: 'column',
-                        backgroundColor: null,
+                        //backgroundColor: null,
                         height: 1000,
                         width: 1150
                     },
@@ -451,7 +454,7 @@
                 Highcharts.chart('idTotalCrewByKapal', {
                     chart: {
                         type: 'bar',
-                        backgroundColor: null,
+                        //backgroundColor: null,
                         height: 900,
                         width: 500
                     },
@@ -609,7 +612,7 @@
                 Highcharts.chart('idDivtotalSchool', {
                     chart: {
                         type: 'bar',
-                        backgroundColor: null,
+                        //backgroundColor: null,
                         height: 800
                     },
                     title: {
@@ -734,7 +737,6 @@
                         type: 'heatmap',
                         plotBorderWidth: 1,
                         height: 500,
-                        backgroundColor: null,
                     },
                     title: {
                         text: 'Ship Reserves per Rank (Heatmap)',
@@ -801,6 +803,106 @@
                     }],
                     credits: {
                         enabled: false,
+                    },
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', status, error);
+            },
+        });
+    });
+
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/getCadangan'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                const {
+                    total_cadangan,
+                    data
+                } = response; // Ambil total_cadangan dari PHP
+
+                const heatmapData = data.map((item, index) => ({
+                    x: index % 5, // Atur posisi heatmap berdasarkan jumlah rank
+                    y: Math.floor(index / 5),
+                    value: item.total_onleave,
+                    onboard: item.total_onboard,
+                    rank: item.rank,
+                    category: item.category,
+                    color: item.color
+                }));
+
+                Highcharts.chart('idDivHeatMap', {
+                    chart: {
+                        type: 'heatmap',
+                        plotBorderWidth: 1,
+                        height: 500,
+                    },
+                    title: {
+                        text: 'Ship Reserves per Rank (Heatmap)',
+                        align: 'center',
+                        style: {
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }
+                    },
+                    xAxis: {
+                        labels: {
+                            enabled: false
+                        },
+                        title: null,
+                    },
+                    yAxis: {
+                        labels: {
+                            enabled: false
+                        },
+                        title: null,
+                    },
+                    colorAxis: {
+                        stops: [
+                            [0, 'rgba(255, 0, 0, 0.8)'],
+                            [0.5, 'rgba(255, 255, 0, 0.8)'],
+                            [1, 'rgba(0, 255, 0, 0.8)']
+                        ],
+                        min: 0,
+                        max: total_cadangan
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `
+                            <b>${this.point.rank}</b><br>
+                            Crew Off-Duty: ${this.point.value}<br>
+                            Crew On-Duty: ${this.point.onboard}<br>
+                            Total Cadangan: <b>${total_cadangan}</b><br>
+                            Category: <b style="color:${this.point.color}">${this.point.category}</b>`;
+                        },
+                    },
+                    series: [{
+                        name: 'Cadangan Kapal',
+                        borderWidth: 1,
+                        data: heatmapData.map(item => ({
+                            x: item.x,
+                            y: item.y,
+                            value: item.value,
+                            onboard: item.onboard,
+                            rank: item.rank,
+                            color: item.color
+                        })),
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function() {
+                                return this.point.rank;
+                            },
+                            color: '#fff',
+                            style: {
+                                fontSize: '12px'
+                            },
+                        },
+                    }],
+                    credits: {
+                        enabled: false
                     },
                 });
             },

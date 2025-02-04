@@ -337,30 +337,42 @@ class Dashboard extends CI_Controller {
 		$trNya = "";
 		$no = 1;
 		$vslCode = $_POST['vslCode'];
+		$genderFilter = isset($_POST['gender']) ? $_POST['gender'] : "";
+		$getAges = isset($_POST['getAges']) ? true : false; 
 		$vslName = "";
 
 		$whereNya = " WHERE A.deletests = '0' AND B.deletests = '0' AND B.signoffdt = '0000-00-00' AND A.inaktif = '0' AND D.deletests = '0' AND B.signonvsl = '".$vslCode."' ";
 
-		$sql = "SELECT COUNT(A.idperson),TRIM(CONCAT(A.fname,' ',A.mname,' ',A.lname)) AS fullName,D.nmvsl,E.nmrank
+		if (!empty($genderFilter)) {
+			$whereNya .= " AND A.gender = '".$genderFilter."' ";
+		}
+
+		$sql = "SELECT TRIM(CONCAT(A.fname,' ',A.mname,' ',A.lname)) AS fullName, D.nmvsl, E.nmrank, 
+					TIMESTAMPDIFF(YEAR, A.dob, CURDATE()) AS age
 				FROM mstpersonal A
 				LEFT JOIN tblcontract B ON A.idperson = B.idperson
 				LEFT JOIN tblkota C ON A.pob = C.KdKota
 				LEFT JOIN mstvessel D ON D.kdvsl = B.signonvsl AND D.nmvsl != '' AND D.nmvsl != '-'
 				LEFT JOIN mstrank E ON E.kdrank = B.signonrank AND E.deletests = '0'
 				".$whereNya."
-				GROUP BY A.idperson,D.nmvsl
+				GROUP BY A.idperson, D.nmvsl
 				ORDER BY fullName ASC";
+		
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
-		foreach ($rsl as $key => $val)
-		{
+		foreach ($rsl as $key => $val) {
 			$vslName = $val->nmvsl;
 			$trNya .= "<tr>";
-				$trNya .= "<td align=\"center\" style=\"font-size:11px;\">".$no."</td>";
-				$trNya .= "<td style=\"font-size:11px;\">".$val->fullName."</td>";
-				$trNya .= "<td style=\"font-size:11px;\">".$val->nmrank."</td>";
-			$trNya .= "</tr>";
+			$trNya .= "<td align=\"center\" style=\"font-size:11px;\">".$no."</td>";
+			$trNya .= "<td style=\"font-size:11px;\">".$val->fullName."</td>";
 
+			if ($getAges) {
+				$trNya .= "<td style=\"font-size:11px;\">".$val->age." years</td>";
+			} else {
+				$trNya .= "<td style=\"font-size:11px;\">".$val->nmrank."</td>";
+			}
+
+			$trNya .= "</tr>";
 			$no++;
 		}
 
@@ -369,6 +381,8 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
+
+
 	
 	function crewBarChart()
 	{
