@@ -381,13 +381,11 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
-
-
 	
 	function crewBarChart()
 	{
 		$sql = "SELECT 
-					C.nmcmp AS ClientName,
+					C.nmcmp AS ClientName,        
 					D.kdvsl AS kode_kapal, 
 					D.nmvsl AS nama_kapal, 
 					COUNT(A.idperson) AS jumlah_crew_onboard,
@@ -395,7 +393,9 @@ class Dashboard extends CI_Controller {
 					SUM(CASE WHEN A.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
 					AVG(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS rata_rata_umur,
 					GROUP_CONCAT(CONCAT(A.fname, ' ', COALESCE(A.mname, ''), ' ', A.lname) SEPARATOR ', ') AS crew_names,
-					GROUP_CONCAT(E.nmrank SEPARATOR ', ') AS crew_ranks
+					GROUP_CONCAT(E.nmrank SEPARATOR ', ') AS crew_ranks,
+					GROUP_CONCAT(A.gender SEPARATOR ', ') AS crew_genders,
+					GROUP_CONCAT(TIMESTAMPDIFF(YEAR, A.dob, CURDATE()) SEPARATOR ', ') AS crew_ages
 				FROM 
 					mstpersonal A
 				LEFT JOIN 
@@ -408,7 +408,6 @@ class Dashboard extends CI_Controller {
 					mstrank E ON B.signonrank = E.kdrank
 				WHERE 
 					A.deletests = '0' 
-					
 					AND B.deletests = '0' 
 					AND B.signoffdt = '0000-00-00' 
 					AND A.inaktif = '0' 
@@ -441,16 +440,17 @@ class Dashboard extends CI_Controller {
 				'male' => (int)$row->total_male,
 				'female' => (int)$row->total_female,
 				'avg_age' => round($row->rata_rata_umur, 1),
-				'crew_names' => explode(', ', $row->crew_names),
-				'crew_ranks' => explode(', ', $row->crew_ranks)
+				'crew_names' => $row->crew_names ? explode(', ', $row->crew_names) : array(),
+				'crew_ranks' => $row->crew_ranks ? explode(', ', $row->crew_ranks) : array(),
+				'crew_genders' => $row->crew_genders ? explode(', ', $row->crew_genders) : array(),
+				'crew_ages' => $row->crew_ages ? explode(', ', $row->crew_ages) : array()
 			);
 		}
 
 		echo json_encode($chartData);
 	}
 
-		
-	
+
 	function contractBarChart()
 	{
 		$sql = "
@@ -459,7 +459,8 @@ class Dashboard extends CI_Controller {
 				B.estsignoffdt AS EstimatedSignOffDate,
 				CONCAT(A.fname, ' ', IFNULL(A.mname, ''), ' ', A.lname) AS CrewName,
 				RANK.nmrank AS RankName,
-				B.signondt AS SignOnDate
+				B.signondt AS SignOnDate,
+				RANK.urutan AS RankOrder
 			FROM 
 				mstpersonal A
 			LEFT JOIN tblcontract B ON A.idperson = B.idperson
@@ -476,15 +477,17 @@ class Dashboard extends CI_Controller {
 				AND D.deletests = '0'
 				AND (B.signonvsl IS NULL OR D.nmvsl != '' AND D.nmvsl != '-')
 			ORDER BY 
-				Month ASC, CrewName, EstimatedSignOffDate ASC;
+				Month ASC, CrewName, EstimatedSignOffDate, RANK.nmrank ASC;
 		";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
 		$data = array();
- 
 		$rankCounts = array();
+		$rankOrder = array();
+
 		foreach ($result as $row) {
 			$monthName = date("F", strtotime($row->EstimatedSignOffDate)); 
+
 			$data[] = array(
 				'month' => $monthName,
 				'estimated_signoff_date' => $row->EstimatedSignOffDate,
@@ -497,11 +500,20 @@ class Dashboard extends CI_Controller {
 				$rankCounts[$monthName][$row->RankName] = 0;
 			}
 			$rankCounts[$monthName][$row->RankName]++;
+
+			if (!isset($rankOrder[$row->RankName])) {
+				$rankOrder[$row->RankName] = (isset($row->RankOrder) && $row->RankOrder !== null) ? $row->RankOrder : 999;
+			}
 		}
 
 		header('Content-Type: application/json');
-		print json_encode(array('crewData' => $data, 'rankSummary' => $rankCounts));
+		echo json_encode(array(
+			'crewData' => $data, 
+			'rankSummary' => $rankCounts,
+			'rankOrder' => $rankOrder  
+		));
 	}
+
 
 	function shipDemograph()
 	{
@@ -676,25 +688,25 @@ class Dashboard extends CI_Controller {
 		$data = array();
 
 		foreach ($result as $row) {
-			$total_onboard = (int) $row->total_onboard;
-			$total_onleave = (int) $row->total_onleave;
-			$batasMedium = 1.5 * $total_onboard;
+			$totalOnboard = (int) $row->total_onboard;
+			$totalOnleave = (int) $row->total_onleave;
+			$batasMedium = 1.5 * $totalOnboard;
 
-			if ($total_onleave <= $total_onboard) {
+			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
 				$color = 'red';
-			} elseif ($total_onleave > $total_onboard && $total_onleave <= $batasMedium) {
+			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
 				$color = 'yellow';
-			} else if ($total_onleave > $batasMedium) {
+			} else if ($totalOnleave > $batasMedium) {
 				$category = 'High';
 				$color = 'green';
 			}
 
 			$data[] = array(
 				'rank' => $row->nmrank,
-				'total_onleave' => $total_onleave,
-				'total_onboard' => $total_onboard,
+				'total_onleave' => $totalOnleave,
+				'total_onboard' => $totalOnboard,
 				'category' => $category,
 				'color' => $color
 			);
@@ -704,7 +716,72 @@ class Dashboard extends CI_Controller {
 		echo json_encode($data);
 	}
 
+	function rankContractExpiry()
+	{
+		$sql = "
+			SELECT 
+				RANK.nmrank AS RankName,
+				COALESCE(expiring.TotalCrew, 0) AS expiring_total,
+				COALESCE(onleave.total_onleave, 0) AS total_onleave,
+				CASE 
+					WHEN COALESCE(onleave.total_onleave, 0) <= COALESCE(expiring.TotalCrew, 0) 
+						THEN 'Segera Rekrut' 
+					WHEN COALESCE(onleave.total_onleave, 0) > COALESCE(expiring.TotalCrew, 0) 
+						AND COALESCE(onleave.total_onleave, 0) <= 1.5 * COALESCE(expiring.TotalCrew, 0) 
+						THEN 'Dipantau' 
+					ELSE 'Cukup' 
+				END AS RecruitmentSuggestion
+			FROM mstrank RANK
+			LEFT JOIN (
+				SELECT 
+					B.signonrank,
+					COUNT(*) AS TotalCrew
+				FROM mstpersonal A
+				LEFT JOIN tblcontract B ON A.idperson = B.idperson
+				WHERE 
+					A.deletests = '0'
+					AND A.inaktif = '0'
+					AND B.deletests = '0'
+					AND B.signoffdt = '0000-00-00'
+					AND B.estsignoffdt != '0000-00-00'
+					AND MONTH(B.estsignoffdt) BETWEEN '2' AND '4'
+				GROUP BY B.signonrank
+			) AS expiring ON RANK.kdrank = expiring.signonrank
+			LEFT JOIN (
+				SELECT 
+					B.signonrank,
+					COUNT(A.idperson) AS total_onleave
+				FROM mstpersonal A
+				LEFT JOIN tblcontract B ON A.idperson = B.idperson
+				WHERE 
+					A.deletests = '0' 
+					AND B.deletests = '0' 
+					AND A.inAktif = '0' 
+					AND A.inBlacklist = '0'
+					AND B.idcontract = (
+						SELECT MAX(idcontract) 
+						FROM tblcontract 
+						WHERE idperson = B.idperson 
+						AND deletests = 0
+					)
+					AND B.signoffdt != '0000-00-00' 
+					AND B.signoffdt <= CURDATE()  
+				GROUP BY B.signonrank
+			) AS onleave ON RANK.kdrank = onleave.signonrank
+			WHERE 
+				RANK.deletests = '0'
+				AND RANK.nmrank != ''
+				AND RANK.urutan > 0
+			ORDER BY 
+				RANK.urutan ASC
+			LIMIT 25";
+			
+		$result = $this->MCrewscv->getDataQuery($sql);
 
+		echo json_encode($result);
+	}
+
+	
 	function getCrewDetailsWithRanks()
 	{
 		$dataOut = array();
