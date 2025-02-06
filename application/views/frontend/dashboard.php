@@ -321,10 +321,6 @@
         });
     });
 
-
-
-
-
     $.ajax({
         url: '<?php echo base_url('dashboard/contractBarChart'); ?>',
         method: 'GET',
@@ -337,7 +333,7 @@
             const months = Object.keys(rankSummary);
             let rankCategories = [...new Set(crewData.map(item => item.rank_name))];
 
-            // Urutkan rank berdasarkan urutan dari database
+
             rankCategories.sort((a, b) => {
                 return (rankOrder[a] || 999) - (rankOrder[b] || 999);
             });
@@ -365,7 +361,7 @@
                     style: {
                         fontSize: '22px',
                         fontWeight: 'bold',
-                        color: '#333'
+                        color: '#000'
                     }
                 },
                 xAxis: {
@@ -374,7 +370,7 @@
                     labels: {
                         style: {
                             fontSize: '16px',
-                            color: '#333'
+                            color: '#000'
                         }
                     }
                 },
@@ -385,20 +381,20 @@
                         style: {
                             fontSize: '18px',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#000'
                         }
                     },
                     labels: {
                         style: {
                             fontSize: '16px',
-                            color: '#333'
+                            color: '#000'
                         }
                     },
                     stackLabels: {
                         enabled: true,
                         style: {
                             fontWeight: 'bold',
-                            color: '#333',
+                            color: '#000',
                             fontSize: '16px'
                         }
                     }
@@ -416,10 +412,10 @@
                         cursor: 'pointer',
                         dataLabels: {
                             enabled: true,
-                            color: '#FFFFFF',
+                            color: '#000',
                             style: {
                                 fontWeight: 'bold',
-                                textOutline: '1px contrast',
+                                textOutline: 'none', // Hapus outline putih
                                 fontSize: '14px'
                             }
                         },
@@ -438,12 +434,12 @@
 
                                 let modalBody = crewDetails.map((item, i) =>
                                     `<tr>
-                                <td style="text-align: center;">${i + 1}</td>
-                                <td style="text-align: left;">${item.crew_name}</td>
-                                <td style="text-align: left;">${item.rank_name}</td>
-                                <td style="text-align: left;">${item.sign_on_date}</td>
-                                <td style="text-align: left;">${item.estimated_signoff_date}</td>
-                            </tr>`
+                                    <td style="text-align: center;">${i + 1}</td>
+                                    <td style="text-align: left;">${item.crew_name}</td>
+                                    <td style="text-align: left;">${item.rank_name}</td>
+                                    <td style="text-align: left;">${item.sign_on_date}</td>
+                                    <td style="text-align: left;">${item.estimated_signoff_date}</td>
+                                </tr>`
                                 ).join('');
 
                                 $('#modalTitle').text(`Crew Distribution for ${selectedMonth}`);
@@ -478,7 +474,7 @@
                     itemStyle: {
                         fontSize: '16px',
                         fontWeight: 'normal',
-                        color: '#333'
+                        color: '#000'
                     }
                 },
                 credits: {
@@ -493,6 +489,7 @@
             console.error('Error fetching contractBarChart data:', error);
         }
     });
+
 
 
 
@@ -858,8 +855,7 @@
                         align: 'center',
                         style: {
                             fontSize: '20px',
-                            fontWeight: 'bold',
-                            color: '#333'
+                            color: 'black'
                         }
                     },
                     xAxis: {
@@ -910,7 +906,7 @@
                             formatter: function() {
                                 return this.point.rank;
                             },
-                            color: '#fff',
+                            color: '#000',
                             style: {
                                 fontSize: '12px',
                             },
@@ -962,14 +958,15 @@
                 Highcharts.chart('idDivRankContractExpiry', {
                     chart: {
                         type: 'bar',
-                        height: 900,
+                        height: 1200,
                         backgroundColor: null
                     },
                     title: {
                         text: 'Rank Expiring, On Leave, and Recruitment Suggestion',
                         style: {
                             fontSize: '20px',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            color: '#000'
                         }
                     },
                     xAxis: {
@@ -977,12 +974,14 @@
                         title: {
                             text: 'Rank',
                             style: {
-                                fontSize: '16px'
+                                fontSize: '16px',
+                                color: '#000'
                             }
                         },
                         labels: {
                             style: {
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                color: '#000'
                             }
                         }
                     },
@@ -991,38 +990,40 @@
                         title: {
                             text: 'Total Crew',
                             style: {
-                                fontSize: '16px'
+                                fontSize: '16px',
+                                color: '#000'
                             }
                         },
                         labels: {
                             style: {
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                color: '#000'
                             }
                         }
                     },
                     tooltip: {
                         shared: true,
                         style: {
-                            fontSize: '14px'
+                            fontSize: '14px',
+                            color: '#000'
                         },
                         formatter: function() {
                             let index = this.point.index;
-                            let suggestionText = 'Cukup';
-                            let suggestionColor =
-                                '<b style="color:green;">Cukup</b>'; // Default hijau
+                            let suggestionText =
+                                '<b style="color:#000;">Cukup</b>'; // Default hitam
 
                             if (suggestionData[index] === 2) {
                                 suggestionText =
-                                    '<b style="color:purple;">Segera Rekrut</b>'; // Ungu
+                                    '<b style="color:#000;">Segera Rekrut</b>'; // Hitam
                             } else if (suggestionData[index] === 1) {
                                 suggestionText =
-                                    '<b style="color:orange;">Dipantau</b>'; // Oranye
+                                    '<b style="color:#000;">Dipantau</b>'; // Hitam
                             }
 
-                            return `<b style="font-size: 16px;">${categories[index]}</b><br/>
-                            <span style="font-size: 14px;">Expiring: ${expiringData[index]}</span><br/>
-                            <span style="font-size: 14px;">On Leave: ${onLeaveData[index]}</span><br/>
-                            <span style="font-size: 14px;">Recruitment: ${suggestionText}</span>`;
+                            return `<b style="font-size: 16px; color:#000;">${categories[index]}</b><br/>
+                        <span style="font-size: 14px; color:#000;">Expiring: ${expiringData[index]}</span><br/>
+                        <span style="font-size: 14px; color:#000;">On Leave: ${onLeaveData[index]}</span><br/>
+                        <span style="font-size: 14px; color:#000;">Recruitment: ${suggestionText}</span>`;
                         }
                     },
                     plotOptions: {
@@ -1031,7 +1032,8 @@
                                 enabled: true,
                                 style: {
                                     fontSize: '14px',
-                                    fontWeight: 'bold'
+                                    fontWeight: 'bold',
+                                    color: '#000'
                                 }
                             },
                             groupPadding: 0.1
@@ -1047,7 +1049,8 @@
                         backgroundColor: 'rgba(255, 255, 255, 0.7)',
                         borderRadius: 5,
                         itemStyle: {
-                            fontSize: '13px'
+                            fontSize: '13px',
+                            color: '#000'
                         }
                     },
                     credits: {

@@ -45,9 +45,10 @@ class Education extends CI_Controller {
 
 			$no++;
 		}
-
+		
 		$dataOut['trNya'] = $trNya;
 		$dataOut['yearNya'] = $dataContext->menuTahun('1970','');
+		$dataOut['getSchoolByOption'] = $this->getSchoolByOption();
 
 		$this->load->view('frontend/education',$dataOut);
 	}
@@ -101,7 +102,7 @@ class Education extends CI_Controller {
 			
 			$stData = "Save Success..!!";
 		} catch (Exception $ex) {
-			$stData = "Failed => ".$ex->getMessage();;
+			$stData = "Failed => ".$ex->getMessage();
 		}
 
 		print $stData;
@@ -178,5 +179,23 @@ class Education extends CI_Controller {
 		print json_encode($status);
 	}
 
+	function getSchoolByOption($return = "")
+	{
+		$opt = "<option value=''>Select School</option>"; 
+		$whereNya = "Deletests = '0'";
+		
+		$rsl = $this->MCrewscv->getData("*", "mstschool", $whereNya, "schoolname ASC");
+
+		foreach ($rsl as $key => $val) {
+			$opt .= "<option value=\"" . htmlspecialchars($val->schoolname, ENT_QUOTES, 'UTF-8') . "\">" 
+					. htmlspecialchars($val->schoolname, ENT_QUOTES, 'UTF-8') . "</option>";
+		}
+		
+		if ($return == "") {
+			return $opt;
+		} else {
+			print json_encode($opt);
+		}
+	}
 
 }

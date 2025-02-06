@@ -453,6 +453,7 @@ class Dashboard extends CI_Controller {
 
 	function contractBarChart()
 	{
+		$dataContext = new DataContext();
 		$sql = "
 			SELECT 
 				DATE_FORMAT(B.estsignoffdt, '%Y-%m') AS Month,
@@ -490,10 +491,10 @@ class Dashboard extends CI_Controller {
 
 			$data[] = array(
 				'month' => $monthName,
-				'estimated_signoff_date' => $row->EstimatedSignOffDate,
+				'estimated_signoff_date' => $dataContext->convertReturnName($row->EstimatedSignOffDate),
 				'crew_name' => $row->CrewName,
 				'rank_name' => $row->RankName,
-				'sign_on_date' => $row->SignOnDate
+				'sign_on_date' => $dataContext->convertReturnName($row->SignOnDate)
 			);
 
 			if (!isset($rankCounts[$monthName][$row->RankName])) {
@@ -665,7 +666,7 @@ class Dashboard extends CI_Controller {
 				LEFT JOIN mstpersonal A ON A.idperson = B.idperson
 				WHERE 
 					RANK.deletests = '0' 
-					AND urutan > 0
+					AND RANK.urutan > 0
 					AND RANK.nmrank != '' 
 					AND A.deletests = '0' 
 					AND B.deletests = '0' 
@@ -682,7 +683,7 @@ class Dashboard extends CI_Controller {
 					RANK.kdrank, RANK.nmrank
 				ORDER BY 
 					RANK.urutan ASC
-				LIMIT 25";
+				LIMIT 50";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
 		$data = array();
@@ -774,7 +775,7 @@ class Dashboard extends CI_Controller {
 				AND RANK.urutan > 0
 			ORDER BY 
 				RANK.urutan ASC
-			LIMIT 25";
+			LIMIT 50";
 			
 		$result = $this->MCrewscv->getDataQuery($sql);
 

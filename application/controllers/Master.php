@@ -302,6 +302,48 @@ class Master extends CI_Controller {
 		}
 	}
 
+	function getDataMasterSchool($search = '')
+	{
+		$dataContext = new DataContext();
+		$dataOut = array();
+		$tr = "";
+		$no = 1;
+		$whereNya = " WHERE Deletests = '0'";
+
+		if($search == "search")
+		{
+			$txtSearch = $_POST['txtSearch'];
+			
+			$whereNya .= " AND schoolname LIKE '%".$txtSearch."%' ";
+		} 
+
+		$sql = "SELECT * FROM mstschool ".$whereNya." ORDER BY schoolname ASC";
+		$rsl = $this->MCrewscv->getDataQuery($sql);
+
+		foreach ($rsl as $key => $value)
+		{
+			$btnAct = "<button class=\"btn btn-success btn-xs\" onclick=\"getDataEdit('".$value->id."'');\" title=\"Edit Data\"><i class=\"fa fa-edit\"></i></button>";
+			$btnAct .= " <button class=\"btn btn-danger btn-xs\" onclick=\"delData('".$value->id."');\" title=\"Delete Data\"><i class=\"fa fa-close\"></i></button>";
+
+			$tr .= "<tr>";
+				$tr .= "<td style=\"font-size:11px;text-align:center;\">".$no."</td>";
+				$tr .= "<td style=\"font-size:11px;\">".$value->schoolname."</td>";
+				$tr .= "<td style=\"font-size:11px;text-align:center;\">".$btnAct."</td>";
+			$tr .= "</tr>";
+			$no++;
+		}
+
+		$dataOut['tr'] = $tr;
+
+		if($search == "search")
+		{
+			print json_encode($dataOut);
+		}
+		else{
+			$this->load->view('frontend/viewMasterSchool',$dataOut);
+		}
+	}
+
 	function getDataVesselType($search = '')
 	{
 		$dataContext = new DataContext();
@@ -537,6 +579,34 @@ class Master extends CI_Controller {
 		print $stData;
 	}
 
+	function saveDataMasterSchool()
+	{
+		$data = $_POST;
+		$dataIns = array();
+		$stData = "";
+		$idEdit = $data['idEdit'];
+		$userDateTimeNow = $this->session->userdata('userCrewSystem')."/".date('Ymd')."/".date('H:i:s');
+
+		try {
+			$dataIns['schoolname'] = $data['txtnameschool'];
+			
+			if($idEdit == "")
+			{
+				$dataIns['AddUsrDt'] = $userDateTimeNow;
+				$this->MCrewscv->insData("mstschool",$dataIns);
+			}
+			else {
+				$dataIns['UpdUsrDt'] = $userDateTimeNow;
+				$whereNya = "id = '".$idEdit."'";
+				$this->MCrewscv->updateData($whereNya,$dataIns,"mstschool");
+			}
+			$stData = "Save Success..!!";
+		} catch (Exception $ex) {
+			$stData = "Failed =>".$ex->getMessage();
+		}
+		print $stData;
+	}
+
 	function saveDataVesselType()
 	{
 		$data = $_POST;
@@ -611,6 +681,11 @@ class Master extends CI_Controller {
 			$sql = "SELECT * FROM  tbltype WHERE KdType = '".$idEdit."' ";
 			$dataOut['rsl'] = $this->MCrewscv->getDataQuery($sql);
 		}
+		else if ($type == "masterSchool")
+		{
+			$sql = "SELECT * FROM mstschool WHERE id = '".$idEdit."' ";
+			$dataOut['rsl'] = $this->MCrewscv->getDataQuery($sql);
+		}
 
 		print json_encode($dataOut);
 	}
@@ -680,7 +755,14 @@ class Master extends CI_Controller {
 				$whereNya = "KdType = '".$idDel."' ";
 				$this->MCrewscv->updateData($whereNya,$dataDel,"tbltype");
 			}
+			else if($type == "masterSchool")
+			{
+				$dataDel['Deletests'] = "1";
+				$dataDel['DelUsrDt'] = $userDateTimeNow;
 
+				$whereNya = "id = '".$idDel."' ";
+				$this->MCrewscv->updateData($whereNya, $dataDel, "tblscl");
+			}
 			$status = "Success..!!";
 		} catch (Exception $ex) {
 			$status = "Failed => ".$ex->getMessage();
