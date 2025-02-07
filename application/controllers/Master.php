@@ -761,7 +761,7 @@ class Master extends CI_Controller {
 				$dataDel['DelUsrDt'] = $userDateTimeNow;
 
 				$whereNya = "id = '".$idDel."' ";
-				$this->MCrewscv->updateData($whereNya, $dataDel, "tblscl");
+				$this->MCrewscv->updateData($whereNya, $dataDel, "mstschool");
 			}
 			$status = "Success..!!";
 		} catch (Exception $ex) {

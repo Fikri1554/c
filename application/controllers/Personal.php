@@ -162,6 +162,7 @@ class Personal extends CI_Controller {
 		$dataOut['optRank'] = $dataContext->getRankByOption("","name");
 		$dataOut['optBlood'] = $dataContext->getBloodType();
 		$dataOut['optSize'] = $dataContext->getUkuran();
+		$dataOut['getVesselType'] = $dataContext->getVesselType();
 
 		if($searchNya == "search")
 		{
@@ -319,7 +320,8 @@ class Personal extends CI_Controller {
 									"txtAdditionalRemark" => $rsl[0]->remarks,
 									"txtSignPlace" => $rsl[0]->signplc,
 									"txtDate_sign" => $rsl[0]->signdt,
-									"txtNextOfKin" => $rsl[0]->next_of_kin
+									"txtNextOfKin" => $rsl[0]->next_of_kin,
+									"slcVesselType" => $rsl[0]->crew_vessel_status
 								);
 
 				if($rsl[0]->pic != "")
@@ -577,6 +579,7 @@ class Personal extends CI_Controller {
 		$dataIns['vesselfor'] = $data['vesselApply'];
 		$dataIns['lower_rank'] = $data['WillingAcceptLowRank'];
 		$dataIns['availdt'] = $data['dateAvailable'];
+		$dataIns['crew_vessel_type'] = $data['slcVesselType'];
 
 		if($data['contactEmail'] != "") { $dataIns['conmthEmail'] = $data['contactEmail']; }
 		if($data['contactFax'] != "") { $dataIns['conmthFax'] = $data['contactFax']; }
@@ -1879,7 +1882,6 @@ class Personal extends CI_Controller {
 		}
 		
 		print $stData;
-		// print json_encode($stData);
 	}
 
 	function deleteData()
