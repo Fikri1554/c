@@ -477,8 +477,10 @@ class Dashboard extends CI_Controller {
 				AND YEAR(B.estsignoffdt) = 2025
 				AND D.deletests = '0'
 				AND (B.signonvsl IS NULL OR D.nmvsl != '' AND D.nmvsl != '-')
+				AND B.signonrank IS NOT NULL 
 			ORDER BY 
 				Month ASC, CrewName, EstimatedSignOffDate, RANK.nmrank ASC;
+
 		";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
@@ -692,6 +694,7 @@ class Dashboard extends CI_Controller {
 			$totalOnboard = (int) $row->total_onboard;
 			$totalOnleave = (int) $row->total_onleave;
 			$batasMedium = 1.5 * $totalOnboard;
+			
 
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
@@ -722,21 +725,35 @@ class Dashboard extends CI_Controller {
 		$sql = "
 			SELECT 
 				RANK.nmrank AS RankName,
-				COALESCE(expiring.TotalCrew, 0) AS expiring_total,
+				COALESCE(expiring.total_expiring, 0) AS total_expiring,
 				COALESCE(onleave.total_onleave, 0) AS total_onleave,
+				COALESCE(onboard.total_onboard, 0) AS total_onboard,
 				CASE 
-					WHEN COALESCE(onleave.total_onleave, 0) <= COALESCE(expiring.TotalCrew, 0) 
-						THEN 'Segera Rekrut' 
-					WHEN COALESCE(onleave.total_onleave, 0) > COALESCE(expiring.TotalCrew, 0) 
-						AND COALESCE(onleave.total_onleave, 0) <= 1.5 * COALESCE(expiring.TotalCrew, 0) 
-						THEN 'Dipantau' 
-					ELSE 'Cukup' 
-				END AS RecruitmentSuggestion
+					WHEN COALESCE(onleave.total_onleave, 0) <= COALESCE(onboard.total_onboard, 0) 
+						THEN 'Low' 
+					WHEN COALESCE(onleave.total_onleave, 0) > COALESCE(onboard.total_onboard, 0) 
+						AND COALESCE(onleave.total_onleave, 0) <= (1.5 * COALESCE(onboard.total_onboard, 0))
+						THEN 'Medium' 
+					ELSE 'High' 
+				END AS RankCategory,
+				CASE 
+					WHEN COALESCE(onleave.total_onleave, 0) <= COALESCE(onboard.total_onboard, 0) 
+						THEN 'red'
+					WHEN COALESCE(onleave.total_onleave, 0) > COALESCE(onboard.total_onboard, 0) 
+						AND COALESCE(onleave.total_onleave, 0) <= 1.5 * COALESCE(onboard.total_onboard, 0) 
+						THEN 'yellow'
+					ELSE 'green'
+				END AS RankColor,
+				CASE 
+					WHEN COALESCE(onleave.total_onleave, 0) <= COALESCE(onboard.total_onboard, 0) 
+						THEN COALESCE(onboard.total_onboard, 0) + 1 - COALESCE(onleave.total_onleave, 0)
+					ELSE 0
+				END AS SuggestedRecruitment
 			FROM mstrank RANK
 			LEFT JOIN (
-				SELECT 
+			 	SELECT 
 					B.signonrank,
-					COUNT(*) AS TotalCrew
+					COUNT(*) AS total_expiring
 				FROM mstpersonal A
 				LEFT JOIN tblcontract B ON A.idperson = B.idperson
 				WHERE 
@@ -745,7 +762,7 @@ class Dashboard extends CI_Controller {
 					AND B.deletests = '0'
 					AND B.signoffdt = '0000-00-00'
 					AND B.estsignoffdt != '0000-00-00'
-					AND MONTH(B.estsignoffdt) BETWEEN '2' AND '4'
+					AND MONTH(B.estsignoffdt) BETWEEN '1' AND '4'
 				GROUP BY B.signonrank
 			) AS expiring ON RANK.kdrank = expiring.signonrank
 			LEFT JOIN (
@@ -769,20 +786,37 @@ class Dashboard extends CI_Controller {
 					AND B.signoffdt <= CURDATE()  
 				GROUP BY B.signonrank
 			) AS onleave ON RANK.kdrank = onleave.signonrank
+			LEFT JOIN (
+				SELECT 
+					Q.signonrank,
+					COUNT(P.idperson) AS total_onboard
+				FROM mstpersonal P
+				LEFT JOIN tblcontract Q ON P.idperson = Q.idperson
+				WHERE 
+					P.deletests = '0' 
+					AND Q.deletests = '0' 
+					AND Q.signoffdt = '0000-00-00' 
+					AND P.inaktif = '0'
+				GROUP BY Q.signonrank
+			) AS onboard ON RANK.kdrank = onboard.signonrank
 			WHERE 
 				RANK.deletests = '0'
 				AND RANK.nmrank != ''
 				AND RANK.urutan > 0
+				AND expiring.total_expiring > 0
+				AND (
+					COALESCE(onleave.total_onleave, 0) <= COALESCE(onboard.total_onboard, 0)
+				)
 			ORDER BY 
 				RANK.urutan ASC
-			LIMIT 50";
+			LIMIT 45
+			";
 			
 		$result = $this->MCrewscv->getDataQuery($sql);
 
 		echo json_encode($result);
 	}
 
-	
 	function getCrewDetailsWithRanks()
 	{
 		$dataOut = array();

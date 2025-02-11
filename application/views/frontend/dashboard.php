@@ -321,176 +321,201 @@
         });
     });
 
-    $.ajax({
-        url: '<?php echo base_url('dashboard/contractBarChart'); ?>',
-        method: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            const crewData = response.crewData;
-            const rankSummary = response.rankSummary;
-            const rankOrder = response.rankOrder || {};
+    $(document).ready(function() {
+        $.ajax({
+            url: '<?php echo base_url('dashboard/contractBarChart'); ?>',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                const crewData = response.crewData;
+                const rankSummary = response.rankSummary;
+                const rankOrder = response.rankOrder || {};
 
-            const months = Object.keys(rankSummary);
-            let rankCategories = [...new Set(crewData.map(item => item.rank_name))];
+                const months = Object.keys(rankSummary);
 
 
-            rankCategories.sort((a, b) => {
-                return (rankOrder[a] || 999) - (rankOrder[b] || 999);
-            });
+                let rankCategories = [...new Set(
+                    crewData.map(item => item.rank_name)
+                )].filter(rank =>
+                    months.some(month => rankSummary[month] && rankSummary[month][rank] > 0)
+                );
 
-            let seriesData = rankCategories.map(rank => ({
-                name: rank,
-                data: months.map(month => (rankSummary[month] && rankSummary[month][rank]) ?
-                    rankSummary[month][rank] : 0)
-            }));
+                rankCategories.sort((a, b) => {
+                    return (rankOrder[a] || 999) - (rankOrder[b] || 999);
+                });
 
-            let totalData = months.map(month => {
-                return Object.values(rankSummary[month] || {}).reduce((sum, value) => sum + value,
-                    0);
-            });
+                let seriesData = rankCategories.map(rank => ({
+                    name: rank,
+                    data: months.map(month => (rankSummary[month] && rankSummary[month][
+                            rank
+                        ]) ?
+                        rankSummary[month][rank] : 0)
+                })).filter(series => series.data.some(value => value > 0));
 
-            Highcharts.chart('idDivBarChartRank', {
-                chart: {
-                    type: 'column',
-                    backgroundColor: null,
-                    height: 1000,
-                    width: 1150
-                },
-                title: {
-                    text: 'Crew Contract Expiry: Monthly Distribution in 2025',
-                    style: {
-                        fontSize: '22px',
-                        fontWeight: 'bold',
-                        color: '#000'
-                    }
-                },
-                xAxis: {
-                    categories: months,
-                    crosshair: true,
-                    labels: {
-                        style: {
-                            fontSize: '16px',
-                            color: '#000'
-                        }
-                    }
-                },
-                yAxis: {
-                    min: 0,
+                let totalData = months.map(month => {
+                    return Object.values(rankSummary[month] || {}).reduce((sum, value) =>
+                        sum + value,
+                        0);
+                });
+
+                Highcharts.chart('idDivBarChartRank', {
+                    chart: {
+                        type: 'column',
+                        backgroundColor: null,
+                        height: 1000,
+                        width: 1150
+                    },
                     title: {
-                        text: 'Number of Crew',
+                        text: 'Crew Contract Expiry: Monthly Distribution in 2025',
                         style: {
-                            fontSize: '18px',
+                            fontSize: '22px',
                             fontWeight: 'bold',
                             color: '#000'
                         }
                     },
-                    labels: {
-                        style: {
-                            fontSize: '16px',
-                            color: '#000'
-                        }
-                    },
-                    stackLabels: {
-                        enabled: true,
-                        style: {
-                            fontWeight: 'bold',
-                            color: '#000',
-                            fontSize: '16px'
-                        }
-                    }
-                },
-                tooltip: {
-                    shared: true,
-                    valueSuffix: ' crew members'
-                },
-                plotOptions: {
-                    column: {
-                        stacking: 'normal',
-                        pointPadding: 0.1,
-                        groupPadding: 0.1,
-                        borderWidth: 0,
-                        cursor: 'pointer',
-                        dataLabels: {
-                            enabled: true,
-                            color: '#000',
+                    xAxis: {
+                        categories: months,
+                        crosshair: true,
+                        labels: {
                             style: {
+                                fontSize: '16px',
+                                color: '#000'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Number of Crew',
+                            style: {
+                                fontSize: '18px',
                                 fontWeight: 'bold',
-                                textOutline: 'none', // Hapus outline putih
-                                fontSize: '14px'
+                                color: '#000'
                             }
                         },
-                        events: {
-                            click: function(event) {
-                                const index = Math.round(event.point.index);
-                                const selectedMonth = months[index];
-                                const crewDetails = crewData.filter(item => item.month ===
-                                    selectedMonth);
-
-                                // Urutkan berdasarkan urutan rank
-                                crewDetails.sort((a, b) => {
-                                    return (rankOrder[a.rank_name] || 999) - (rankOrder[
-                                        b.rank_name] || 999);
-                                });
-
-                                let modalBody = crewDetails.map((item, i) =>
-                                    `<tr>
-                                    <td style="text-align: center;">${i + 1}</td>
-                                    <td style="text-align: left;">${item.crew_name}</td>
-                                    <td style="text-align: left;">${item.rank_name}</td>
-                                    <td style="text-align: left;">${item.sign_on_date}</td>
-                                    <td style="text-align: left;">${item.estimated_signoff_date}</td>
-                                </tr>`
-                                ).join('');
-
-                                $('#modalTitle').text(`Crew Distribution for ${selectedMonth}`);
-                                $('#idBodyModalCrewDetailByEstimatedSignOff').html(modalBody);
-                                $('#detailModalCrewSignoff').modal('show');
+                        labels: {
+                            style: {
+                                fontSize: '16px',
+                                color: '#000'
+                            }
+                        },
+                        stackLabels: {
+                            enabled: true,
+                            style: {
+                                fontWeight: 'bold',
+                                color: '#000',
+                                fontSize: '16px'
                             }
                         }
-                    }
-                },
-                series: [...seriesData, {
-                    name: 'Total',
-                    type: 'spline',
-                    data: totalData,
-                    marker: {
-                        enabled: true,
-                        symbol: 'circle',
-                        radius: 6
                     },
-                    dataLabels: {
-                        enabled: true,
-                        style: {
+                    tooltip: {
+                        shared: true,
+                        valueSuffix: ' crew members'
+                    },
+                    plotOptions: {
+                        column: {
+                            stacking: 'normal',
+                            pointPadding: 0.1,
+                            groupPadding: 0.1,
+                            borderWidth: 0,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                color: '#000',
+                                style: {
+                                    fontWeight: 'bold',
+                                    textOutline: 'none',
+                                    fontSize: '14px'
+                                }
+                            },
+                            events: {
+                                click: function(event) {
+                                    const index = Math.round(event.point.index);
+                                    const selectedMonth = months[index];
+                                    const crewDetails = crewData.filter(item => item
+                                        .month ===
+                                        selectedMonth);
+
+
+                                    let groupedData = {};
+                                    crewDetails.forEach(item => {
+                                        if (!groupedData[item.rank_name]) {
+                                            groupedData[item.rank_name] = [];
+                                        }
+                                        groupedData[item.rank_name].push({
+                                            name: item.crew_name,
+                                            signOn: item.sign_on_date,
+                                            signOff: item
+                                                .estimated_signoff_date
+                                        });
+                                    });
+
+                                    let modalBody = '';
+                                    let rowNumber = 1;
+                                    Object.keys(groupedData).forEach(rank => {
+                                        let crewList = groupedData[rank];
+                                        crewList.forEach((crew, index) => {
+                                            modalBody += `<tr>
+                                        ${index === 0 ? `<td style="text-align: center;" rowspan="${crewList.length}">${rowNumber}</td>` : ''}
+                                        ${index === 0 ? `<td style="text-align: left;" rowspan="${crewList.length}">${rank}</td>` : ''}
+                                        <td style="text-align: left;">${crew.name}</td>
+                                        <td style="text-align: left;">${crew.signOn}</td>
+                                        <td style="text-align: left;">${crew.signOff}</td>
+                                    </tr>`;
+                                        });
+                                        rowNumber++;
+                                    });
+
+                                    $('#modalTitleCrewDetailByEstimatedSignOff').text(
+                                        `Crew Distribution for ${selectedMonth}`);
+                                    $('#idBodyModalCrewDetailByEstimatedSignOff').html(
+                                        modalBody);
+                                    $('#detailModalCrewSignoff').modal('show');
+                                }
+                            }
+                        }
+                    },
+                    series: [...seriesData, {
+                        name: 'Total',
+                        type: 'spline',
+                        data: totalData,
+                        marker: {
+                            enabled: true,
+                            symbol: 'circle',
+                            radius: 6
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            style: {
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: '#000'
+                            }
+                        }
+                    }],
+                    legend: {
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        itemStyle: {
                             fontSize: '16px',
-                            fontWeight: 'bold',
+                            fontWeight: 'normal',
                             color: '#000'
                         }
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    exporting: {
+                        enabled: true
                     }
-                }],
-                legend: {
-                    layout: 'horizontal',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    itemStyle: {
-                        fontSize: '16px',
-                        fontWeight: 'normal',
-                        color: '#000'
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                exporting: {
-                    enabled: true
-                }
-            });
-        },
-        error: function(xhr, status, error) {
-            console.error('Error fetching contractBarChart data:', error);
-        }
-    });
-
-
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching contractBarChart data:', error);
+            }
+        });
+    })
 
 
 
@@ -929,40 +954,34 @@
             method: 'GET',
             dataType: 'json',
             success: function(response) {
-                let categories = [];
-                let expiringData = [];
-                let onLeaveData = [];
-                let suggestionData = [];
-                let suggestionColors = [];
+                var categories = [];
+                var expiringData = [];
+                var suggestionData = [];
+                var totalOnboard = [];
+                var totalOnleave = [];
 
                 response.forEach(item => {
                     categories.push(item.RankName);
-                    expiringData.push(parseInt(item.expiring_total));
-                    onLeaveData.push(parseInt(item.total_onleave));
 
-                    let suggestionValue = 0;
-                    let color = 'green';
+                    var totalExpiring = parseInt(item.total_expiring);
+                    var totalOnBoard = parseInt(item.total_onboard);
+                    var totalOnLeave = parseInt(item.total_onleave);
+                    var suggestionValue = parseInt(item.SuggestedRecruitment);
 
-                    if (item.RecruitmentSuggestion === 'Segera Rekrut') {
-                        suggestionValue = 2;
-                        color = 'purple';
-                    } else if (item.RecruitmentSuggestion === 'Dipantau') {
-                        suggestionValue = 1;
-                        color = 'orange';
-                    }
-
+                    expiringData.push(totalExpiring);
                     suggestionData.push(suggestionValue);
-                    suggestionColors.push(color);
+                    totalOnboard.push(totalOnBoard);
+                    totalOnleave.push(totalOnLeave);
                 });
 
                 Highcharts.chart('idDivRankContractExpiry', {
                     chart: {
                         type: 'bar',
-                        height: 1200,
+                        height: 1300,
                         backgroundColor: null
                     },
                     title: {
-                        text: 'Rank Expiring, On Leave, and Recruitment Suggestion',
+                        text: 'Recruitment Suggestion',
                         style: {
                             fontSize: '20px',
                             fontWeight: 'bold',
@@ -1009,21 +1028,13 @@
                         },
                         formatter: function() {
                             let index = this.point.index;
-                            let suggestionText =
-                                '<b style="color:#000;">Cukup</b>'; // Default hitam
+                            let suggestionText = suggestionData[index] > 0 ?
+                                `<b style="color:#000;">Recruitment Suggestion: (${suggestionData[index]}) orang</b>` :
+                                '<b style="color:#000;">Cukup</b>';
 
-                            if (suggestionData[index] === 2) {
-                                suggestionText =
-                                    '<b style="color:#000;">Segera Rekrut</b>'; // Hitam
-                            } else if (suggestionData[index] === 1) {
-                                suggestionText =
-                                    '<b style="color:#000;">Dipantau</b>'; // Hitam
-                            }
+                            return `
+                                    <span style="font-size: 14px; color:#000;">${suggestionText}</span>`;
 
-                            return `<b style="font-size: 16px; color:#000;">${categories[index]}</b><br/>
-                        <span style="font-size: 14px; color:#000;">Expiring: ${expiringData[index]}</span><br/>
-                        <span style="font-size: 14px; color:#000;">On Leave: ${onLeaveData[index]}</span><br/>
-                        <span style="font-size: 14px; color:#000;">Recruitment: ${suggestionText}</span>`;
                         }
                     },
                     plotOptions: {
@@ -1057,22 +1068,20 @@
                         enabled: false
                     },
                     series: [{
-                            name: 'Expiring in 2 Months',
-                            data: expiringData,
-                            color: 'red' // 🔴 Merah
-                        },
-                        {
-                            name: 'On Leave',
-                            data: onLeaveData,
-                            color: 'blue' // 🔵 Biru
-                        },
-                        {
-                            name: 'Recruitment Suggestion',
-                            data: suggestionData,
-                            colorByPoint: true, // Warna berubah sesuai nilai
-                            colors: suggestionColors // Warna diambil dari array yang sudah disesuaikan
+                        name: 'Recruitment Suggestion',
+                        data: suggestionData,
+                        colors: 'blue',
+                        dataLabels: {
+                            enabled: true,
+                            inside: true,
+                            align: 'right',
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                color: '#000'
+                            }
                         }
-                    ]
+                    }]
                 });
             },
             error: function(xhr, status, error) {
@@ -1330,7 +1339,8 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header" style="padding: 10px;background-color:#078415;">
-                <h5 class="modal-title" id="modalTitle" style="color: white;">Crew Distribution By Estimated Sign Off
+                <h5 class="modal-title" id="modalTitleCrewDetailByEstimatedSignOff" style="color: white;">Crew
+                    Distribution By Estimated Sign Off
                 </h5>
             </div>
             <div class="modal-body">
