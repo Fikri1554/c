@@ -498,6 +498,7 @@
         }
     }
 
+
     function actBtnAdd(actShow, actHide) {
         $("#" + actHide).hide();
         $("#" + actShow).show(200);
@@ -1028,7 +1029,7 @@
                                         <label for="txtcrewVesselStatus" style="font-size:12px;">Crew Vessel Status
                                             :</label>
                                         <select class="form-control input-sm" id="slcVesselType">
-                                            <?php echo $getVesselType; ?>
+                                            <?php echo $getCrewVesselType; ?>
                                         </select>
                                     </div>
                                 </div>

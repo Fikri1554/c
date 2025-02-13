@@ -162,7 +162,7 @@ class Personal extends CI_Controller {
 		$dataOut['optRank'] = $dataContext->getRankByOption("","name");
 		$dataOut['optBlood'] = $dataContext->getBloodType();
 		$dataOut['optSize'] = $dataContext->getUkuran();
-		$dataOut['getVesselType'] = $dataContext->getVesselType();
+		$dataOut['getCrewVesselType'] = $dataContext->getCrewVesselType();
 
 		if($searchNya == "search")
 		{
@@ -321,7 +321,7 @@ class Personal extends CI_Controller {
 									"txtSignPlace" => $rsl[0]->signplc,
 									"txtDate_sign" => $rsl[0]->signdt,
 									"txtNextOfKin" => $rsl[0]->next_of_kin,
-									"slcVesselType" => $rsl[0]->crew_vessel_status
+									"slcVesselType" => $rsl[0]->crew_vessel_type
 								);
 
 				if($rsl[0]->pic != "")
@@ -1562,6 +1562,46 @@ class Personal extends CI_Controller {
 
 		$this->load->view('frontend/allCertificate',$dataOut);
 	}
+
+	function exportPDFCertificate($idPerson = "")
+	{
+		$dataContext = new DataContext();
+		$trNya = "";
+		$no = 1;
+
+		if (empty($idPerson)) {
+			die("ID Person tidak boleh kosong!");
+		}
+
+		$sql = "SELECT certgroup, certname FROM tblcertdoc WHERE idperson = '".$idPerson."' AND deletests = '0' ORDER BY certgroup, certname ASC";
+		
+		$rsl = $this->MCrewscv->getDataQuery($sql);
+
+		foreach ($rsl as $val) {
+			$certName = "(".$val->certgroup.") ".$val->certname;
+
+			$trNya .= "<tr>";
+			$trNya .= "<td align='center' style='font-size:12px;'>".$no."</td>";
+			$trNya .= "<td style='font-size:12px;'>".$certName."</td>";
+			$trNya .= "</tr>";
+
+			$no++;
+		}
+
+		$dataOut['trNya'] = $trNya;
+
+		$nama_dokumen = "Sertifikat_Person_".$idPerson;
+		require("application/views/frontend/pdf/mpdf60/mpdf.php");
+		$mpdf = new mPDF('utf-8', 'A4');
+		ob_start();
+		$this->load->view('frontend/exportCertificate', $dataOut);
+		$html = ob_get_contents();
+		ob_end_clean();
+		$mpdf->WriteHTML(utf8_encode($html));
+		$mpdf->Output($nama_dokumen.".pdf", 'D');
+		exit;
+	}
+
 
 	function getDataTableNominee($idPerson = "")
 	{

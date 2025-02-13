@@ -297,7 +297,7 @@ class DataContext extends CI_Controller {
 		}
 	}
 
-	function getVesselType($return = "")
+	function getCrewVesselType($return = "")
 	{
 		$opt = "<option value=''>Select Vessel Type</option>"; 
 

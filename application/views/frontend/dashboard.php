@@ -266,13 +266,13 @@
 
                                     modalBody.append(crewList.length > 0 ? crewList.map(
                                         (crew, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${crew.name}</td>
-            <td>${crew.rank}</td>
-            <td>${crew.age !== undefined ? crew.age : '-'}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="4" style="text-align: center;">No Crew Data Available</td></tr>');
+                                            <tr>
+                                                <td>${index + 1}</td>
+                                                <td>${crew.name}</td>
+                                                <td>${crew.rank}</td>
+                                                <td>${crew.age !== undefined ? crew.age : '-'}</td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="4" style="text-align: center;">No Crew Data Available</td></tr>');
 
                                     $('#modalTitle').text(title);
                                     $('#detailModalClientShip').modal('show');
@@ -330,35 +330,26 @@
                 const crewData = response.crewData;
                 const rankSummary = response.rankSummary;
                 const rankOrder = response.rankOrder || {};
-
                 const months = Object.keys(rankSummary);
 
-
-                let rankCategories = [...new Set(
-                    crewData.map(item => item.rank_name)
-                )].filter(rank =>
-                    months.some(month => rankSummary[month] && rankSummary[month][rank] > 0)
-                );
-
-                rankCategories.sort((a, b) => {
-                    return (rankOrder[a] || 999) - (rankOrder[b] || 999);
-                });
+                let rankCategories = Object.keys(rankOrder)
+                    .sort((a, b) => (rankOrder[a] || 999) - (rankOrder[b] || 999));
 
                 let seriesData = rankCategories.map(rank => ({
                     name: rank,
                     data: months.map(month => (rankSummary[month] && rankSummary[month][
                             rank
                         ]) ?
-                        rankSummary[month][rank] : 0)
+                        rankSummary[month][rank] :
+                        0)
                 })).filter(series => series.data.some(value => value > 0));
 
                 let totalData = months.map(month => {
                     return Object.values(rankSummary[month] || {}).reduce((sum, value) =>
-                        sum + value,
-                        0);
+                        sum + value, 0);
                 });
 
-                Highcharts.chart('idDivBarChartRank', {
+                const chart = Highcharts.chart('idDivBarChartRank', {
                     chart: {
                         type: 'column',
                         backgroundColor: null,
@@ -430,12 +421,11 @@
                             },
                             events: {
                                 click: function(event) {
+                                    $("#paginationInfo").html('');
                                     const index = Math.round(event.point.index);
                                     const selectedMonth = months[index];
                                     const crewDetails = crewData.filter(item => item
-                                        .month ===
-                                        selectedMonth);
-
+                                        .month === selectedMonth);
 
                                     let groupedData = {};
                                     crewDetails.forEach(item => {
@@ -452,19 +442,22 @@
 
                                     let modalBody = '';
                                     let rowNumber = 1;
-                                    Object.keys(groupedData).forEach(rank => {
-                                        let crewList = groupedData[rank];
-                                        crewList.forEach((crew, index) => {
-                                            modalBody += `<tr>
-                                        ${index === 0 ? `<td style="text-align: center;" rowspan="${crewList.length}">${rowNumber}</td>` : ''}
-                                        ${index === 0 ? `<td style="text-align: left;" rowspan="${crewList.length}">${rank}</td>` : ''}
-                                        <td style="text-align: left;">${crew.name}</td>
-                                        <td style="text-align: left;">${crew.signOn}</td>
-                                        <td style="text-align: left;">${crew.signOff}</td>
-                                    </tr>`;
+                                    Object.keys(groupedData)
+                                        .sort((a, b) => (rankOrder[a] || 999) - (
+                                            rankOrder[b] || 999))
+                                        .forEach(rank => {
+                                            let crewList = groupedData[rank];
+                                            crewList.forEach((crew, index) => {
+                                                modalBody += `<tr>
+                                                ${index === 0 ? `<td style="text-align: center;" rowspan="${crewList.length}">${rowNumber}</td>` : ''}
+                                                <td style="text-align: left;">${crew.name}</td>
+                                                ${index === 0 ? `<td style="text-align: left;" rowspan="${crewList.length}">${rank}</td>` : ''}
+                                                <td style="text-align: left;">${crew.signOn}</td>
+                                                <td style="text-align: left;">${crew.signOff}</td>
+                                            </tr>`;
+                                            });
+                                            rowNumber++;
                                         });
-                                        rowNumber++;
-                                    });
 
                                     $('#modalTitleCrewDetailByEstimatedSignOff').text(
                                         `Crew Distribution for ${selectedMonth}`);
@@ -497,11 +490,14 @@
                         layout: 'horizontal',
                         align: 'center',
                         verticalAlign: 'bottom',
-                        itemStyle: {
-                            fontSize: '16px',
-                            fontWeight: 'normal',
-                            color: '#000'
-                        }
+                        labelFormatter: function() {
+                            if (this.name === "Total") {
+                                return this.name +
+                                    ' <button id="convertToTableBtn" class="btn btn-primary btn-sm" style="margin-left: 10px;">Convert to Table</button>';
+                            }
+                            return this.name;
+                        },
+                        useHTML: true
                     },
                     credits: {
                         enabled: false
@@ -510,14 +506,73 @@
                         enabled: true
                     }
                 });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching contractBarChart data:', error);
+
+                // Event handler untuk "Convert to Table"
+                $(document).on('click', '#convertToTableBtn', function() {
+                    let groupedData = {};
+                    crewData.forEach(item => {
+                        if (!groupedData[item.rank_name]) {
+                            groupedData[item.rank_name] = [];
+                        }
+                        groupedData[item.rank_name].push({
+                            name: item.crew_name,
+                            signOn: item.sign_on_date,
+                            signOff: item.estimated_signoff_date
+                        });
+                    });
+
+                    let rankKeys = Object.keys(groupedData).sort((a, b) => (rankOrder[a] ||
+                        999) - (rankOrder[b] || 999));
+                    let currentPage = 0;
+
+                    function displayTable(page) {
+                        let rank = rankKeys[page];
+                        let crewList = groupedData[rank] || [];
+                        let modalBody = '';
+
+                        crewList.forEach((crew, index) => {
+                            modalBody += `<tr>
+                                ${index === 0 ? `<td style="text-align: center;" rowspan="${crewList.length}">${page + 1}</td>` : ''}
+                                <td style="text-align: left;">${crew.name}</td>
+                                ${index === 0 ? `<td style="text-align: left;" rowspan="${crewList.length}">${rank}</td>` : ''}
+                                <td style="text-align: left;">${crew.signOn}</td>
+                                <td style="text-align: left;">${crew.signOff}</td>
+                            </tr>`;
+                        });
+
+                        $('#idBodyModalCrewDetailByEstimatedSignOff').html(modalBody);
+                        updatePagination();
+                    }
+
+                    function updatePagination() {
+                        let totalPages = rankKeys.length;
+                        let paginationHtml = `<nav><ul class="pagination">`;
+
+                        for (let i = 0; i < totalPages; i++) {
+                            paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                                <a href="#" class="page-link" data-page="${i}">${rankKeys[i]}</a>
+                            </li>`;
+                        }
+
+                        paginationHtml += `</ul></nav>`;
+                        $('#paginationInfo').html(paginationHtml);
+                    }
+
+                    $(document).on('click', '.page-link', function(event) {
+                        event.preventDefault();
+                        currentPage = parseInt($(this).data('page'));
+                        displayTable(currentPage);
+                    });
+
+                    $('#modalTitleCrewDetailByEstimatedSignOff').text(
+                        'Crew Contract Expiry Data');
+                    $('#detailModalCrewSignoff').modal('show');
+                    displayTable(currentPage);
+                });
+
             }
         });
-    })
-
-
+    });
 
     $(document).ready(function() {
         $.ajax({
@@ -733,8 +788,6 @@
             }
         });
     });
-
-
 
     $(document).ready(function() {
         $.ajax({
@@ -981,7 +1034,7 @@
                         backgroundColor: null
                     },
                     title: {
-                        text: 'Recruitment Suggestion',
+                        text: 'Recruitment Suggestion & Total Expiring ( 1 Months )',
                         style: {
                             fontSize: '20px',
                             fontWeight: 'bold',
@@ -1357,6 +1410,7 @@
                             </tr>
                         </thead>
                         <tbody id="idBodyModalCrewDetailByEstimatedSignOff"></tbody>
+                        <div id="paginationInfo"></div>
                     </table>
                 </div>
             </div>

@@ -479,8 +479,7 @@ class Dashboard extends CI_Controller {
 				AND (B.signonvsl IS NULL OR D.nmvsl != '' AND D.nmvsl != '-')
 				AND B.signonrank IS NOT NULL 
 			ORDER BY 
-				Month ASC, CrewName, EstimatedSignOffDate, RANK.nmrank ASC;
-
+				Month ASC, RankOrder ASC, CrewName ASC, EstimatedSignOffDate ASC;
 		";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
@@ -505,8 +504,15 @@ class Dashboard extends CI_Controller {
 			$rankCounts[$monthName][$row->RankName]++;
 
 			if (!isset($rankOrder[$row->RankName])) {
-				$rankOrder[$row->RankName] = (isset($row->RankOrder) && $row->RankOrder !== null) ? $row->RankOrder : 999;
+				$rankOrder[$row->RankName] = isset($row->RankOrder) ? $row->RankOrder : 999;
 			}
+		}
+
+		// Pastikan rankCounts diurutkan berdasarkan RankOrder
+		foreach ($rankCounts as $month => &$ranks) {
+			uksort($ranks, function ($a, $b) use ($rankOrder) {
+				return (isset($rankOrder[$a]) ? $rankOrder[$a] : 999) - (isset($rankOrder[$b]) ? $rankOrder[$b] : 999);
+			});
 		}
 
 		header('Content-Type: application/json');
@@ -762,7 +768,7 @@ class Dashboard extends CI_Controller {
 					AND B.deletests = '0'
 					AND B.signoffdt = '0000-00-00'
 					AND B.estsignoffdt != '0000-00-00'
-					AND MONTH(B.estsignoffdt) BETWEEN '1' AND '4'
+					AND B.estsignoffdt BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
 				GROUP BY B.signonrank
 			) AS expiring ON RANK.kdrank = expiring.signonrank
 			LEFT JOIN (
@@ -893,6 +899,5 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
-
 
 }
