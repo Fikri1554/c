@@ -947,8 +947,6 @@ class Contract extends CI_Controller {
 		return $dataOut;
 	}
 
-
-	
 	function printData($status = "",$company = "",$vessel = "",$rank = "")
 	{
 		$dataContext = new DataContext();

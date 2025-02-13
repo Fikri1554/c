@@ -1573,22 +1573,50 @@ class Personal extends CI_Controller {
 			die("ID Person tidak boleh kosong!");
 		}
 
-		$sql = "SELECT certgroup, certname FROM tblcertdoc WHERE idperson = '".$idPerson."' AND deletests = '0' ORDER BY certgroup, certname ASC";
-		
-		$rsl = $this->MCrewscv->getDataQuery($sql);
+		$sqlCert = "SELECT certgroup, certname, issdate, expdate 
+					FROM tblcertdoc 
+					WHERE idperson = '".$idPerson."' AND deletests = '0' 
+					ORDER BY certgroup, certname ASC";
 
-		foreach ($rsl as $val) {
-			$certName = "(".$val->certgroup.") ".$val->certname;
+		$rslCert = $this->MCrewscv->getDataQuery($sqlCert);
+
+		foreach ($rslCert as $val) {
+			$certName = "(" . $val->certgroup . ") " . $val->certname;
+			$issDate = (!empty($val->issdate) && $val->issdate !== "0000-00-00") ? date("d-M-Y", strtotime($val->issdate)) : "N/A";
+			$expDate = (!empty($val->expdate) && $val->expdate !== "0000-00-00") ? date("d-M-Y", strtotime($val->expdate)) : "N/A";
 
 			$trNya .= "<tr>";
-			$trNya .= "<td align='center' style='font-size:12px;'>".$no."</td>";
-			$trNya .= "<td style='font-size:12px;'>".$certName."</td>";
+			$trNya .= "<td align='center' style='font-size:12px;'>" . $no . "</td>";
+			$trNya .= "<td align='left' style='font-size:12px;'>" . $certName . "</td>";
+			$trNya .= "<td style='font-size:12px;'>" . $issDate . "</td>";
+			$trNya .= "<td style='font-size:12px;'>" . $expDate . "</td>";
 			$trNya .= "</tr>";
 
 			$no++;
 		}
 
+		$sqlHeader = "
+			SELECT 
+				p.idperson, 
+				CONCAT(p.fname, ' ', IFNULL(p.mname, ''), ' ', p.lname) AS fullname,
+				c.lastvsl,
+				COALESCE(m.nmcmp, 'N/A') AS company  
+			FROM mstpersonal p
+			LEFT JOIN tblcontract c ON p.idperson = c.idperson 
+				AND c.signondt = (SELECT MAX(signondt) FROM tblcontract WHERE idperson = p.idperson)
+			LEFT JOIN mstcmprec m ON c.kdcmprec = m.kdcmp  
+			WHERE p.idperson = '".$idPerson."'
+			LIMIT 1
+		";
+
+		$rslHeader = $this->MCrewscv->getDataQuery($sqlHeader);
+		$headerData = isset($rslHeader[0]) ? $rslHeader[0] : null;
+
 		$dataOut['trNya'] = $trNya;
+		$dataOut['fullname'] = $headerData ? $headerData->fullname : "N/A";
+		$dataOut['idperson'] = $headerData ? $headerData->idperson : "N/A";
+		$dataOut['lastvsl'] = $headerData ? $headerData->lastvsl : "N/A";
+		$dataOut['company'] = $headerData ? $headerData->company : "N/A"; 
 
 		$nama_dokumen = "Sertifikat_Person_".$idPerson;
 		require("application/views/frontend/pdf/mpdf60/mpdf.php");
@@ -1601,6 +1629,7 @@ class Personal extends CI_Controller {
 		$mpdf->Output($nama_dokumen.".pdf", 'D');
 		exit;
 	}
+
 
 
 	function getDataTableNominee($idPerson = "")
