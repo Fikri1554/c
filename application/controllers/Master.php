@@ -279,9 +279,16 @@ class Master extends CI_Controller {
 		{
 			$btnAct = "<button class=\"btn btn-success btn-xs\" onclick=\"getDataEdit('".$val->kdvsl."','vessel');\" title=\"Edit Data\"><i class=\"fa fa-edit\"></i></button>";
 			$btnAct .= " <button class=\"btn btn-danger btn-xs\" onclick=\"delData('".$val->kdvsl."','vessel');\" title=\"Delete Data\"><i class=\"fa fa-close\"></i></button>";
-
+			$btnDisplay = "";
+			
+			if($val->st_display == 'Y')
+			{
+				$btnDisplay = "<i class=\"fa fa-check\"></i>";
+			}
+			
 			$trNya .= "<tr>";
 				$trNya .= "<td style=\"font-size:11px;text-align:center;\">".$no."</td>";
+				$trNya .= "<td style=\"font-size:11px;text-align:center;\">".$btnDisplay."</td>";
 				$trNya .= "<td style=\"font-size:11px;\">".$val->nmvsl."</td>";
 				$trNya .= "<td style=\"font-size:11px;\">".$val->descvsl."</td>";
 				$trNya .= "<td style=\"font-size:11px;\">".$val->nmcmp."</td>";
@@ -293,6 +300,7 @@ class Master extends CI_Controller {
 
 		$dataOut['trNya'] = $trNya;
 		$dataOut['optCompany'] = $dataContext->getCompanyByOption("",'kode');
+		$dataOut['getCrewVesselType'] = $dataContext->getCrewVesselType();
 
 		if($search == "search")
 		{
@@ -558,7 +566,8 @@ class Master extends CI_Controller {
 			$dataIns['kdcmp'] =  $data['slcCompany'];
 			$dataIns['nmcmp'] =  $data['slcCompanyName'];
 			$dataIns['nmvsl'] =  $data['txtVesselName'];
-			$dataIns['descvsl'] =  $data['txtDefinition'];
+			$dataIns['descvsl'] =  $data['slcDefinition'];
+			$dataIns['st_display'] =  $data['slcStsDisplay'];
 			
 			if($idEdit == "")
 			{

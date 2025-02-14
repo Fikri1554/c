@@ -163,7 +163,7 @@ class DataContext extends CI_Controller {
 	{
 		$opt = "";
 
-		$whereNya = "deletests = '0'";
+		$whereNya = "deletests = '0' AND st_display = 'Y'";
 
 		if($searchNya != "" AND $searchNya != "017")
 		{
