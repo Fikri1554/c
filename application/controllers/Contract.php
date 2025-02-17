@@ -147,10 +147,10 @@ class Contract extends CI_Controller {
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateSeaman']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDatePassport']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDatePassport']."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['SSBT']) ? "" : "")."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['OTCBHS']) ? "" : "")."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['CTCBHS']) ? "" : "")."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['ERST']) ? "" : "")."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['SSBT']) ? $val['certName']['SSBT'] : "N/A")."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['OTCBHS']) ? $val['certName']['OTCBHS'] : "N/A")."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['CTCBHS']) ? $val['certName']['CTCBHS'] : "N/A")."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".(isset($val['certName']['ERST']) ? $val['certName']['ERST'] : "N/A")."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:left;\">".$val['certName']['certPanama']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:left;\">".$val['certName']['certOther']."</td>";
 
@@ -868,7 +868,6 @@ class Contract extends CI_Controller {
 		$tempData = array();
 		$keyNo = 0;
 
-		
 		$certSeaman = "";
 		$certPassport = "";
 		$certPanama = "";
@@ -887,6 +886,10 @@ class Contract extends CI_Controller {
 		$sql = "SELECT * FROM tblcertdoc WHERE deletests = '0' AND idperson = '".$idPerson."' ORDER BY idcertdoc ASC";
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
+		$query = "SELECT crew_vessel_type FROM mstpersonal WHERE idperson = '".$idPerson."' LIMIT 1";
+		$result = $this->MCrewscv->getDataQuery($query);
+		$crewVesselType = isset($result[0]->crew_vessel_type) ? $result[0]->crew_vessel_type : "";
+
 		if (count($rsl) > 0) {
 			foreach ($rsl as $val) {
 				$certData = array(
@@ -902,43 +905,42 @@ class Contract extends CI_Controller {
 						$tempData['other'][$keyNo] = $certData;
 					}
 					$keyNo++;
-				}
-				elseif (stripos($val->certname, "SEAMAN BOOK") !== false){
+				} elseif (stripos($val->certname, "SEAMAN BOOK") !== false) {
 					$tempData['seaman book'][$keyNo] = $certData;
-				}
-				elseif(stripos($val->certname, "PASSPORT") !== false){
+				} elseif (stripos($val->certname, "PASSPORT") !== false) {
 					$tempData['passport'][$keyNo] = $certData;
+				} elseif (in_array($val->certname, array("SSBT", "OTCBHS", "CTCBHS", "ERST"))) {
+					if (in_array($crewVesselType, array("CHEMICAL TANKER", "OIL TANKER"))) {
+						$dataOut[$val->certname] = "Iss. Date: " . $dataContext->convertReturnName($val->issdate) . ", Exp. Date: " . $dataContext->convertReturnName($val->expdate);
+					} else {
+						$dataOut[$val->certname] = "N/A";
+					}
 				}
 			}
 
 			foreach ($tempData['seaman book'] as $val) {
-				$issDate = $dataContext->convertReturnName($val['issDate']);
-				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$dataOut['issDateSeaman'] = $issDate;
-				$dataOut['expDateSeaman'] = $expDate;
+				$dataOut['issDateSeaman'] = $dataContext->convertReturnName($val['issDate']);
+				$dataOut['expDateSeaman'] = $dataContext->convertReturnName($val['expDate']);
 			}
 
 			foreach ($tempData['passport'] as $val) {
-				$issDate = $dataContext->convertReturnName($val['issDate']);
-				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$dataOut['issDatePassport'] = $issDate;
-				$dataOut['expDatePassport'] = $expDate;
+				$dataOut['issDatePassport'] = $dataContext->convertReturnName($val['issDate']);
+				$dataOut['expDatePassport'] = $dataContext->convertReturnName($val['expDate']);
 			}
 
 			foreach ($tempData['panama'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$certPanama .= "<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
+				$certPanama .= "<label>(Iss. Date: " . $issDate . ", <br/> Exp. Date: " . $expDate . ")</label>";
 			}
 
 			foreach ($tempData['other'] as $val) {
 				$issDate = $dataContext->convertReturnName($val['issDate']);
 				$expDate = $dataContext->convertReturnName($val['expDate']);
-				$certOther .= "<label>(Iss. Date: ".$issDate.", <br/> Exp. Date: ".$expDate.")</label>";
+				$certOther .= "<label>(Iss. Date: " . $issDate . ", <br/> Exp. Date: " . $expDate . ")</label>";
 			}
 		}
 
-		
 		$dataOut['certSeaman'] = $certSeaman;
 		$dataOut['certPassport'] = $certPassport;
 		$dataOut['certPanama'] = $certPanama;

@@ -405,19 +405,13 @@
                     },
                     plotOptions: {
                         column: {
-                            stacking: 'normal',
+                            stacking: null,
                             pointPadding: 0.1,
                             groupPadding: 0.1,
                             borderWidth: 0,
                             cursor: 'pointer',
                             dataLabels: {
-                                enabled: true,
-                                color: '#000',
-                                style: {
-                                    fontWeight: 'bold',
-                                    textOutline: 'none',
-                                    fontSize: '14px'
-                                }
+                                enabled: false,
                             },
                             events: {
                                 click: function(event) {
@@ -468,14 +462,15 @@
                             }
                         }
                     },
-                    series: [...seriesData, {
+                    series: [{
                         name: 'Total',
-                        type: 'spline',
                         data: totalData,
-                        marker: {
-                            enabled: true,
-                            symbol: 'circle',
-                            radius: 6
+                        color: {
+                            linearGradient: [0, 0, 0, 500],
+                            stops: [
+                                [0, '#001f3f'],
+                                [1, '#0074D9']
+                            ]
                         },
                         dataLabels: {
                             enabled: true,
@@ -487,14 +482,8 @@
                         }
                     }],
                     legend: {
-                        layout: 'horizontal',
-                        align: 'center',
-                        verticalAlign: 'bottom',
+                        enabled: false,
                         labelFormatter: function() {
-                            if (this.name === "Total") {
-                                return this.name +
-                                    ' <button id="convertToTableBtn" class="btn btn-primary btn-sm" style="margin-left: 10px;">Convert to Table</button>';
-                            }
                             return this.name;
                         },
                         useHTML: true
@@ -506,8 +495,15 @@
                         enabled: true
                     }
                 });
+                setTimeout(function() {
+                    if (!$('#convertToTableBtn').length) {
+                        $('#idDivBarChartRank').after(
+                            '<button id="convertToTableBtn" class="btn btn-primary btn-sm mt-3">Convert to Table</button>'
+                        );
+                    }
+                }, 500)
 
-                // Event handler untuk "Convert to Table"
+
                 $(document).on('click', '#convertToTableBtn', function() {
                     let groupedData = {};
                     crewData.forEach(item => {
@@ -570,6 +566,7 @@
                     displayTable(currentPage);
                 });
 
+
             }
         });
     });
@@ -587,8 +584,7 @@
                     chart: {
                         type: 'bar',
                         backgroundColor: null,
-                        height: 900,
-                        width: 500
+                        height: 900
                     },
                     title: {
                         text: `Crew Distribution by Owned Ship (Total: ${totalCrewOnboard.toLocaleString()})`,
@@ -601,7 +597,7 @@
                     xAxis: {
                         categories: data.map(item => item.nama_kapal),
                         title: {
-                            text: 'Nama Kapal',
+                            text: 'Ships',
                             style: {
                                 fontSize: '14px',
                                 fontWeight: 'bold'
@@ -616,7 +612,7 @@
                     yAxis: {
                         min: 0,
                         title: {
-                            text: 'Total Crew / Age',
+                            text: 'Number of Crew',
                             style: {
                                 fontSize: '15px',
                                 fontWeight: 'bold'
@@ -629,17 +625,17 @@
                         }
                     },
                     series: [{
-                            name: 'Total Crew Onboard',
+                            name: 'Total Crew',
                             data: data.map(item => item.jumlah_crew_onboard),
                             color: '#007bff'
                         },
                         {
-                            name: 'Male',
+                            name: 'Male Crew',
                             data: data.map(item => item.total_male),
                             color: '#28a745'
                         },
                         {
-                            name: 'Female',
+                            name: 'Female Crew',
                             data: data.map(item => item.total_female),
                             color: '#dc3545'
                         },
@@ -918,7 +914,6 @@
                     onboard: item.total_onboard,
                     rank: item.rank,
                     category: item.category,
-                    color: item.color
                 }));
 
                 Highcharts.chart('idDivHeatMap', {
@@ -950,34 +945,32 @@
                     },
                     colorAxis: {
                         stops: [
-                            [0, 'rgba(255, 0, 0, 0.8)'],
-                            [0.5, 'rgba(255, 255, 0, 0.8)'],
-                            [1, 'rgba(0, 255, 0, 0.8)']
+                            [0, '#B3E0DC'],
+                            [0.5, '#F5A623'],
+                            [1, '#D84315']
                         ],
                         min: 0,
-                        max: Math.max(...data.map(item => item
-                            .total_onleave))
+                        max: Math.max(...heatmapData.map((d) => d
+                            .value)),
                     },
                     tooltip: {
                         formatter: function() {
                             return `
-                        <b>${this.point.rank}</b><br>
-                        Crew Off-Duty: ${this.point.value}<br>
-                        Crew On-Duty: ${this.point.onboard}<br>
-                        Category: <b style="color:${this.point.color}">${this.point.category}</b>`;
+                            <b>${this.point.rank}</b><br>
+                            Crew Off-Duty: ${this.point.value}<br>
+                            Crew On-Duty: ${this.point.onboard}<br>
+                            `;
                         },
                     },
                     series: [{
                         name: 'Cadangan Kapal',
                         borderWidth: 1,
-                        data: heatmapData.map(item => ({
+                        data: heatmapData.map((item) => ({
                             x: item.x,
                             y: item.y,
                             value: item.value,
                             onboard: item.onboard,
                             rank: item.rank,
-                            color: item
-                                .color
                         })),
                         dataLabels: {
                             enabled: true,
@@ -1143,10 +1136,20 @@
         });
     });
     </script>
+    <style>
+    body {
+        background-color: #ffffff !important;
+    }
+
+    .header {
+        background-color: #d1e9ef;
+    }
+    </style>
+
 </head>
 
 <body>
-    <div class="container" style="background-color:;">
+    <div class="container">
         <div class="form-panel" style="margin-top:5px;padding-bottom:15px;">
             <legend style="text-align:right;color:#067780;">
                 <img id="idLoading" src="<?php echo base_url('assets/img/loading.gif');?>"

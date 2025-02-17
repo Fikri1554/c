@@ -508,7 +508,6 @@ class Dashboard extends CI_Controller {
 			}
 		}
 
-		// Pastikan rankCounts diurutkan berdasarkan RankOrder
 		foreach ($rankCounts as $month => &$ranks) {
 			uksort($ranks, function ($a, $b) use ($rankOrder) {
 				return (isset($rankOrder[$a]) ? $rankOrder[$a] : 999) - (isset($rankOrder[$b]) ? $rankOrder[$b] : 999);
@@ -700,17 +699,17 @@ class Dashboard extends CI_Controller {
 			$totalOnboard = (int) $row->total_onboard;
 			$totalOnleave = (int) $row->total_onleave;
 			$batasMedium = 1.5 * $totalOnboard;
-			
 
+			
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
-				$color = 'red';
+				$color = '#B3E0DC'; 
 			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
-				$color = 'yellow';
+				$color = '#F5A623';  
 			} else if ($totalOnleave > $batasMedium) {
 				$category = 'High';
-				$color = 'green';
+				$color = '#D84315';  
 			}
 
 			$data[] = array(
@@ -725,6 +724,7 @@ class Dashboard extends CI_Controller {
 		header('Content-Type: application/json');
 		echo json_encode($data);
 	}
+
 
 	function rankContractExpiry()
 	{
