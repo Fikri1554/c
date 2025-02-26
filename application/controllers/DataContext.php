@@ -161,7 +161,7 @@ class DataContext extends CI_Controller {
 
 	function getVesselByOption($return = "",$typeVal = "",$searchNya = "")
 	{
-		$opt = "";
+		$opt = "<option value=''> - </option>";
 
 		$whereNya = "deletests = '0' AND st_display = 'Y'";
 
@@ -306,8 +306,8 @@ class DataContext extends CI_Controller {
 		$rsl = $this->MCrewscv->getData("*", "tbltype", $whereNya, "NmType ASC");
 
 		foreach ($rsl as $val) {
-			$opt .= "<option value=\"" . htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "\">" 
-					. htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "</option>";
+			$opt .= "<option value=\"".$val->DefType."\">" 
+					.$val->DefType."</option>";
 		}
 
 		if ($return == "") {
@@ -317,6 +317,75 @@ class DataContext extends CI_Controller {
 		}
 	}
 
+	function getVesselOwnShipOption($return = "")
+	{
+		$options = "<label style='display: block; padding: 5px; cursor: pointer;'>
+						<input type='checkbox' id='selectAllVesselsOwnShip'> <b>All</b>
+					</label>";
+
+		$whereNya = "Deletests = '0' AND st_display = 'Y' AND nmvsl IN (
+			'MV. ANDHIKA ALISHA', 
+			'MV. ANDHIKA ATHALIA', 
+			'MT. ANDHIKA VIDYANATA', 
+			'MV. ANDHIKA KANISHKA', 
+			'MV. ANDHIKA PARAMESTI', 
+			'MV. ANDHIKA SHAKILLA', 
+			'MV. BULK HALMAHERA', 
+			'MV. BULK BATAVIA', 
+			'MV. BULK NUSANTARA'
+		)";
+
+		$rsl = $this->MCrewscv->getData("*", "mstvessel", $whereNya, "nmvsl ASC");
+
+		if ($rsl) {
+			foreach ($rsl as $row) {
+				$options .= "<label style='display: block; padding: 5px; cursor: pointer;'>
+								<input type='checkbox' name='vessels[]' value='".$row->nmvsl."'> ".$row->nmvsl."
+							</label>";
+			}
+		}
+
+		if ($return == "") {
+			return $options;
+		} else {
+			print json_encode($options);
+		}
+	}
+
+	function getVesselClientShipOption($return = "")
+	{
+		$options = "<label style='display: block; padding: 5px; cursor: pointer;'>
+						<input type='checkbox' id='selectAllVesselsClientShip'> <b>All</b>
+					</label>";
+
+		$whereNya = "Deletests = '0' AND st_display = 'Y' AND nmvsl NOT IN (
+			'MV. ANDHIKA ALISHA', 
+			'MV. ANDHIKA ATHALIA', 
+			'MT. ANDHIKA VIDYANATA', 
+			'MV. ANDHIKA KANISHKA', 
+			'MV. ANDHIKA PARAMESTI', 
+			'MV. ANDHIKA SHAKILLA', 
+			'MV. BULK HALMAHERA', 
+			'MV. BULK BATAVIA', 
+			'MV. BULK NUSANTARA'
+		)";
+
+		$rsl = $this->MCrewscv->getData("*", "mstvessel", $whereNya, "nmvsl ASC");
+
+		if ($rsl) {
+			foreach ($rsl as $row) {
+				$options .= "<label style='display: block; padding: 5px; cursor: pointer;'>
+								<input type='checkbox' name='vesselsClient[]' value='".$row->nmvsl."'> ".$row->nmvsl."
+							</label>";
+			}
+		}
+
+		if ($return == "") {
+			return $options;
+		} else {
+			print json_encode($options);
+		}
+	}
 
 	function getMstCertificateByOption($return = "")
 	{

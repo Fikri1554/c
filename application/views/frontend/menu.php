@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/style.css">
     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/responsive.css">
     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/jquery-ui.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 
 <body
@@ -117,6 +118,8 @@
     <script src="https://code.highcharts.com/modules/heatmap.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
     <script type="text/javascript">
     </script>

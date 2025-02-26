@@ -1600,14 +1600,18 @@ class Personal extends CI_Controller {
 				p.idperson, 
 				CONCAT(p.fname, ' ', IFNULL(p.mname, ''), ' ', p.lname) AS fullname,
 				c.lastvsl,
-				COALESCE(m.nmcmp, 'N/A') AS company  
+				COALESCE(m.nmcmp, 'N/A') AS company,
+				COALESCE(cert.docno, 'N/A') AS docno, 
+				COALESCE(cert.issplace, 'N/A') AS issplace
 			FROM mstpersonal p
 			LEFT JOIN tblcontract c ON p.idperson = c.idperson 
 				AND c.signondt = (SELECT MAX(signondt) FROM tblcontract WHERE idperson = p.idperson)
 			LEFT JOIN mstcmprec m ON c.kdcmprec = m.kdcmp  
+			LEFT JOIN tblcertdoc cert ON p.idperson = cert.idperson 
 			WHERE p.idperson = '".$idPerson."'
 			LIMIT 1
 		";
+
 
 		$rslHeader = $this->MCrewscv->getDataQuery($sqlHeader);
 		$headerData = isset($rslHeader[0]) ? $rslHeader[0] : null;
@@ -1617,6 +1621,8 @@ class Personal extends CI_Controller {
 		$dataOut['idperson'] = $headerData ? $headerData->idperson : "N/A";
 		$dataOut['lastvsl'] = $headerData ? $headerData->lastvsl : "N/A";
 		$dataOut['company'] = $headerData ? $headerData->company : "N/A"; 
+		$dataOut['docno'] = $headerData ? $headerData->docno : "N/A";
+		$dataOut['issplace'] = $headerData ? $headerData->issplace : "N/A";
 
 		$nama_dokumen = "Sertifikat_Person_".$idPerson;
 		require("application/views/frontend/pdf/mpdf60/mpdf.php");
@@ -1626,7 +1632,7 @@ class Personal extends CI_Controller {
 		$html = ob_get_contents();
 		ob_end_clean();
 		$mpdf->WriteHTML(utf8_encode($html));
-		$mpdf->Output($nama_dokumen.".pdf", 'L');
+		$mpdf->Output($nama_dokumen.".pdf", 'I');
 		exit;
 	}
 

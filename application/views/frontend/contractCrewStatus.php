@@ -141,24 +141,29 @@
             $("#slcSearchRank").val("");
         }
 
-        if (status == 'onboard') {
-            $('#idTDCertOnboard').show();
-            $('#idTRCertOnboard').show();
+        if (status == 'all') {
+            $('#idTDCertOnboard, #idTRCertOnboard').show();
             $("#idTableCertificate").css('display', 'inline-block');
+            $('#colSSBT, #colOTCBHS, #colCTCBHS, #colERST').show();
+
+        } else if (status == 'onboard') {
+            $('#idTDCertOnboard, #idTRCertOnboard').show();
+            $("#idTableCertificate").css('display', 'inline-block');
+            $('#colSSBT, #colOTCBHS, #colCTCBHS, #colERST').show();
         } else {
-            $('#idTDCertOnboard').hide();
-            $('#idTRCertOnboard').hide();
+            $('#idTDCertOnboard, #idTRCertOnboard').hide();
             $("#idTableCertificate").css('display', '');
+
+            $('#colSSBT, #colOTCBHS, #colCTCBHS, #colERST').hide();
         }
 
         var company = $("#slcSearchCompany").val();
         var vessel = $("#slcSearchVessel").val();
         var rank = $("#slcSearchRank").val();
 
-        $("#idLoadingFormCont").show();
-        $("#idLoadingDocCont").show();
-        $("#idLoading").show();
+        $("#idLoadingFormCont, #idLoadingDocCont, #idLoading").show();
         $("#idTbody").empty();
+
         $.post('<?php echo base_url("contract/getDataCrewStatus/search"); ?>', {
                 status: status,
                 company: company,
@@ -166,19 +171,18 @@
                 rank: rank
             },
             function(data) {
-                $("#idTbody").empty();
-                $("#idTbody").append(data);
-                $("#idLoading").hide();
-                $("#idLoadingFormCont").hide();
-                $("#idLoadingDocCont").hide();
+                $("#idTbody").empty().append(data);
 
-                $("#idFormCont").hide();
-                $("#idFormViewDocument").hide();
+                $("#idLoading, #idLoadingFormCont, #idLoadingDocCont").hide();
+
+                $("#idFormCont, #idFormViewDocument").hide();
                 $("#idDataTableCont").show(100);
             },
             "json"
         );
     }
+
+
 
     function printData() {
         var status = $("#slcSearchStatus").val();
@@ -310,6 +314,80 @@
     function reloadPage() {
         window.location = "<?php echo base_url('contract/getDataCrewStatus');?>";
     }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var table = document.getElementById("idTableCertificate");
+        var thead = table.querySelector("thead");
+        var tableWrapper = table.parentElement;
+
+        var cloneThead = thead.cloneNode(true);
+        var stickyHeader = document.createElement("div");
+        stickyHeader.appendChild(cloneThead);
+
+        var tableStyle = getComputedStyle(table);
+        Object.assign(stickyHeader.style, {
+            position: "fixed",
+            top: "0",
+            left: tableWrapper.getBoundingClientRect().left + "px",
+            width: tableWrapper.offsetWidth + "px",
+            overflow: "hidden",
+            zIndex: "1000",
+            display: "none",
+            borderCollapse: tableStyle.borderCollapse,
+            backgroundColor: tableStyle.backgroundColor
+        });
+
+        function syncColumnWidths() {
+            var originalThs = thead.querySelectorAll("th");
+            var cloneThs = cloneThead.querySelectorAll("th");
+
+            originalThs.forEach((th, index) => {
+                var cloneTh = cloneThs[index];
+                var computedStyle = getComputedStyle(th);
+
+                cloneTh.style.width = th.offsetWidth + "px";
+
+                cloneTh.style.borderTop = computedStyle.borderTop;
+                cloneTh.style.borderBottom = computedStyle.borderBottom;
+                cloneTh.style.borderLeft = computedStyle.borderLeft;
+                cloneTh.style.borderRight = computedStyle.borderRight;
+
+                cloneTh.style.padding = computedStyle.padding;
+                cloneTh.style.boxSizing = "border-box";
+
+                cloneTh.style.backgroundColor = computedStyle.backgroundColor;
+                cloneTh.style.color = computedStyle.color;
+            });
+        }
+
+        syncColumnWidths();
+
+        tableWrapper.appendChild(stickyHeader);
+
+        function updateStickyHeader() {
+            var rect = table.getBoundingClientRect();
+            var wrapperRect = tableWrapper.getBoundingClientRect();
+
+            if (rect.top < 0 && rect.bottom > 0) {
+                stickyHeader.style.display = "block";
+                stickyHeader.style.left = wrapperRect.left + "px";
+                syncColumnWidths();
+            } else {
+                stickyHeader.style.display = "none";
+            }
+        }
+
+        tableWrapper.addEventListener("scroll", function() {
+            stickyHeader.style.left = (tableWrapper.getBoundingClientRect().left) + "px";
+        });
+
+        window.addEventListener("resize", function() {
+            stickyHeader.style.width = tableWrapper.offsetWidth + "px";
+            syncColumnWidths();
+        });
+
+        window.addEventListener("scroll", updateStickyHeader);
+    });
     </script>
 </head>
 
@@ -735,8 +813,8 @@
                 <div class="col-md-4 col-xs-12">
                     <div class="btn-group btn-group-justified" role="group" aria-label="Status Crew">
                         <div class="btn-group" role="group">
-                            <button type="button" onclick="searchData('onboard');" class="btn btn-info btn-xs"
-                                title="On Board" style="font-weight:bold;">On Board</button>
+                            <button type="button" class="btn btn-info btn-xs" title="On Board"
+                                style="font-weight:bold;">On Board</button>
                         </div>
                         <div class="btn-group" role="group">
                             <button type="button" onclick="searchData('onleave');" class="btn btn-success btn-xs"
@@ -830,20 +908,24 @@
                                                 Sign Off</th>
                                             <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
                                                 Est. Sign Off</th>
-                                            <th style="vertical-align:middle;text-align:center;" colspan="2">Seaman Book
-                                            </th>
-                                            <th style="vertical-align:middle;text-align:center;" colspan="2">Passport
-                                            </th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                            <th id="colSeamanBook" style="vertical-align:middle;text-align:center;"
+                                                colspan="2">Seaman Book</th>
+                                            <th id="colPassport" style="vertical-align:middle;text-align:center;"
+                                                colspan="2">Passport</th>
+                                            <th id="colSSBT" style="width:10%;vertical-align:middle;text-align:center;"
+                                                rowspan="2">
                                                 SSBT</th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                            <th id="colOTCBHS"
+                                                style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
                                                 OTCBHS</th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                            <th id="colCTCBHS"
+                                                style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
                                                 CTCBHS</th>
-                                            <th style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                            <th id="colERST" style="width:10%;vertical-align:middle;text-align:center;"
+                                                rowspan="2">
                                                 ERST</th>
-                                            <th style="vertical-align:middle;text-align:center;" colspan="2">Endorsement
-                                            </th>
+                                            <th id="colEndorsement" style="vertical-align:middle;text-align:center;"
+                                                colspan="2">Endorsement</th>
                                             <th style="width:5%;vertical-align:middle;width:50px;text-align:center;"
                                                 rowspan="2">Action</th>
                                         </tr>

@@ -36,6 +36,8 @@ class Dashboard extends CI_Controller {
 		$dataOut['newApplicent'] = number_format($newApplicent,0);
 		$dataOut['cadetOnBoard'] = number_format($cadetOnBoard,0);
 		$dataOut['totalCrew'] = number_format($onBoard+$onLeave,0);
+		$dataOut['vesselType'] = $dataContext->getVesselOwnShipOption();
+		$dataOut['vesselTypeClient'] = $dataContext->getVesselClientShipOption();
 
 		$this->load->view('frontend/dashboard',$dataOut);
 	}
@@ -156,7 +158,6 @@ class Dashboard extends CI_Controller {
 			}
 		}
 
-		// Set output data
 		$dataOut['trNya'] = $trNya;
 		$dataOut['totalCrew'] = number_format($ttlCrewOnLeave, 0) . " Crew";
 
@@ -223,7 +224,6 @@ class Dashboard extends CI_Controller {
 			$no++;
 		}
 
-
 		$dataOut['trNya'] = $trNya;
 		$dataOut['vessel'] = $vesselName;
 
@@ -281,7 +281,7 @@ class Dashboard extends CI_Controller {
 	function getCadetOnboard()
 	{
 		$total = 0;
-
+ 
 		$sql = "SELECT COUNT(A.idperson)
 				FROM mstpersonal A
 				LEFT JOIN tblcontract B ON A.idperson = B.idperson
@@ -381,9 +381,87 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
+
+	function shipDemograph()
+	{
+		$selectedVessels = $this->input->post('vessels'); 
+
+		if (empty($selectedVessels)) {
+			echo json_encode(array()); 
+			return;
+		}
+
+		if (in_array("All", $selectedVessels)) {
+			$whereVessel = "D.deletests = '0' AND D.st_display = 'Y' AND D.nmvsl IN (
+				'MV. ANDHIKA ALISHA', 
+				'MV. ANDHIKA ATHALIA', 
+				'MT. ANDHIKA VIDYANATA', 
+				'MV. ANDHIKA KANISHKA', 
+				'MV. ANDHIKA PARAMESTI', 
+				'MV. ANDHIKA SHAKILLA', 
+				'MV. BULK HALMAHERA', 
+				'MV. BULK BATAVIA', 
+				'MV. BULK NUSANTARA'
+			)";
+		} else {
+			$vesselList = "'" . implode("','", $selectedVessels) . "'";
+			$whereVessel = "D.nmvsl IN ($vesselList) AND D.st_display = 'Y' AND D.deletests = '0'";
+		}
+		$sql = "SELECT 
+					D.kdvsl AS kode_kapal, 
+					D.nmvsl AS nama_kapal, 
+					COUNT(A.idperson) AS jumlah_crew_onboard,
+					SUM(CASE WHEN A.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
+					SUM(CASE WHEN A.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
+					SUM(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS total_umur
+				FROM 
+					mstpersonal A
+				LEFT JOIN 
+					tblcontract B ON A.idperson = B.idperson
+				LEFT JOIN 
+					mstvessel D ON D.kdvsl = B.signonvsl 
+				WHERE 
+					A.deletests = '0' 
+					AND B.deletests = '0' 
+					AND B.signoffdt = '0000-00-00' 
+					AND A.inaktif = '0' 
+					AND B.signoffdt = '0000-00-00'
+					AND $whereVessel
+				GROUP BY 
+					D.kdvsl, D.nmvsl;
+				";
+
+		$result = $this->MCrewscv->getDataQuery($sql);
+		echo json_encode($result);
+	}
 	
 	function crewBarChart()
 	{
+		$selectedVesselClient = $this->input->post('vesselsClient');
+
+		if (empty($selectedVesselClient)) {
+			echo json_encode(array());
+			return;
+		}
+
+		if (in_array("All", $selectedVesselClient)) {
+			$whereVessel = "LOWER(D.nmvsl) NOT IN (
+				'mv. andhika alisha', 
+				'mv. andhika athalia', 
+				'mt. andhika vidyanata', 
+				'mv. andhika kanishka', 
+				'mv. andhika paramesti', 
+				'mv. andhika shakilla', 
+				'mv. bulk halmahera', 
+				'mv. bulk batavia', 
+				'mv. bulk nusantara'
+			)";
+		} else {
+			$vesselList = "'" . implode("','", array_map('strtolower', $selectedVesselClient)) . "'";
+			$whereVessel = "LOWER(D.nmvsl) IN ($vesselList)";
+		}
+
+
 		$sql = "SELECT 
 					C.nmcmp AS ClientName,        
 					D.kdvsl AS kode_kapal, 
@@ -391,11 +469,7 @@ class Dashboard extends CI_Controller {
 					COUNT(A.idperson) AS jumlah_crew_onboard,
 					SUM(CASE WHEN A.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
 					SUM(CASE WHEN A.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
-					AVG(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS rata_rata_umur,
-					GROUP_CONCAT(CONCAT(A.fname, ' ', COALESCE(A.mname, ''), ' ', A.lname) SEPARATOR ', ') AS crew_names,
-					GROUP_CONCAT(E.nmrank SEPARATOR ', ') AS crew_ranks,
-					GROUP_CONCAT(A.gender SEPARATOR ', ') AS crew_genders,
-					GROUP_CONCAT(TIMESTAMPDIFF(YEAR, A.dob, CURDATE()) SEPARATOR ', ') AS crew_ages
+					AVG(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS rata_rata_umur
 				FROM 
 					mstpersonal A
 				LEFT JOIN 
@@ -404,8 +478,6 @@ class Dashboard extends CI_Controller {
 					mstcmprec C ON C.kdcmp = B.kdcmprec
 				LEFT JOIN 
 					mstvessel D ON D.kdvsl = B.signonvsl 
-				LEFT JOIN 
-					mstrank E ON B.signonrank = E.kdrank
 				WHERE 
 					A.deletests = '0' 
 					AND B.deletests = '0' 
@@ -413,41 +485,16 @@ class Dashboard extends CI_Controller {
 					AND A.inaktif = '0' 
 					AND D.deletests = '0' 
 					AND C.deletests = '0'
-					AND D.nmvsl NOT IN (
-						'MV. ANDHIKA ALISHA', 
-						'MV. ANDHIKA ATHALIA', 
-						'MT. ANDHIKA VIDYANATA', 
-						'MV. ANDHIKA KANISHKA', 
-						'MV. ANDHIKA PARAMESTI', 
-						'MV. ANDHIKA SHAKILLA', 
-						'MV. BULK HALMAHERA', 
-						'MV. BULK BATAVIA', 
-						'MV. BULK NUSANTARA'
-					)
+					AND $whereVessel
 				GROUP BY 
 					C.nmcmp, D.kdvsl, D.nmvsl
 				ORDER BY 
-					C.nmcmp, D.nmvsl";
+					C.nmcmp, D.nmvsl
+				"; 
+
 
 		$result = $this->MCrewscv->getDataQuery($sql);
-
-		$chartData = array();
-		foreach ($result as $row) {
-			$chartData[] = array(
-				'client' => $row->ClientName,
-				'ship' => $row->nama_kapal,
-				'crew_count' => (int)$row->jumlah_crew_onboard,
-				'male' => (int)$row->total_male,
-				'female' => (int)$row->total_female,
-				'avg_age' => round($row->rata_rata_umur, 1),
-				'crew_names' => $row->crew_names ? explode(', ', $row->crew_names) : array(),
-				'crew_ranks' => $row->crew_ranks ? explode(', ', $row->crew_ranks) : array(),
-				'crew_genders' => $row->crew_genders ? explode(', ', $row->crew_genders) : array(),
-				'crew_ages' => $row->crew_ages ? explode(', ', $row->crew_ages) : array()
-			);
-		}
-
-		echo json_encode($chartData);
+		echo json_encode($result);
 	}
 
 
@@ -522,82 +569,6 @@ class Dashboard extends CI_Controller {
 		));
 	}
 
-
-	function shipDemograph()
-	{
-		$sql = "SELECT 
-					D.kdvsl AS kode_kapal, 
-					D.nmvsl AS nama_kapal, 
-					COUNT(A.idperson) AS jumlah_crew_onboard,
-					SUM(CASE WHEN A.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
-					SUM(CASE WHEN A.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
-					AVG(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS rata_rata_umur
-				FROM 
-					mstpersonal A
-				LEFT JOIN 
-					tblcontract B ON A.idperson = B.idperson
-				LEFT JOIN 
-					tblkota C ON A.pob = C.KdKota
-				LEFT JOIN 
-					mstvessel D ON D.kdvsl = B.signonvsl 
-				WHERE 
-					A.deletests = '0' 
-					AND B.deletests = '0' 
-					AND B.signoffdt = '0000-00-00' 
-					AND A.inaktif = '0' 
-					AND D.deletests = '0' 
-					AND D.nmvsl IN (
-						'MV. ANDHIKA ALISHA', 
-						'MV. ANDHIKA ATHALIA', 
-						'MT. ANDHIKA VIDYANATA', 
-						'MV. ANDHIKA KANISHKA', 
-						'MV. ANDHIKA PARAMESTI', 
-						'MV. ANDHIKA SHAKILLA', 
-						'MV. BULK HALMAHERA', 
-						'MV. BULK BATAVIA', 
-						'MV. BULK NUSANTARA'
-					)
-				GROUP BY 
-					D.kdvsl, D.nmvsl
-				";
-		
-		$result = $this->MCrewscv->getDataQuery($sql);
-
-		$data = array();
-		$categories = array();
-		$crewCounts = array();
-		$maleCounts = array();
-		$femaleCounts = array();
-		$avgAges = array();
-		$kdvslList = array();
-		
-		foreach ($result as $value) {
-			$categories[] = $value->nama_kapal;
-			$crewCounts[] = (int)$value->jumlah_crew_onboard;
-			$maleCounts[] = (int)$value->total_male;
-			$femaleCounts[] = (int)$value->total_female;
-			$avgAges[] = round($value->rata_rata_umur, 1);
-			$kdvslList[] = $value->kode_kapal; 
-
-	
-			$status = (int)$value->jumlah_crew_onboard >= 22 ? "Properly Manned" : "Under-Manned";
-			$statuses[] = $status; 
-		}
-
-		$chartData = array();
-		foreach ($result as $value) {
-			$chartData[] = array(
-				'nama_kapal' => $value->nama_kapal,
-				'kode_kapal' => $value->kode_kapal,
-				'jumlah_crew_onboard' => (int)$value->jumlah_crew_onboard,
-				'total_male' => (int)$value->total_male,
-				'total_female' => (int)$value->total_female,
-				'rata_rata_umur' => round($value->rata_rata_umur, 1),
-				'status' => (int)$value->jumlah_crew_onboard >= 22 ? "Properly Manned" : "Under-Manned",
-			);
-		}
-		echo json_encode($chartData);
-	}
 
 	function getSchool() {
 		$sql = "
@@ -689,7 +660,7 @@ class Dashboard extends CI_Controller {
 				GROUP BY 
 					RANK.kdrank, RANK.nmrank
 				ORDER BY 
-					RANK.urutan ASC
+					RANK.urutan DESC
 				LIMIT 50";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
@@ -703,13 +674,13 @@ class Dashboard extends CI_Controller {
 			
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
-				$color = '#B3E0DC'; 
+				$color = '#ff9c9c';
 			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
 				$color = '#F5A623';  
 			} else if ($totalOnleave > $batasMedium) {
 				$category = 'High';
-				$color = '#D84315';  
+				$color = '#f2cba8';  
 			}
 
 			$data[] = array(
@@ -724,8 +695,7 @@ class Dashboard extends CI_Controller {
 		header('Content-Type: application/json');
 		echo json_encode($data);
 	}
-
-
+	
 	function rankContractExpiry()
 	{
 		$sql = "

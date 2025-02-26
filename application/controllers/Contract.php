@@ -58,7 +58,7 @@ class Contract extends CI_Controller {
 					LEFT JOIN mstpersonal D ON D.idperson = A.idperson
 					LEFT JOIN mstcmprec E ON E.kdcmp = A.kdcmprec
 					LEFT JOIN tblnegara F ON F.KdNegara = D.nationalid
-					WHERE A.signoffdt = '0000-00-00' AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND A.deletests = 0 AND D.inAktif = '0' AND D.inblacklist = '0' ".$whereNya."
+					WHERE A.signoffdt = '0000-00-00' AND B.urutan > 0 AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND A.deletests = 0 AND D.inAktif = '0' AND D.inblacklist = '0' ".$whereNya."
 					ORDER BY b.urutan ASC, fullName ASC";
 
 				$rsl = $this->MCrewscv->getDataQuery($sql);
@@ -171,10 +171,9 @@ class Contract extends CI_Controller {
 				$trNya .= $tempTr;
 
 			}
-			if($status == "onleave"  OR $status == "all")
-			{
+			if ($status == "onleave" OR $status == "all") {
 				$tempTr = "";
-				$no =1;
+				$no = 1;
 
 				$sql = "SELECT A.idcontract,A.idperson,D.inAktif,D.inBlacklist,TRIM(CONCAT(D.fname,' ',D.mname,' ' ,D.lname)) AS fullName,D.usecertdoc,D.dob,A.kdcmprec,A.signondt,A.signoffdt,A.estsignoffdt,A.signonrank,B.nmrank,A.signonvsl,C.nmvsl,A.lastvsl,A.signondesc,F.NmNegara
 					FROM tblcontract A
@@ -189,40 +188,46 @@ class Contract extends CI_Controller {
 							AND idperson = D.idperson
 							)
 					LEFT JOIN tblnegara F ON F.KdNegara = D.nationalid
-					WHERE A.deletests = 0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE() AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND D.inblacklist = '0' ".$whereNya."
+					WHERE A.deletests = 0 AND B.urutan > 0 	AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE() AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND D.inblacklist = '0' ".$whereNya."
 					ORDER BY B.urutan ASC,fullName ASC";
 
 				$rsl = $this->MCrewscv->getDataQuery($sql);
-				foreach ($rsl as $key => $val)
-				{
-					if($val->usecertdoc == "N")
-					{
-						$onclickNya = "viewDocument('".$val->idperson."','".$status."');";
-					}else{
-						$onclickNya = "viewDocument('".$val->idperson."','".$status."');";
+				foreach ($rsl as $key => $val) {
+					$certData = $this->getcertificateByUser($val->idperson);
+
+					if ($val->usecertdoc == "N") {
+						$onclickNya = "viewDocument('" . $val->idperson . "','" . $status . "');";
+					} else {
+						$onclickNya = "viewDocument('" . $val->idperson . "','" . $status . "');";
 					}
 
-					$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" onclick=\"getDataEditSignOff('".$val->idperson."','".$status."');\">Sign Off</button>";
-					$btnAct .= "<button class=\"btn btn-info btn-xs btn-block\" onclick=\"".$onclickNya."\">Document</button>";
-					$btnAct .= "<button class=\"btn btn-danger btn-xs btn-block\" title=\"Proses\" onclick=\"viewPersonalProses('".$val->idperson."');\">Proses</button>";
+					$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" onclick=\"getDataEditSignOff('" . $val->idperson . "','" . $status . "');\">Sign Off</button>";
+					$btnAct .= "<button class=\"btn btn-info btn-xs btn-block\" onclick=\"" . $onclickNya . "\">Document</button>";
+					$btnAct .= "<button class=\"btn btn-danger btn-xs btn-block\" title=\"Proses\" onclick=\"viewPersonalProses('" . $val->idperson . "');\">Proses</button>";
 
 					$tempTr .= "<tr>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;background-color:#5CB85C;\">".$no."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->nmrank."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->fullName."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->NmNegara."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->dob)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->lastvsl."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signondt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signoffdt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$btnAct."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;background-color:#5CB85C;\">" . $no . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->nmrank."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->fullName."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->NmNegara."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->dob) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->lastvsl."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signondt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signoffdt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['issDateSeaman']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['expDateSeaman']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['issDatePassport']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['expDatePassport']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$certData['certPanama']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$certData['certOther']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">" . $btnAct . "</td>";
 					$tempTr .= "</tr>";
 
 					$no++;
 				}
 
-				$trNya .= "<tr><td style=\"background-color:#5CB85C;color:#FFF;\" colspan=\"20\"><b><i>:: ON LEAVE ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
+				$trNya .= "<tr><td style=\"background-color:#5CB85C;color:#FFF;\" colspan=\"20\"><b><i>:: ON LEAVE ::</i> ( " . number_format($no - 1, 0) . " Data ) </b></td></tr>";
 				$trNya .= $tempTr;
 			}
 			if($status == "nonaktif" OR $status == "all")
@@ -249,30 +254,37 @@ class Contract extends CI_Controller {
 						ORDER BY B.urutan ASC, fullName ASC";
 
 				$rsl = $this->MCrewscv->getDataQuery($sql);
-				foreach ($rsl as $key => $val)
-				{
-					if($val->usecertdoc == "N")
-					{
-						$onclickNya = "viewDocument('".$val->idperson."','".$status."');";
-					}else{
-						$onclickNya = "viewDocument('".$val->idperson."','".$status."');";
+				foreach ($rsl as $key => $val) {
+					$certData = $this->getcertificateByUser($val->idperson);
+
+					if ($val->usecertdoc == "N") {
+						$onclickNya = "viewDocument('" . $val->idperson . "','" . $status . "');";
+					} else {
+						$onclickNya = "viewDocument('" . $val->idperson . "','" . $status . "');";
 					}
 
-					$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" onclick=\"getDataEditSignOff('".$val->idperson."','".$status."');\">Sign Off</button>";
-					$btnAct .= "<button class=\"btn btn-info btn-xs btn-block\" onclick=\"".$onclickNya."\">Document</button>";
-					$btnAct .= "<button class=\"btn btn-danger btn-xs btn-block\" title=\"Proses\" onclick=\"viewPersonalProses('".$val->idperson."');\">Proses</button>";
+					$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" onclick=\"getDataEditSignOff('" . $val->idperson . "','" . $status . "');\">Sign Off</button>";
+					$btnAct .= "<button class=\"btn btn-info btn-xs btn-block\" onclick=\"" . $onclickNya . "\">Document</button>";
+					$btnAct .= "<button class=\"btn btn-danger btn-xs btn-block\" title=\"Proses\" onclick=\"viewPersonalProses('" . $val->idperson . "');\">Proses</button>";
 
 					$tempTr .= "<tr>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;background-color:#F0AD4E;\">".$no."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->nmrank."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->fullName."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->NmNegara."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->dob)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->lastvsl."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signondt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signoffdt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$btnAct."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;background-color:#5CB85C;\">" . $no . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->nmrank."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->fullName."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->NmNegara."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->dob) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->lastvsl."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signondt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signoffdt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['issDateSeaman']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['expDateSeaman']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['issDatePassport']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['expDatePassport']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$certData['certPanama']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$certData['certOther']."</td>";
+
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">" . $btnAct . "</td>";
 					$tempTr .= "</tr>";
 
 					$no++;
@@ -305,30 +317,37 @@ class Contract extends CI_Controller {
 						ORDER BY B.urutan ASC, fullName ASC";
 
 				$rsl = $this->MCrewscv->getDataQuery($sql);
-				foreach ($rsl as $key => $val)
-				{
-					if($val->usecertdoc == "N")
-					{
-						$onclickNya = "viewDocument('".$val->idperson."','".$status."');";
-					}else{
-						$onclickNya = "viewDocument('".$val->idperson."','".$status."');";
+				foreach ($rsl as $key => $val) {
+					$certData = $this->getcertificateByUser($val->idperson);
+
+					if ($val->usecertdoc == "N") {
+						$onclickNya = "viewDocument('" . $val->idperson . "','" . $status . "');";
+					} else {
+						$onclickNya = "viewDocument('" . $val->idperson . "','" . $status . "');";
 					}
 
-					$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" onclick=\"getDataEditSignOff('".$val->idperson."','".$status."');\">Sign Off</button>";
-					$btnAct .= "<button class=\"btn btn-info btn-xs btn-block\" onclick=\"".$onclickNya."\">Document</button>";
-					$btnAct .= "<button class=\"btn btn-danger btn-xs btn-block\" title=\"Proses\" onclick=\"viewPersonalProses('".$val->idperson."');\">Proses</button>";
+					$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" onclick=\"getDataEditSignOff('" . $val->idperson . "','" . $status . "');\">Sign Off</button>";
+					$btnAct .= "<button class=\"btn btn-info btn-xs btn-block\" onclick=\"" . $onclickNya . "\">Document</button>";
+					$btnAct .= "<button class=\"btn btn-danger btn-xs btn-block\" title=\"Proses\" onclick=\"viewPersonalProses('" . $val->idperson . "');\">Proses</button>";
 
 					$tempTr .= "<tr>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;background-color:#D9534F;color:#FFF;\">".$no."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->nmrank."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->fullName."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->NmNegara."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->dob)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->lastvsl."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signondt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signoffdt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt)."</td>";
-						$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$btnAct."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;background-color:#5CB85C;\">" . $no . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->nmrank."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->fullName."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->NmNegara."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->dob) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$val->lastvsl."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signondt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->signoffdt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt) . "</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['issDateSeaman']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['expDateSeaman']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['issDatePassport']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:center;\">".$certData['expDatePassport']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$certData['certPanama']."</td>";
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">".$certData['certOther']."</td>";
+
+					$tempTr .= "<td style=\"font-size:11px;text-align:left;\">" . $btnAct . "</td>";
 					$tempTr .= "</tr>";
 
 					$no++;
@@ -337,7 +356,6 @@ class Contract extends CI_Controller {
 				$trNya .= "<tr><td style=\"background-color:#D9534F;color:#FFF;\" colspan=\"20\"><b><i>:: NOT FOR EMP ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
 				$trNya .= $tempTr;
 			}			
-			
 		}else{
 			$trNya = "<tr><td style=\"text-align:center;font-weight:bold;\" colspan=\"20\">- Select Status -</td></tr>";
 		}
@@ -372,7 +390,7 @@ class Contract extends CI_Controller {
 				LEFT JOIN mstrank C ON C.kdrank = A.signonrank AND C.deletests = '0'
 				LEFT JOIN mstvessel D ON D.kdvsl = A.signonvsl AND D.deletests = '0'
 				LEFT JOIN mstremark E ON E.kdremark = A.signoffremark AND E.deletests = '0'
-				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."' ORDER BY A.idcontract DESC ";
+				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."' ORDER BY A.signondt DESC ";
 
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
@@ -399,8 +417,8 @@ class Contract extends CI_Controller {
 				$trNya .= "<td style=\"font-size:10px;\">".$val->signondesc."</td>";
 				$trNya .= "<td style=\"font-size:10px;\">".$val->lastvsl."</td>";
 				$trNya .= "<td style=\"font-size:10px;text-align:center;\">".$dataContext->convertReturnName($val->estsignoffdt)."</td>";
-				$trNya .= "<td style=\"font-size:10px;\">".$val->estremark."</td>";
 				$trNya .= "<td style=\"font-size:10px;\">".$val->no_pkl."</td>";
+				$trNya .= "<td style=\"font-size:10px;\">".$val->estremark."</td>";
 				$trNya .= "<td style=\"font-size:10px;\">".$val->nmremark."</td>";
 				$trNya .= "<td style=\"font-size:10px;\">".$btnAct."</td>";
 			$trNya .= "</tr>";
@@ -461,7 +479,6 @@ class Contract extends CI_Controller {
 			if($idEdit == "")
 			{
 				$dataIns['addusrdt'] = $userInit."/".$dateNow;
-
 				$idEdit = $this->MCrewscv->insData("tblcontract",$dataIns,'idContract');
 			}else{
 				$dataIns['updusrdt'] = $userInit."/".$dateNow;
@@ -995,7 +1012,7 @@ class Contract extends CI_Controller {
 						WHERE deletests =0
 						AND idperson = D.idperson
 						)
-					WHERE A.deletests=0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE()
+					WHERE A.deletests=0 AND B.urutan > 0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE()
 					AND A.kdcmprec=E.kdcmp AND A.signonvsl=C.kdvsl AND A.signonrank=B.kdrank AND D.noncrew=0 AND A.idperson=D.idperson AND D.inblacklist = 0 AND D.inAktif = 1 ".$whereNya."
 					GROUP BY A.idperson 
 					ORDER BY B.urutan ASC, fullName ASC";
@@ -1041,7 +1058,7 @@ class Contract extends CI_Controller {
 						WHERE deletests =0
 						AND idperson = D.idperson
 						)
-					WHERE A.deletests=0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE()
+					WHERE A.deletests=0 AND B.urutan > 0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE()
 					AND A.kdcmprec=E.kdcmp AND A.signonvsl=C.kdvsl AND A.signonrank=B.kdrank AND D.noncrew=0 AND A.idperson=D.idperson AND D.inblacklist=1 ".$whereNya."
 					GROUP BY A.idperson 
 					ORDER BY B.urutan ASC, fullName ASC";
@@ -1083,7 +1100,7 @@ class Contract extends CI_Controller {
 					LEFT JOIN mstvessel C ON C.kdvsl = A.signonvsl
 					LEFT JOIN mstpersonal D ON D.idperson = A.idperson
 					LEFT JOIN mstcmprec E ON E.kdcmp = A.kdcmprec
-					WHERE A.signoffdt = '0000-00-00' AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND A.deletests = 0 AND D.inAktif = '0' AND D.inblacklist = '0' ".$whereNya."
+					WHERE A.signoffdt = '0000-00-00' AND B.urutan > 0 AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND A.deletests = 0 AND D.inAktif = '0' AND D.inblacklist = '0' ".$whereNya."
 					ORDER BY b.urutan ASC, fullName ASC";
 
 			$rsl = $this->MCrewscv->getDataQuery($sql);
@@ -1154,7 +1171,7 @@ class Contract extends CI_Controller {
 						WHERE deletests =0
 						AND idperson = D.idperson
 						)
-					WHERE A.deletests = 0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE() AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND D.inblacklist = '0' ".$whereNya."
+					WHERE A.deletests = 0 AND B.urutan > 0 AND A.signoffdt != '0000-00-00' AND A.signoffdt <= CURDATE() AND A.kdcmprec = E.kdcmp AND A.signonvsl = C.kdvsl AND A.signonrank = B.kdrank AND D.noncrew = 0 AND A.idperson = D.idperson AND D.inblacklist = '0' ".$whereNya."
 					ORDER BY B.urutan ASC,fullName ASC";
 
 			$rsl = $this->MCrewscv->getDataQuery($sql);

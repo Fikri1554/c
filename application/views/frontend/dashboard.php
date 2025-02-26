@@ -120,209 +120,6 @@
 
     $(document).ready(function() {
         $.ajax({
-            url: '<?php echo base_url('dashboard/crewBarChart'); ?>',
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                let categories = [];
-                let crewCounts = [];
-                let maleCounts = [];
-                let femaleCounts = [];
-                let avgAges = [];
-
-                data.forEach(function(item) {
-                    categories.push(item.ship);
-                    crewCounts.push(item.crew_count);
-                    maleCounts.push(item.male);
-                    femaleCounts.push(item.female);
-                    avgAges.push(item.avg_age);
-                });
-
-                let totalCrewOnboard = crewCounts.reduce((sum, num) => sum + num, 0);
-
-                Highcharts.chart('idDivOverall', {
-                    chart: {
-                        type: 'bar',
-                        height: 900,
-                        backgroundColor: null
-                    },
-                    title: {
-                        text: `Crew Distribution by Ship Client (Total: ${totalCrewOnboard.toLocaleString()})`,
-                        style: {
-                            fontSize: '22px',
-                            fontWeight: 'bold',
-                            color: '#333'
-                        }
-                    },
-                    xAxis: {
-                        categories: categories,
-                        title: {
-                            text: 'Ships',
-                            style: {
-                                fontSize: '20px',
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labels: {
-                            style: {
-                                fontSize: '16px'
-                            }
-                        }
-                    },
-                    yAxis: {
-                        min: 0,
-                        title: {
-                            text: 'Number of Crew',
-                            style: {
-                                fontSize: '18px',
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labels: {
-                            style: {
-                                fontSize: '16px'
-                            }
-                        }
-                    },
-                    plotOptions: {
-                        bar: {
-                            dataLabels: {
-                                enabled: true,
-                                style: {
-                                    fontSize: '14px',
-                                    color: 'black'
-                                }
-                            },
-                            groupPadding: 0.01,
-                            pointPadding: 1.5,
-                            pointWidth: 5.5,
-                            cursor: 'pointer',
-                            events: {
-                                click: function(event) {
-                                    let shipIndex = event.point.index;
-                                    let shipData = data[shipIndex];
-
-                                    let modalBody = $(
-                                        '#idBodyModalCrewDetailByClientShip');
-                                    modalBody.empty();
-
-                                    let selectedCategory = event.point.series.name;
-                                    let crewList = [];
-                                    let title = '';
-
-                                    if (!shipData.crew_names || !shipData.crew_ranks) {
-                                        shipData.crew_names = [];
-                                        shipData.crew_ranks = [];
-                                    }
-
-                                    if (!shipData.crew_genders) {
-                                        shipData.crew_genders = [];
-                                    }
-
-                                    if (!shipData.crew_ages) {
-                                        shipData.crew_ages = [];
-                                    }
-
-                                    if (selectedCategory === 'Total Crew') {
-                                        crewList = shipData.crew_names.map((name, i) =>
-                                            ({
-                                                name: name,
-                                                rank: shipData.crew_ranks[i] ||
-                                                    '-'
-                                            }));
-                                        title = `All Crew on ${shipData.ship}`;
-                                    } else if (selectedCategory === 'Male Crew') {
-                                        crewList = shipData.crew_names.map((name, i) =>
-                                            ({
-                                                name: name,
-                                                rank: shipData.crew_ranks[i] ||
-                                                    '-',
-                                                gender: shipData.crew_genders[i]
-                                            })).filter(crew => crew.gender ===
-                                            'Male');
-                                        title = `Male Crew on ${shipData.ship}`;
-                                    } else if (selectedCategory === 'Female Crew') {
-                                        crewList = shipData.crew_names.map((name, i) =>
-                                            ({
-                                                name: name,
-                                                rank: shipData.crew_ranks[i] ||
-                                                    '-',
-                                                gender: shipData.crew_genders[i]
-                                            })).filter(crew => crew.gender ===
-                                            'Female');
-                                        title = `Female Crew on ${shipData.ship}`;
-                                    } else if (selectedCategory === 'Average Age') {
-                                        crewList = shipData.crew_names.map((name, i) =>
-                                            ({
-                                                name: name,
-                                                rank: shipData.crew_ranks[i] ||
-                                                    '-',
-                                                age: shipData.crew_ages[i] ?
-                                                    parseInt(shipData.crew_ages[
-                                                        i]) : '-'
-                                            }));
-                                        title = `Crew Ages on ${shipData.ship}`;
-                                    }
-
-                                    modalBody.append(crewList.length > 0 ? crewList.map(
-                                        (crew, index) => `
-                                            <tr>
-                                                <td>${index + 1}</td>
-                                                <td>${crew.name}</td>
-                                                <td>${crew.rank}</td>
-                                                <td>${crew.age !== undefined ? crew.age : '-'}</td>
-                                            </tr>
-                                        `).join('') : '<tr><td colspan="4" style="text-align: center;">No Crew Data Available</td></tr>');
-
-                                    $('#modalTitle').text(title);
-                                    $('#detailModalClientShip').modal('show');
-                                }
-
-                            }
-                        }
-                    },
-                    credits: {
-                        enabled: false
-                    },
-                    legend: {
-                        enabled: true,
-                        itemStyle: {
-                            fontSize: '16px',
-                            fontWeight: 'bold'
-                        }
-                    },
-                    series: [{
-                            name: 'Total Crew',
-                            data: crewCounts,
-                            color: '#0073e6' // Biru
-                        },
-                        {
-                            name: 'Male Crew',
-                            data: maleCounts,
-                            color: '#28a745' // Hijau
-                        },
-                        {
-                            name: 'Female Crew',
-                            data: femaleCounts,
-                            color: '#e63946' // Merah
-                        },
-                        {
-                            name: 'Average Age',
-                            data: avgAges,
-                            color: '#f39c12' // Orange
-                        }
-                    ]
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching data:', error);
-                alert('Gagal mengambil data kru. Silakan coba lagi.');
-            }
-        });
-    });
-
-    $(document).ready(function() {
-        $.ajax({
             url: '<?php echo base_url('dashboard/contractBarChart'); ?>',
             method: 'GET',
             dataType: 'json',
@@ -332,10 +129,10 @@
                 const rankOrder = response.rankOrder || {};
                 const months = Object.keys(rankSummary);
 
-                let rankCategories = Object.keys(rankOrder)
+                var rankCategories = Object.keys(rankOrder)
                     .sort((a, b) => (rankOrder[a] || 999) - (rankOrder[b] || 999));
 
-                let seriesData = rankCategories.map(rank => ({
+                var seriesData = rankCategories.map(rank => ({
                     name: rank,
                     data: months.map(month => (rankSummary[month] && rankSummary[month][
                             rank
@@ -344,7 +141,7 @@
                         0)
                 })).filter(series => series.data.some(value => value > 0));
 
-                let totalData = months.map(month => {
+                var totalData = months.map(month => {
                     return Object.values(rankSummary[month] || {}).reduce((sum, value) =>
                         sum + value, 0);
                 });
@@ -421,7 +218,7 @@
                                     const crewDetails = crewData.filter(item => item
                                         .month === selectedMonth);
 
-                                    let groupedData = {};
+                                    var groupedData = {};
                                     crewDetails.forEach(item => {
                                         if (!groupedData[item.rank_name]) {
                                             groupedData[item.rank_name] = [];
@@ -434,13 +231,13 @@
                                         });
                                     });
 
-                                    let modalBody = '';
-                                    let rowNumber = 1;
+                                    var modalBody = '';
+                                    var rowNumber = 1;
                                     Object.keys(groupedData)
                                         .sort((a, b) => (rankOrder[a] || 999) - (
                                             rankOrder[b] || 999))
                                         .forEach(rank => {
-                                            let crewList = groupedData[rank];
+                                            var crewList = groupedData[rank];
                                             crewList.forEach((crew, index) => {
                                                 modalBody += `<tr>
                                                 ${index === 0 ? `<td style="text-align: center;" rowspan="${crewList.length}">${rowNumber}</td>` : ''}
@@ -505,7 +302,7 @@
 
 
                 $(document).on('click', '#convertToTableBtn', function() {
-                    let groupedData = {};
+                    var groupedData = {};
                     crewData.forEach(item => {
                         if (!groupedData[item.rank_name]) {
                             groupedData[item.rank_name] = [];
@@ -517,14 +314,14 @@
                         });
                     });
 
-                    let rankKeys = Object.keys(groupedData).sort((a, b) => (rankOrder[a] ||
+                    var rankKeys = Object.keys(groupedData).sort((a, b) => (rankOrder[a] ||
                         999) - (rankOrder[b] || 999));
-                    let currentPage = 0;
+                    var currentPage = 0;
 
                     function displayTable(page) {
-                        let rank = rankKeys[page];
-                        let crewList = groupedData[rank] || [];
-                        let modalBody = '';
+                        var rank = rankKeys[page];
+                        var crewList = groupedData[rank] || [];
+                        var modalBody = '';
 
                         crewList.forEach((crew, index) => {
                             modalBody += `<tr>
@@ -541,10 +338,10 @@
                     }
 
                     function updatePagination() {
-                        let totalPages = rankKeys.length;
-                        let paginationHtml = `<nav><ul class="pagination">`;
+                        var totalPages = rankKeys.length;
+                        var paginationHtml = `<nav><ul class="pagination">`;
 
-                        for (let i = 0; i < totalPages; i++) {
+                        for (var i = 0; i < totalPages; i++) {
                             paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
                                 <a href="#" class="page-link" data-page="${i}">${rankKeys[i]}</a>
                             </li>`;
@@ -567,220 +364,6 @@
                 });
 
 
-            }
-        });
-    });
-
-    $(document).ready(function() {
-        $.ajax({
-            url: '<?php echo base_url("dashboard/shipDemograph"); ?>',
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                let totalCrewOnboard = data.reduce((sum, item) => sum + item.jumlah_crew_onboard,
-                    0);
-
-                Highcharts.chart('idTotalCrewByKapal', {
-                    chart: {
-                        type: 'bar',
-                        backgroundColor: null,
-                        height: 900
-                    },
-                    title: {
-                        text: `Crew Distribution by Owned Ship (Total: ${totalCrewOnboard.toLocaleString()})`,
-                        align: 'center',
-                        style: {
-                            fontSize: '20px',
-                            color: 'black'
-                        }
-                    },
-                    xAxis: {
-                        categories: data.map(item => item.nama_kapal),
-                        title: {
-                            text: 'Ships',
-                            style: {
-                                fontSize: '14px',
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labels: {
-                            style: {
-                                fontSize: '12px'
-                            }
-                        }
-                    },
-                    yAxis: {
-                        min: 0,
-                        title: {
-                            text: 'Number of Crew',
-                            style: {
-                                fontSize: '15px',
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labels: {
-                            style: {
-                                fontSize: '15px'
-                            }
-                        }
-                    },
-                    series: [{
-                            name: 'Total Crew',
-                            data: data.map(item => item.jumlah_crew_onboard),
-                            color: '#007bff'
-                        },
-                        {
-                            name: 'Male Crew',
-                            data: data.map(item => item.total_male),
-                            color: '#28a745'
-                        },
-                        {
-                            name: 'Female Crew',
-                            data: data.map(item => item.total_female),
-                            color: '#dc3545'
-                        },
-                        {
-                            name: 'Average Age',
-                            data: data.map(item => item.rata_rata_umur),
-                            color: '#fd7e14'
-                        }
-                    ],
-                    plotOptions: {
-                        series: {
-                            dataLabels: {
-                                enabled: true,
-                                style: {
-                                    fontSize: '15px',
-                                    color: 'black'
-                                }
-                            },
-                            pointWidth: 10,
-                            cursor: 'pointer',
-                            point: {
-                                events: {
-                                    click: function() {
-                                        const vslCode = data[this.index].kode_kapal;
-                                        const vesselName = this.category;
-                                        const clickedSeries = this.series.name;
-                                        const totalCrew = data[this.index]
-                                            .jumlah_crew_onboard;
-
-                                        let vesselStatus = totalCrew >= 22 ?
-                                            "Properly Manned" : "Under Manned";
-                                        let statusColor = totalCrew >= 22 ? "green" :
-                                            "red";
-
-                                        $("#idLblVesselStatus").text(
-                                            `Status: ${vesselStatus}`).css("color",
-                                            statusColor);
-
-                                        if (clickedSeries === "Male" ||
-                                            clickedSeries === "Female") {
-                                            $("#idLblModalVesselDetailByOwnShip").text(
-                                                `${vesselName} - ${clickedSeries} Crew`
-                                            );
-
-                                            $.ajax({
-                                                url: '<?php echo base_url("dashboard/getDetailCrewOnBoard"); ?>',
-                                                method: 'POST',
-                                                data: {
-                                                    vslCode: vslCode,
-                                                    gender: clickedSeries
-                                                },
-                                                dataType: 'json',
-                                                success: function(response) {
-                                                    $("#idBodyModalCrewDetailByOwnShip")
-                                                        .html(response
-                                                            .trNya);
-                                                    $("#idModalCrewByOwnShip")
-                                                        .modal('show');
-                                                },
-                                                error: function() {
-                                                    alert(
-                                                        "Failed to load crew details. Please try again."
-                                                    );
-                                                }
-                                            });
-
-                                        } else if (clickedSeries === "Average Age") {
-                                            $("#idLblModalVesselDetailByOwnShip").text(
-                                                `${vesselName} - Crew Ages`);
-
-                                            $.ajax({
-                                                url: '<?php echo base_url("dashboard/getDetailCrewOnBoard"); ?>',
-                                                method: 'POST',
-                                                data: {
-                                                    vslCode: vslCode,
-                                                    getAges: true
-                                                },
-                                                dataType: 'json',
-                                                success: function(response) {
-                                                    $("#idBodyModalCrewDetailByOwnShip")
-                                                        .html(response
-                                                            .trNya);
-                                                    $("#idModalCrewByOwnShip")
-                                                        .modal('show');
-                                                },
-                                                error: function() {
-                                                    alert(
-                                                        "Failed to load crew ages. Please try again."
-                                                    );
-                                                }
-                                            });
-                                        } else {
-                                            $("#idLblModalVesselDetailByOwnShip").text(
-                                                vesselName);
-
-                                            $.ajax({
-                                                url: '<?php echo base_url("dashboard/getDetailCrewOnBoard"); ?>',
-                                                method: 'POST',
-                                                data: {
-                                                    vslCode: vslCode
-                                                },
-                                                dataType: 'json',
-                                                success: function(response) {
-                                                    $("#idBodyModalCrewDetailByOwnShip")
-                                                        .html(response
-                                                            .trNya);
-                                                    $("#idModalCrewByOwnShip")
-                                                        .modal('show');
-                                                },
-                                                error: function() {
-                                                    alert(
-                                                        "Failed to load crew details. Please try again."
-                                                    );
-                                                }
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-
-                        },
-                        bar: {
-                            groupPadding: 0.1
-                        }
-                    },
-                    legend: {
-                        enabled: true,
-                        layout: 'horizontal',
-                        align: 'center',
-                        verticalAlign: 'bottom',
-                        itemStyle: {
-                            fontSize: '16px',
-                            fontWeight: 'bold'
-                        }
-                    },
-                    credits: {
-                        enabled: false
-                    },
-                    exporting: {
-                        enabled: true
-                    }
-                });
-            },
-            error: function() {
-                alert("Failed to load data.");
             }
         });
     });
@@ -907,13 +490,16 @@
             method: 'GET',
             dataType: 'json',
             success: function(data) {
+                const columns = 5;
                 const heatmapData = data.map((item, index) => ({
-                    x: index % 5,
-                    y: Math.floor(index / 5),
+                    x: (columns - 1) - (index %
+                        columns),
+                    y: Math.floor(index / columns),
                     value: item.total_onleave,
                     onboard: item.total_onboard,
                     rank: item.rank,
                     category: item.category,
+                    color: item.color
                 }));
 
                 Highcharts.chart('idDivHeatMap', {
@@ -921,6 +507,7 @@
                         type: 'heatmap',
                         plotBorderWidth: 1,
                         height: 500,
+                        width: 1150,
                         backgroundColor: null
                     },
                     title: {
@@ -928,7 +515,6 @@
                         align: 'center',
                         style: {
                             fontSize: '20px',
-                            color: 'black'
                         }
                     },
                     xAxis: {
@@ -943,27 +529,16 @@
                         },
                         title: null,
                     },
-                    colorAxis: {
-                        stops: [
-                            [0, '#B3E0DC'],
-                            [0.5, '#F5A623'],
-                            [1, '#D84315']
-                        ],
-                        min: 0,
-                        max: Math.max(...heatmapData.map((d) => d
-                            .value)),
-                    },
                     tooltip: {
                         formatter: function() {
                             return `
-                            <b>${this.point.rank}</b><br>
-                            Crew Off-Duty: ${this.point.value}<br>
-                            Crew On-Duty: ${this.point.onboard}<br>
-                            `;
+                    <b>${this.point.rank}</b><br>
+                    Crew Off-Duty: ${this.point.value}<br>
+                    Crew On-Duty: ${this.point.onboard}<br>
+                    `;
                         },
                     },
                     series: [{
-                        name: 'Cadangan Kapal',
                         borderWidth: 1,
                         data: heatmapData.map((item) => ({
                             x: item.x,
@@ -971,13 +546,13 @@
                             value: item.value,
                             onboard: item.onboard,
                             rank: item.rank,
+                            color: item.color
                         })),
                         dataLabels: {
                             enabled: true,
                             formatter: function() {
                                 return this.point.rank;
                             },
-                            color: '#000',
                             style: {
                                 fontSize: '12px',
                             },
@@ -986,12 +561,16 @@
                     credits: {
                         enabled: false,
                     },
+                    legend: {
+                        enabled: false
+                    }
                 });
             },
             error: function(xhr, status, error) {
                 console.error('Error fetching data:', status, error);
             },
         });
+
     });
 
     $(document).ready(function() {
@@ -1023,7 +602,7 @@
                 Highcharts.chart('idDivRankContractExpiry', {
                     chart: {
                         type: 'bar',
-                        height: 1300,
+                        height: 900,
                         backgroundColor: null
                     },
                     title: {
@@ -1073,8 +652,8 @@
                             color: '#000'
                         },
                         formatter: function() {
-                            let index = this.point.index;
-                            let suggestionText = suggestionData[index] > 0 ?
+                            var index = this.point.index;
+                            var suggestionText = suggestionData[index] > 0 ?
                                 `<b style="color:#000;">Recruitment Suggestion: (${suggestionData[index]}) orang</b>` :
                                 '<b style="color:#000;">Cukup</b>';
 
@@ -1135,6 +714,201 @@
             }
         });
     });
+
+    $(document).ready(function() {
+        $("#selectAllVesselsOwnShipOwnShip").change(function() {
+            $("input[name='vessels[]']").prop("checked", this.checked);
+        });
+
+        $("input[name='vessels[]']").change(function() {
+            if (!this.checked) {
+                $("#selectAllVesselsOwnShip").prop("checked", false);
+            }
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var expanded = false;
+
+        window.showCheckboxes = function() {
+            var checkboxes = document.getElementById("idCheckboxVesselOwnShip");
+            if (checkboxes) {
+                if (!expanded) {
+                    checkboxes.style.display = "block";
+                    expanded = true;
+                } else {
+                    checkboxes.style.display = "none";
+                    expanded = false;
+                }
+            } else {
+                console.error("Element with ID 'idCheckboxVesselOwnShip' not found!");
+            }
+        };
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var expandedClient = false;
+
+        window.showCheckboxesClient = function() {
+            var checkboxesClient = document.getElementById("idCheckboxVesselClient");
+            if (checkboxesClient) {
+                if (!expandedClient) {
+                    checkboxesClient.style.display = "block";
+                    expandedClient = true;
+                } else {
+                    checkboxesClient.style.display = "none";
+                    expandedClient = false;
+                }
+            } else {
+                console.error("Element with ID 'idCheckboxVesselClient' not found!")
+            }
+        }
+    })
+
+    function searchVesselClient() {
+        var selectedVesselClient = [];
+
+        if ($("#selectAllVesselsClientShip").is(":checked")) {
+            selectedVesselClient.push("All");
+        } else {
+            $("input[name='vesselsClient[]']:checked").each(function() {
+                selectedVesselClient.push($(this).val());
+            });
+        }
+
+        if (selectedVesselClient.length === 0) {
+            alert('Pilih minimal satu kapal');
+            return;
+        }
+
+        $.ajax({
+            url: "<?php echo base_url('dashboard/crewBarChart'); ?>",
+            type: "POST",
+            data: {
+                vesselsClient: selectedVesselClient
+            },
+            dataType: "json",
+            success: function(response) {
+                if (!response || response.length === 0) {
+                    alert('Data not found!');
+                    return;
+                }
+
+                var totalCrewClient = 0,
+                    totalMaleClient = 0,
+                    totalFemaleClient = 0,
+                    totalAgeSumClient = 0;
+                var vesselListClient = [];
+
+                response.forEach(function(ship) {
+                    var crewCountClient = parseInt(ship.jumlah_crew_onboard) || 0;
+                    totalCrewClient += crewCountClient;
+                    totalMaleClient += parseInt(ship.total_male) || 0;
+                    totalFemaleClient += parseInt(ship.total_female) || 0;
+                    totalAgeSumClient += parseFloat(ship.rata_rata_umur) * crewCountClient;
+                    vesselListClient.push(ship.nama_kapal);
+                });
+
+                var avgAgeClient = totalCrewClient > 0 ? (totalAgeSumClient / totalCrewClient).toFixed(1) :
+                    0;
+
+                $("#txtTotalCrewShipClient").text(totalCrewClient);
+                $("#xtAvgAgeShipClient").text(avgAgeClient);
+                $("#xtTotalMaleShipClient").text(totalMaleClient);
+                $("#txtTotalFemaleShipClient").text(totalFemaleClient);
+
+                var halfClient = Math.ceil(vesselListClient.length / 2);
+                $("#listKapalClient_1").html(
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    vesselListClient.slice(0, halfClient).map(vessel =>
+                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
+                    "</ul>"
+                );
+                $("#listKapalClient_2").html(
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    vesselListClient.slice(halfClient).map(vessel =>
+                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
+                    "</ul>"
+                );
+            },
+            error: function(xhr, status, error) {
+                console.error("Error:", error);
+                alert("Gagal mengambil data. Silakan coba lagi.");
+            }
+        });
+    }
+
+    function searchVessel() {
+        var selectedVessels = [];
+
+        if ($("#selectAllVesselsOwnShip").is(":checked")) {
+            selectedVessels.push("All");
+        } else {
+            $("input[name='vessels[]']:checked").each(function() {
+                selectedVessels.push($(this).val());
+            });
+        }
+
+        if (selectedVessels.length === 0) {
+            alert("Pilih minimal satu kapal!");
+            return;
+        }
+
+        $.ajax({
+            url: "<?php echo base_url('dashboard/shipDemograph') ?>",
+            type: "POST",
+            data: {
+                vessels: selectedVessels
+            },
+            dataType: "json",
+            success: function(response) {
+                if (!response || response.length === 0) {
+                    alert("Data tidak ditemukan!");
+                    return;
+                }
+
+                var totalCrew = 0,
+                    totalMale = 0,
+                    totalFemale = 0,
+                    totalAgeSum = 0;
+                var vesselList = [];
+
+                response.forEach(function(ship) {
+                    var crewCount = parseInt(ship.jumlah_crew_onboard) || 0;
+                    totalCrew += crewCount;
+                    totalMale += parseInt(ship.total_male) || 0;
+                    totalFemale += parseInt(ship.total_female) || 0;
+                    totalAgeSum += parseInt(ship.total_umur) || 0;
+                    vesselList.push(ship.nama_kapal);
+                });
+
+                var avgAge = totalCrew > 0 ? (totalAgeSum / totalCrew).toFixed(1) : 0;
+
+                $("#txtTotalCrew").text(totalCrew);
+                $("#txtAvgAge").text(avgAge);
+                $("#txtTotalMale").text(totalMale);
+                $("#txtTotalFemale").text(totalFemale);
+
+                var half = Math.ceil(vesselList.length / 2);
+                $("#listKapal_1").html(
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    vesselList.slice(0, half).map(v => `<li><i class='fa fa-ship'></i> ${v}</li>`).join(
+                        "") +
+                    "</ul>"
+                );
+                $("#listKapal_2").html(
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    vesselList.slice(half).map(v => `<li><i class='fa fa-ship'></i> ${v}</li>`).join(
+                        "") +
+                    "</ul>"
+                );
+            },
+            error: function(xhr, status, error) {
+                console.error("Error:", error);
+                alert("Gagal mengambil data. Silakan coba lagi.");
+            }
+        });
+    }
     </script>
     <style>
     body {
@@ -1166,7 +940,7 @@
                 </div>
                 <div class="col-lg-2 col-6">
                     <div class="panel-heading"
-                        style="background-color:#16839B;color:#FFFFFF;border:2px solid #000000;cursor:pointer;border-radius:30px;"
+                        style="background-color:#FFFFFF;color:#000080;border:2px solid #000000;cursor:pointer;border-radius:30px;"
                         onclick="displayOnBoard();">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
@@ -1181,7 +955,7 @@
                 </div>
                 <div class="col-lg-2 col-6">
                     <div class="panel-heading"
-                        style="background-color:#078415;color:#FFFFFF;border:2px solid #000000;cursor: pointer;border-radius:30px;"
+                        style="background-color:#FFFFFF;color:#000080;border:2px solid #000000;cursor: pointer;border-radius:30px;"
                         onclick="displayOnLeave();">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
@@ -1196,7 +970,7 @@
                 </div>
                 <div class="col-lg-2 col-6">
                     <div class="panel-heading"
-                        style="background-color:#E47100;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
+                        style="background-color:#FFFFFF;color:#000080;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
                                 <i class="fa fa-user-circle-o fa-3x"></i>
@@ -1210,7 +984,7 @@
                 </div>
                 <div class="col-lg-2 col-6">
                     <div class="panel-heading"
-                        style="background-color:#C80000;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
+                        style="background-color:#FFFFFF;color:#000080;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
                                 <i class="fa fa-user-secret fa-3x"></i>
@@ -1224,7 +998,7 @@
                 </div>
                 <div class="col-lg-2 col-6">
                     <div class="panel-heading"
-                        style="background-color:#66007A;color:#FFFFFF;border:2px solid #000000;border-radius:30px;cursor:pointer;"
+                        style="background-color:#FFFFFF;color:#000080;border:2px solid #000000;border-radius:30px;cursor:pointer;"
                         onclick="displayNewApplicent();">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
@@ -1239,7 +1013,7 @@
                 </div>
                 <div class="col-lg-2 col-6">
                     <div class="panel-heading"
-                        style="background-color:#7A1A00;color:#FFFFFF;border:2px solid #000000;border-radius:30px;">
+                        style="background-color:#FFFFFF;color:#000080;border:2px solid #000000;border-radius:30px;">
                         <div class="row">
                             <div class="col-xs-3" style="text-align:center;">
                                 <i class="fa fa fa-child fa-3x"></i>
@@ -1253,15 +1027,224 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-6" style="margin-top: 12px;">
-                    <div id="idDivOverall">
+                <!-- KAPAL CLIENT -->
+                <div class="col-md-6" style="margin-top: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h5 style="font-size:20px;">Data of Client Ship:</h5>
+                        <div onclick="showCheckboxesClient()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
+                        background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                            <select
+                                style="width: 100%; border: none; background: transparent; font-size: 14px; cursor: pointer;">
+                                <option readonly>- Select Vessel -</option>
+                            </select>
+                            <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;"></div>
+                            <div id="idCheckboxVesselClient" style="display: none; border: 1px solid #ccc; border-radius: 8px; position: absolute; background: white; 
+                            width: 100%; z-index: 1; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);">
+                                <?php echo $vesselTypeClient; ?>
+                            </div>
+                        </div>
+                        <button type="submit" onclick="searchVesselClient();"
+                            style="width: 150px; background: #84b0e3; color: white; padding: 10px; border: none; 
+                            border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: transform 0.2s, background 0.3s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'"
+                            onmouseleave="this.style.transform='scale(1)'">
+                            🔍 Search
+                        </button>
+                    </div>
+                    <div class="row" style="margin-top: 20px;">
+                        <div class="row" style="margin-top: 20px; margin-right: 50px;">
+                            <div class="col-md-4">
+                                <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                                    <h5 class="fw-bold"
+                                        style="font-size: 20px; background-color: #84b0e3; padding: 5px; font-weight:bold; color: #fff;">
+                                        Total Crew
+                                    </h5>
+                                    <div
+                                        style="position: relative; display: inline-block; font-size: 150px; color: #84b0e3;">
+                                        <span id="txtTotalCrewShipClient"
+                                            style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                            font-size: 50px; font-weight: bold; color: #84b0e3; margin-top: 20px;">0</span>
+                                        <i class='fa fa-users' style="font-size: 85px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                                    <h5 class="fw-bold"
+                                        style="font-size: 20px; background-color: #84b0e3; padding: 5px; font-weight:bold; color: #fff;">
+                                        Average Age
+                                    </h5>
+                                    <div style="position: relative; display: inline-block;">
+                                        <span id="txtAvgAgeShipClient"
+                                            style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                                font-size: 50px; font-weight: bold; color: #84b0e3; margin-top: 20px;">0</span>
+                                        <div style="
+                                                margin-top: 70px;
+                                                width: 135px; height: 135px; 
+                                                background-color:#84b0e3;
+                                                -webkit-mask-image: url('http://localhost/crewcv/assets/img/avgage.svg'); 
+                                                mask-image: url('http://localhost/crewcv/assets/img/avgage.svg'); 
+                                                -webkit-mask-size: contain;
+                                                -webkit-mask-position: center;
+                                                ">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                                    <h5 class="fw-bold"
+                                        style="font-size: 20px; background-color: #84b0e3; padding: 5px; font-weight:bold; color: #fff;">
+                                        Gender
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div
+                                                style="position: relative; display: inline-block; font-size: 150px; color: #84b0e3;">
+                                                <span id="txtTotalMaleShipClient"
+                                                    style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                                    font-size: 50px; font-weight: bold; color: #84b0e3; margin-top: 20px;">0</span>
+                                                <i class="fa fa-male" style="font-size: 85px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div
+                                                style="position: relative; display: inline-block; font-size: 150px; color: #84b0e3;">
+                                                <span id="txtTotalFemaleShipClient"
+                                                    style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                                    font-size: 50px; font-weight: bold; color: #84b0e3; margin-top: 20px;">0</span>
+                                                <i class="fa fa-female" style="font-size: 85px;"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12" style="border-radius: 10px; padding: 15px;">
+                                <h5 style="font-size: 20px; color: #000080; font-weight: bold;">Vessel Name Client</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div id="listKapalClient_1"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div id="listKapalClient_2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6" style="margin-top: 12px;">
-                    <div id="idTotalCrewByKapal">
 
+                <!-- KAPAL MILIK -->
+                <div class="col-md-6" style="margin-top: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h5 style="font-size:20px;">Data of Own Ship:</h5>
+                        <div onclick="showCheckboxes()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
+                        background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                            <select
+                                style="width: 100%; border: none; background: transparent; font-size: 14px; cursor: pointer;">
+                                <option readonly>- Select Vessel -</option>
+                            </select>
+                            <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;"></div>
+                            <div id="idCheckboxVesselOwnShip" style="display: none; border: 1px solid #ccc; border-radius: 8px; position: absolute; background: white; 
+                            width: 100%; z-index: 1; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);">
+                                <?php echo $vesselType; ?>
+                            </div>
+                        </div>
+                        <button type="submit" onclick="searchVessel();"
+                            style="width: 150px; background: #000080; color: white; padding: 10px; border: none; 
+                            border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: transform 0.2s, background 0.3s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'"
+                            onmouseleave="this.style.transform='scale(1)'">
+                            🔍 Search
+                        </button>
+                    </div>
+                    <div class="row" style="margin-top: 20px;">
+                        <div class="row" style="margin-top: 20px;">
+                            <div class="col-md-4">
+                                <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                                    <h5 class="fw-bold"
+                                        style="font-size: 20px; background-color: #000080; padding: 5px; font-weight:bold; color: #fff;">
+                                        Total Crew
+                                    </h5>
+                                    <div
+                                        style="position: relative; display: inline-block; font-size: 150px; color: #000080;">
+                                        <span id="txtTotalCrew"
+                                            style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                            font-size: 50px; font-weight: bold; color: #000080; margin-top: 20px;">0</span>
+                                        <i class='fa fa-users' style="font-size: 85px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                                    <h5 class="fw-bold"
+                                        style="font-size: 20px; background-color: #000080; padding: 5px; font-weight:bold; color: #fff;">
+                                        Average Age
+                                    </h5>
+                                    <div style="position: relative; display: inline-block;">
+                                        <span id="txtAvgAge"
+                                            style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                            font-size: 50px; font-weight: bold; color: #000080; margin-top: 20px;">0</span>
+                                        <div style="
+                                                margin-top: 70px;
+                                                width: 135px; height: 135px; 
+                                                background-color:#000080;
+                                                -webkit-mask-image: url('http://localhost/crewcv/assets/img/avgage.svg'); 
+                                                mask-image: url('http://localhost/crewcv/assets/img/avgage.svg'); 
+                                                -webkit-mask-size: contain;
+                                                -webkit-mask-position: center;
+                                                ">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                                    <h5 class="fw-bold"
+                                        style="font-size: 20px; background-color: #000080; padding: 5px; font-weight:bold; color: #fff;">
+                                        Gender
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div
+                                                style="position: relative; display: inline-block; font-size: 150px; color: #000080;">
+                                                <span id="txtTotalMale"
+                                                    style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                                    font-size: 50px; font-weight: bold; color: #000080; margin-top: 20px;">0</span>
+                                                <i class="fa fa-male" style="font-size: 85px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div
+                                                style="position: relative; display: inline-block; font-size: 150px; color: #000080;">
+                                                <span id="txtTotalFemale"
+                                                    style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+                                                font-size: 50px; font-weight: bold; color: #000080; margin-top: 20px;margin-right: 20px;">0</span>
+                                                <i class="fa fa-female" style="font-size: 85px;"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12" style="border-radius: 10px; padding: 15px;">
+                                <h5 style="font-size: 20px; color: #000080; font-weight: bold;">Vessel Name</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div id="listKapal_1"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div id="listKapal_2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
             <div class="row" style="margin-top: 12px;">
                 <div class="col-md-12">
@@ -1431,7 +1414,7 @@
             <div class="modal-header" style="padding: 10px;background-color:#16839B;">
                 <button type="button" class="close" data-dismiss="modal"
                     style="opacity:unset;text-shadow:none;color:#FFF;">&times;</button>
-                <h4 class="modal-title" style="color:#FFFFFF;"><i>:: Crew On Board ::</i></h4>
+                <h4 class="modal-title" style="color:#000080;"><i>:: Crew On Board ::</i></h4>
             </div>
             <div class="modal-body" id="idModalDetail">
                 <div class="row">
@@ -1449,7 +1432,8 @@
                                         <th style="vertical-align: middle; width:3%;text-align:center;">No</th>
                                         <th style="vertical-align: middle; width:25%;text-align:center;">Vessel Name
                                         </th>
-                                        <th style="vertical-align: middle; width:10%;text-align:center;">Total Crew</th>
+                                        <th style="vertical-align: middle; width:10%;text-align:center;">Total Crew
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody id="idBodyModal">
@@ -1491,7 +1475,7 @@
             <div class="modal-header" style="padding: 10px; background-color:#078415">
                 <button type=" button" class="close" data-dismiss="modal"
                     style="opacity:unset;text-shadow:none;color:#FFF;">&times;</button>
-                <h4 class="modal-title" style="color:#FFFFFF;"><i>:: Crew On Leave ::</i></h4>
+                <h4 class="modal-title" style="color:#000080;"><i>:: Crew On Leave ::</i></h4>
             </div>
             <div class="modal-body" id="idModalDetail">
                 <div class="row">
@@ -1508,9 +1492,11 @@
                                     <thead>
                                         <tr style="background-color:#078415; color: #FFF; height:40px;">
                                             <th style="vertical-align: middle; width:3%; text-align:center;">No</th>
-                                            <th style="vertical-align: middle; width:25%; text-align:center;">Rank Name
+                                            <th style="vertical-align: middle; width:25%; text-align:center;">Rank
+                                                Name
                                             </th>
-                                            <th style="vertical-align: middle; width:10%; text-align:center;">Crew Name
+                                            <th style="vertical-align: middle; width:10%; text-align:center;">Crew
+                                                Name
                                             </th>
                                         </tr>
                                     </thead>
@@ -1562,7 +1548,7 @@
             <div class="modal-header" style="padding: 10px;background-color:#66007A;">
                 <button type="button" class="close" data-dismiss="modal"
                     style="opacity:unset;text-shadow:none;color:#FFF;">&times;</button>
-                <h4 class="modal-title" style="color:#FFFFFF;"><i>:: Crew New Applicent ::</i></h4>
+                <h4 class="modal-title" style="color:#000080;"><i>:: Crew New Applicent ::</i></h4>
             </div>
             <div class="modal-body" id="idDivModalCrewDetail">
                 <div class="row">
@@ -1573,8 +1559,10 @@
                                 <thead>
                                     <tr style="background-color: #66007A;color: #FFF;height:40px;">
                                         <th style="vertical-align: middle; width:3%;text-align:center;">No</th>
-                                        <th style="vertical-align: middle; width:50%;text-align:center;">Crew Name</th>
-                                        <th style="vertical-align: middle; width:45%;text-align:center;">Apply For</th>
+                                        <th style="vertical-align: middle; width:50%;text-align:center;">Crew Name
+                                        </th>
+                                        <th style="vertical-align: middle; width:45%;text-align:center;">Apply For
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody id="idBodyModalCrew">

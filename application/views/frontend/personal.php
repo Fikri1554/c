@@ -325,6 +325,7 @@
                 $("#txtIdEdit").val(id);
                 $("#teksJudulName").text(data.fullName);
 
+
                 $.each(data['rslVal'], function(key, val) {
                     $("#" + key).val(val);
                 });
@@ -1026,11 +1027,11 @@
                             <div class="col-md-6 col-xs-12">
                                 <div class="row">
                                     <div class="col-md-9 col-xs-12">
-                                        <label for="txtcrewVesselStatus" style="font-size:12px;">Crew Vessel Status
+                                        <label for="txtcrewVesselStatus" style="font-size:12px;"> Select Vessel
                                             :</label>
-                                        <select class="form-control input-sm" id="slcVesselType">
-                                            <?php echo $getCrewVesselType; ?>
-                                        </select>
+                                        <div class="form-control input-sm" id="slcVesselType" style="height:auto;">
+                                            <?php echo getVesselOption(); ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

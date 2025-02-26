@@ -57,6 +57,10 @@
             <td><strong>Last Vessel:</strong> <?php echo $lastvsl; ?></td>
             <td><strong>Company:</strong> <?php echo $company; ?></td>
         </tr>
+        <tr>
+            <td><strong>Issued Place:</strong> <?php echo $issplace; ?></td>
+            <td><strong>Nomor Document:</strong> <?php echo $docno; ?></td>
+        </tr>
     </table>
 
     <table class="data-table">
