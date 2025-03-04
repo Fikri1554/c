@@ -162,7 +162,7 @@ class Personal extends CI_Controller {
 		$dataOut['optRank'] = $dataContext->getRankByOption("","name");
 		$dataOut['optBlood'] = $dataContext->getBloodType();
 		$dataOut['optSize'] = $dataContext->getUkuran();
-		$dataOut['getCrewVesselType'] = $dataContext->getCrewVesselType();
+		$dataOut['getVesselType'] = $dataContext->getVesselType();
 
 		if($searchNya == "search")
 		{
@@ -1573,7 +1573,7 @@ class Personal extends CI_Controller {
 			die("ID Person tidak boleh kosong!");
 		}
 
-		$sqlCert = "SELECT certgroup, certname, issdate, expdate 
+		$sqlCert = "SELECT certgroup, certname, issdate, expdate, docno, issplace
 					FROM tblcertdoc 
 					WHERE idperson = '".$idPerson."' AND deletests = '0' 
 					ORDER BY certgroup, certname ASC";
@@ -1582,12 +1582,16 @@ class Personal extends CI_Controller {
 
 		foreach ($rslCert as $val) {
 			$certName = "(" . $val->certgroup . ") " . $val->certname;
+			$docNo = $val->docno;
+			$issPlace = $val->issplace;
 			$issDate = (!empty($val->issdate) && $val->issdate !== "0000-00-00") ? date("d-M-Y", strtotime($val->issdate)) : "N/A";
 			$expDate = (!empty($val->expdate) && $val->expdate !== "0000-00-00") ? date("d-M-Y", strtotime($val->expdate)) : "N/A";
 
 			$trNya .= "<tr>";
 			$trNya .= "<td align='center' style='font-size:12px;'>" . $no . "</td>";
 			$trNya .= "<td align='left' style='font-size:12px;'>" . $certName . "</td>";
+			$trNya .= "<td align='left' style='font-size:12px;'>" . $docNo . "</td>";
+			$trNya .= "<td align='left' style='font-size:12px;'>" . $issPlace . "</td>";
 			$trNya .= "<td style='font-size:12px;'>" . $issDate . "</td>";
 			$trNya .= "<td style='font-size:12px;'>" . $expDate . "</td>";
 			$trNya .= "</tr>";
@@ -1600,14 +1604,11 @@ class Personal extends CI_Controller {
 				p.idperson, 
 				CONCAT(p.fname, ' ', IFNULL(p.mname, ''), ' ', p.lname) AS fullname,
 				c.lastvsl,
-				COALESCE(m.nmcmp, 'N/A') AS company,
-				COALESCE(cert.docno, 'N/A') AS docno, 
-				COALESCE(cert.issplace, 'N/A') AS issplace
+				COALESCE(m.nmcmp, 'N/A') AS company
 			FROM mstpersonal p
 			LEFT JOIN tblcontract c ON p.idperson = c.idperson 
 				AND c.signondt = (SELECT MAX(signondt) FROM tblcontract WHERE idperson = p.idperson)
 			LEFT JOIN mstcmprec m ON c.kdcmprec = m.kdcmp  
-			LEFT JOIN tblcertdoc cert ON p.idperson = cert.idperson 
 			WHERE p.idperson = '".$idPerson."'
 			LIMIT 1
 		";
@@ -1621,8 +1622,6 @@ class Personal extends CI_Controller {
 		$dataOut['idperson'] = $headerData ? $headerData->idperson : "N/A";
 		$dataOut['lastvsl'] = $headerData ? $headerData->lastvsl : "N/A";
 		$dataOut['company'] = $headerData ? $headerData->company : "N/A"; 
-		$dataOut['docno'] = $headerData ? $headerData->docno : "N/A";
-		$dataOut['issplace'] = $headerData ? $headerData->issplace : "N/A";
 
 		$nama_dokumen = "Sertifikat_Person_".$idPerson;
 		require("application/views/frontend/pdf/mpdf60/mpdf.php");
@@ -1635,6 +1634,7 @@ class Personal extends CI_Controller {
 		$mpdf->Output($nama_dokumen.".pdf", 'I');
 		exit;
 	}
+
 
 	function getDataTableNominee($idPerson = "")
 	{
@@ -1955,6 +1955,7 @@ class Personal extends CI_Controller {
 		}
 		
 		print $stData;
+		// print json_encode($stData);
 	}
 
 	function deleteData()

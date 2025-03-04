@@ -42,7 +42,7 @@
         var newApplicent = "";
         var fileStatementWages = $("#uploadFileOfWages").val();
         var fileInterview = $("#uploadFileInterview").val();
-        var slcVesselType = $("#slcVesselType").val()
+        var slcVesselType = $("#slcVesselType").val();
         var fileEvaluation = $("#uploadFileEvaluation").val();
         var fileStateForm = $("#uploadFileStatementForm").val();
 
@@ -142,6 +142,7 @@
         formData.append('nonCrew', nonCrew);
         formData.append('newApplicent', newApplicent);
         formData.append('slcVesselType', slcVesselType);
+
 
         formData.append('cekFileUpload', fileUpload);
         formData.append('fileUpload', $("#fileUploadPersonalData").prop('files')[0]);
@@ -316,15 +317,12 @@
 
                 $("#idDivViewStatementForm").empty();
                 $("#idDivViewStatementForm").append(data.imgStatementForm);
-                $("#slcVesselType").empty();
-                $("#slcVesselType").append();
 
                 $("#slcDataForm").css('display', '');
                 $("#slcDataForm").val("personal_data");
                 $("#txtIdPerson").val(id);
                 $("#txtIdEdit").val(id);
                 $("#teksJudulName").text(data.fullName);
-
 
                 $.each(data['rslVal'], function(key, val) {
                     $("#" + key).val(val);
@@ -498,7 +496,6 @@
             );
         }
     }
-
 
     function actBtnAdd(actShow, actHide) {
         $("#" + actHide).hide();
@@ -703,13 +700,34 @@
     }
 
     function backButton() {
-        $("#idFormBodyOther").empty();
-        $("#idFormBodyOther").css("display", "none");
-        $("#idFormBody").css("display", "none");
+        $("#idViewPic").empty();
+        $("#teksJudulName").empty();
+        $("#idDivViewEvaluation").empty();
+
+        var elTextHide = document.querySelectorAll('#idForm input[type="hidden"]');
+        var elInput = document.querySelectorAll(
+            '#idForm input[type="text"], #idForm input[type="number"], #idForm input[type="password"]'
+        );
+        var elSlc = document.querySelectorAll('#idForm select');
+        var elUplFile = document.querySelectorAll('#idForm input[type="file"]');
+        var elTextArea = document.querySelectorAll('#idForm textarea');
+        var elChecked = document.querySelectorAll('#idForm input[type="checkbox"]');
+        var elRadio = document.querySelectorAll('#idForm input[type="radio"]');
+
+        elTextHide.forEach(element => element.value = '');
+        elInput.forEach(element => element.value = '');
+        elSlc.forEach(element => element.value = '');
+        elUplFile.forEach(element => element.value = '');
+        elTextArea.forEach(element => element.value = '');
+        elChecked.forEach(element => element.checked = false);
+        elRadio.forEach(element => element.checked = false);
+
+        $("#idFormBodyOther").empty().css("display", "none");
         $("#idForm").css("display", "none");
         $("#idDataTable").show(200);
         $("#idLoading").hide();
     }
+
 
     function reloadPage() {
         window.location = "<?php echo base_url('personal/getData');?>";
@@ -1024,17 +1042,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6 col-xs-12">
-                                <div class="row">
-                                    <div class="col-md-9 col-xs-12">
-                                        <label for="txtcrewVesselStatus" style="font-size:12px;"> Select Vessel
-                                            :</label>
-                                        <div class="form-control input-sm" id="slcVesselType" style="height:auto;">
-                                            <?php echo getVesselOption(); ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                         <div class="row" style="margin-top:5px;">
                             <div class="col-md-6 col-xs-12">
@@ -1298,6 +1305,17 @@
                                     <input type="radio" name="rdFeelClaustrophobic" id="rdFeelClaustrophobicNo"
                                         value="n" checked="checked"> No
                                 </label>
+                            </div>
+                            <div class="col-md-4 col-xs-12">
+                                <div class="row">
+                                    <div class="col-md-9 col-xs-12">
+                                        <label for="txtcrewVesselStatus" style="font-size:12px;">Crew Vessel Type
+                                            :</label>
+                                        <select class="form-control input-sm" id="slcVesselType">
+                                            <?php echo $getVesselType; ?>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="row" style="margin-top:5px;">

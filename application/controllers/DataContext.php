@@ -104,15 +104,14 @@ class DataContext extends CI_Controller {
 	{
 		$timestamp = strtotime($date);
 		return date('d-M-Y', $timestamp);
-	}
-
+	}	
 
 	function getCityByOption($return = "",$typeVal = "")
 	{
 		$opt = "";
 
 		$rsl = $this->MCrewscv->getData("*","tblkota","Deletests = '0'","NmKota ASC");
-
+		$opt .= "<option value=\"\">- Select Kota -</option>";
 		foreach ($rsl as $key => $val)
 		{
 			if($typeVal == "name")
@@ -297,6 +296,27 @@ class DataContext extends CI_Controller {
 		}
 	}
 
+
+	function getVesselType($return = "")
+	{
+		$opt = "<option value=''>Select Vessel Type</option>"; 
+
+		$whereNya = "Deletests = '0' AND DefType IN ('Bulk Carrier', 'OIL TANKER', 'CHEMICAL TANKER', 'FLOATING CRANE', 'TUG BOAT')";
+
+		$rsl = $this->MCrewscv->getData("*", "tbltype", $whereNya, "NmType ASC");
+
+		foreach ($rsl as $val) {
+			$opt .= "<option value=\"" . htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "\">" 
+					. htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "</option>";
+		}
+
+		if ($return == "") {
+			return $opt;
+		} else {
+			print json_encode($opt);
+		}
+	}
+
 	function getCrewVesselType($return = "")
 	{
 		$opt = "<option value=''>Select Vessel Type</option>"; 
@@ -386,7 +406,7 @@ class DataContext extends CI_Controller {
 			print json_encode($options);
 		}
 	}
-
+	
 	function getMstCertificateByOption($return = "")
 	{
 		$opt = "";

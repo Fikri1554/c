@@ -103,7 +103,6 @@ class Dashboard extends CI_Controller {
 			$rankOrder[] = $rank->nmrank;
 		}
 
-		
 		$mappedCrewByRank = array();
 		foreach ($crewData as $crew) {
 			if (isset($crew->nmrank)) {
@@ -469,7 +468,7 @@ class Dashboard extends CI_Controller {
 					COUNT(A.idperson) AS jumlah_crew_onboard,
 					SUM(CASE WHEN A.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
 					SUM(CASE WHEN A.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
-					AVG(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS rata_rata_umur
+					SUM(TIMESTAMPDIFF(YEAR, A.dob, CURDATE())) AS total_umur
 				FROM 
 					mstpersonal A
 				LEFT JOIN 
@@ -490,7 +489,8 @@ class Dashboard extends CI_Controller {
 					C.nmcmp, D.kdvsl, D.nmvsl
 				ORDER BY 
 					C.nmcmp, D.nmvsl
-				"; 
+				";
+
 
 
 		$result = $this->MCrewscv->getDataQuery($sql);
@@ -574,11 +574,8 @@ class Dashboard extends CI_Controller {
 		$sql = "
 			SELECT 
 				T.namescl AS nama_sekolah,
-				COUNT(B.idperson) AS jumlah_onboard,
-				GROUP_CONCAT(
-					CONCAT_WS(' ', A.fname, A.mname, A.lname, '(', R.nmrank, ')')
-					ORDER BY A.fname SEPARATOR ', '
-				) AS nama_crew_rank
+				COUNT(CASE WHEN B.signoffdt = '0000-00-00' THEN A.idperson END) AS jumlah_onboard,
+				COUNT(CASE WHEN B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE() THEN A.idperson END) AS jumlah_onleave
 			FROM tblscl T
 			LEFT JOIN mstpersonal A ON T.idperson = A.idperson
 			LEFT JOIN tblcontract B ON A.idperson = B.idperson
@@ -588,7 +585,6 @@ class Dashboard extends CI_Controller {
 				AND R.urutan > 0
 				AND T.deletests = '0'
 				AND B.deletests = '0'
-				AND B.signoffdt = '0000-00-00' -- Hanya crew yang masih onboard
 			GROUP BY T.namescl
 			ORDER BY jumlah_onboard DESC
 			LIMIT 10;
@@ -604,7 +600,7 @@ class Dashboard extends CI_Controller {
 				return array(
 					'school' => $row->nama_sekolah,
 					'onboard_crew' => (int)$row->jumlah_onboard,
-					'crew_details' => $row->nama_crew_rank
+					'onleave_crew' => (int)$row->jumlah_onleave,
 				);
 			}, $result);
 
@@ -671,16 +667,15 @@ class Dashboard extends CI_Controller {
 			$totalOnleave = (int) $row->total_onleave;
 			$batasMedium = 1.5 * $totalOnboard;
 
-			
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
-				$color = '#ff9c9c';
+				$color = '#f15b40';
 			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
-				$color = '#F5A623';  
+				$color = '#ffc20f';  
 			} else if ($totalOnleave > $batasMedium) {
 				$category = 'High';
-				$color = '#f2cba8';  
+				$color = '#62bb47';  
 			}
 
 			$data[] = array(

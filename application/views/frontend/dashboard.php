@@ -369,120 +369,175 @@
     });
 
     $(document).ready(function() {
-        $.ajax({
-            url: '<?php echo base_url("dashboard/getSchool"); ?>',
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                const categories = data.map(item => item.school);
-                const seriesDataOnboard = data.map(item => item.onboard_crew);
+        function loadChart(category) {
+            $.ajax({
+                url: '<?php echo base_url("dashboard/getSchool"); ?>',
+                method: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    const categories = data.map(item => item.school);
+                    let seriesData;
+                    let onboardData = data.map(item => item.onboard_crew);
 
-                Highcharts.chart('idDivtotalSchool', {
-                    chart: {
-                        type: 'bar',
-                        backgroundColor: null,
-                        height: 800
-                    },
-                    title: {
-                        text: 'Top 10 Schools by Onboard Crew',
-                        style: {
-                            fontSize: '20px',
-                            fontWeight: 'bold',
-                            color: '#333'
-                        }
-                    },
-                    xAxis: {
-                        categories: categories,
-                        title: {
-                            text: 'Nama Sekolah'
+                    if (category === "Onboard") {
+                        seriesData = onboardData;
+                        $('#comparisonContainer').hide();
+                        $('#idDivtotalSchoolContainer').removeClass('col-md-6').addClass(
+                            'col-md-12');
+                    } else if (category === "Onleave") {
+                        seriesData = data.map(item => item.onleave_crew);
+                        $('#comparisonContainer').show();
+                        $('#idDivtotalSchoolContainer, #comparisonContainer').removeClass(
+                            'col-md-12').addClass('col-md-6');
+                    } else {
+                        seriesData = data.map(item => item.onboard_crew + item.onleave_crew);
+                        $('#comparisonContainer').show();
+                        $('#idDivtotalSchoolContainer, #comparisonContainer').removeClass(
+                            'col-md-12').addClass('col-md-6');
+                    }
+
+                    Highcharts.chart('idDivtotalSchool', {
+                        chart: {
+                            type: 'bar',
+                            backgroundColor: null,
+                            height: 600
                         },
-                        labels: {
+                        title: {
+                            text: `Top 10 Schools by Crew (${category})`,
                             style: {
-                                fontSize: '14px'
+                                fontSize: '20px',
+                                fontWeight: 'bold',
+                                color: '#333'
                             }
                         },
-                        gridLineWidth: 1
-                    },
-                    yAxis: {
-                        min: 0,
-                        title: {
-                            text: 'Onboard Crew'
-                        },
-                        labels: {
-                            style: {
-                                fontSize: '16px'
-                            }
-                        }
-                    },
-                    tooltip: {
-                        formatter: function() {
-                            return `<b>${data[this.point.index].school}</b><br>
-                                Onboard Crew: ${data[this.point.index].onboard_crew}`;
-                        }
-                    },
-                    plotOptions: {
-                        bar: {
-                            dataLabels: {
-                                enabled: true,
+                        xAxis: {
+                            categories: categories,
+                            title: {
+                                text: 'Nama Sekolah'
+                            },
+                            labels: {
                                 style: {
-                                    fontSize: '16px',
-                                    color: 'black',
+                                    fontSize: '14px'
                                 }
                             },
-                            groupPadding: 0.1,
-                            cursor: 'pointer',
-                            point: {
-                                events: {
-                                    click: function() {
-                                        const schoolData = data[this.index];
-                                        const crewDetails = schoolData.crew_details ?
-                                            schoolData.crew_details.split(', ') : [];
-
-                                        $('#modalTitle').text(
-                                            `Detail Crew for ${schoolData.school}`);
-                                        $('.modal-header').css('background-color',
-                                            '#078415');
-
-                                        const tbody = $(
-                                            '#idBodyModalCrewDetailByInstitution');
-                                        tbody.empty();
-
-                                        if (crewDetails.length > 0) {
-                                            crewDetails.forEach((crew, i) => {
-                                                tbody.append(`
-                                                <tr>
-                                                    <td style="text-align: center;">${i + 1}</td>
-                                                    <td>${crew}</td>
-                                                </tr>
-                                            `);
-                                            });
-                                        } else {
-                                            tbody.append(`
-                                            <tr>
-                                                <td colspan="2" style="text-align: center;">No crew data available.</td>
-                                            </tr>
-                                        `);
-                                        }
-
-                                        $('#detailModal').modal('show');
-                                    }
+                            gridLineWidth: 1
+                        },
+                        yAxis: {
+                            min: 0,
+                            title: {
+                                text: 'Jumlah Crew'
+                            },
+                            labels: {
+                                style: {
+                                    fontSize: '16px'
                                 }
                             }
-                        }
-                    },
-                    series: [{
-                        name: 'Onboard Crew',
-                        data: seriesDataOnboard,
-                        color: '#5DADE2'
-                    }]
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching data:', xhr.responseText || error);
-                alert(`Failed to load data: ${xhr.status} - ${xhr.statusText}`);
-            }
+                        },
+                        tooltip: {
+                            formatter: function() {
+                                return `<b>${data[this.point.index].school}</b><br>
+                            ${category} Crew: ${seriesData[this.point.index]}`;
+                            }
+                        },
+                        plotOptions: {
+                            bar: {
+                                dataLabels: {
+                                    enabled: true,
+                                    style: {
+                                        fontSize: '16px',
+                                        color: 'black'
+                                    }
+                                },
+                                groupPadding: 0.1
+                            }
+                        },
+                        series: [{
+                            name: `${category} Crew`,
+                            data: seriesData,
+                            color: category === "Onboard" ? '#5DADE2' : (
+                                category === "Onleave" ? '#F39C12' : '#2ECC71')
+                        }]
+                    });
+
+                    if (category === "Onleave" || category === "All") {
+                        Highcharts.chart('idDivComparison', {
+                            chart: {
+                                type: 'bar',
+                                backgroundColor: null,
+                                height: 600
+                            },
+                            title: {
+                                text: 'Comparison with Onboard Crew',
+                                style: {
+                                    fontSize: '18px',
+                                    fontWeight: 'bold',
+                                    color: '#333'
+                                }
+                            },
+                            xAxis: {
+                                categories: categories,
+                                title: {
+                                    text: 'Nama Sekolah'
+                                },
+                                labels: {
+                                    style: {
+                                        fontSize: '14px'
+                                    }
+                                },
+                                gridLineWidth: 1
+                            },
+                            yAxis: {
+                                min: 0,
+                                title: {
+                                    text: 'Jumlah Crew'
+                                },
+                                labels: {
+                                    style: {
+                                        fontSize: '16px'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                formatter: function() {
+                                    return `<b>${data[this.point.index].school}</b><br>
+                                Onboard Crew: ${onboardData[this.point.index]}`;
+                                }
+                            },
+                            plotOptions: {
+                                bar: {
+                                    dataLabels: {
+                                        enabled: true,
+                                        style: {
+                                            fontSize: '16px',
+                                            color: 'black'
+                                        }
+                                    },
+                                    groupPadding: 0.1
+                                }
+                            },
+                            series: [{
+                                name: 'Onboard Crew',
+                                data: onboardData,
+                                color: '#5DADE2'
+                            }]
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', xhr.responseText || error);
+                    alert(`Failed to load data: ${xhr.status} - ${xhr.statusText}`);
+                }
+            });
+        }
+
+        $('#crewCategory').change(function() {
+            const selectedCategory = $(this).val();
+            loadChart(selectedCategory);
         });
+
+        loadChart('Onboard');
     });
+
 
     $(document).ready(function() {
         $.ajax({
@@ -490,7 +545,7 @@
             method: 'GET',
             dataType: 'json',
             success: function(data) {
-                const columns = 5;
+                const columns = 6;
                 const heatmapData = data.map((item, index) => ({
                     x: (columns - 1) - (index %
                         columns),
@@ -539,7 +594,7 @@
                         },
                     },
                     series: [{
-                        borderWidth: 1,
+                        borderWidth: 0.5,
                         data: heatmapData.map((item) => ({
                             x: item.x,
                             y: item.y,
@@ -554,7 +609,10 @@
                                 return this.point.rank;
                             },
                             style: {
-                                fontSize: '12px',
+                                fontSize: '15px',
+                                fontWeight: 'bold',
+                                color: '#000',
+                                textOutline: 'none'
                             },
                         },
                     }],
@@ -805,7 +863,8 @@
                     totalCrewClient += crewCountClient;
                     totalMaleClient += parseInt(ship.total_male) || 0;
                     totalFemaleClient += parseInt(ship.total_female) || 0;
-                    totalAgeSumClient += parseFloat(ship.rata_rata_umur) * crewCountClient;
+                    totalAgeSumClient += parseInt(ship.total_umur) || 0;
+
                     vesselListClient.push(ship.nama_kapal);
                 });
 
@@ -813,8 +872,8 @@
                     0;
 
                 $("#txtTotalCrewShipClient").text(totalCrewClient);
-                $("#xtAvgAgeShipClient").text(avgAgeClient);
-                $("#xtTotalMaleShipClient").text(totalMaleClient);
+                $("#txtAvgAgeShipClient").text(avgAgeClient);
+                $("#txtTotalMaleShipClient").text(totalMaleClient);
                 $("#txtTotalFemaleShipClient").text(totalFemaleClient);
 
                 var halfClient = Math.ceil(vesselListClient.length / 2);
@@ -892,13 +951,15 @@
                 var half = Math.ceil(vesselList.length / 2);
                 $("#listKapal_1").html(
                     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
-                    vesselList.slice(0, half).map(v => `<li><i class='fa fa-ship'></i> ${v}</li>`).join(
+                    vesselList.slice(0, half).map(vessel =>
+                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
                         "") +
                     "</ul>"
                 );
                 $("#listKapal_2").html(
                     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
-                    vesselList.slice(half).map(v => `<li><i class='fa fa-ship'></i> ${v}</li>`).join(
+                    vesselList.slice(half).map(vessel =>
+                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
                         "") +
                     "</ul>"
                 );
@@ -909,6 +970,40 @@
             }
         });
     }
+
+    function showCheckboxes() {
+        var checkboxes = document.getElementById("idCheckboxVesselOwnShip");
+        if (checkboxes.style.display === "none") {
+            checkboxes.style.display = "block";
+        } else {
+            checkboxes.style.display = "none";
+        }
+    }
+    document.addEventListener("click", function(event) {
+        var dropdown = document.getElementById("idCheckboxVesselOwnShip");
+        var selectBox = document.querySelector("[onclick='showCheckboxes()']");
+
+        if (!selectBox.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.style.display = "none";
+        }
+    });
+
+    function showCheckboxesClient() {
+        var checkboxes = document.getElementById("idCheckboxVesselClient");
+        if (checkboxes.style.display === "none") {
+            checkboxes.style.display = "block";
+        } else {
+            checkboxes.style.display = "none";
+        }
+    }
+    document.addEventListener("click", function(event) {
+        var dropdown = document.getElementById("idCheckboxVesselClient");
+        var selectBox = document.querySelector("[onclick='showCheckboxesClient()']");
+
+        if (!selectBox.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.style.display = "none";
+        }
+    });
     </script>
     <style>
     body {
@@ -1120,7 +1215,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <!-- <div class="row">
                             <div class="col-md-12" style="border-radius: 10px; padding: 15px;">
                                 <h5 style="font-size: 20px; color: #000080; font-weight: bold;">Vessel Name Client</h5>
                                 <div class="row">
@@ -1132,7 +1227,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -1229,7 +1324,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <!-- <div class="row">
                             <div class="col-md-12" style="border-radius: 10px; padding: 15px;">
                                 <h5 style="font-size: 20px; color: #000080; font-weight: bold;">Vessel Name</h5>
                                 <div class="row">
@@ -1241,7 +1336,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -1253,10 +1348,28 @@
             </div>
 
             <div class="row" style="margin-top: 12px;">
-                <div class="col-md-12">
+                <div class="col-md-12 text-center">
+                    <h3 style="font-weight: bold;">Top 10 Schools by</h3>
+                    <div style="width: 200px; margin: 10px auto;">
+                        <select id="crewCategory" class="form-control">
+                            <option value="Onboard">Onboard</option>
+                            <option value="Onleave">Onleave</option>
+                            <option value="All">All</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="idDivtotalSchoolContainer" class="col-md-12">
                     <div id="idDivtotalSchool"></div>
                 </div>
+                <div id="comparisonContainer" class="col-md-6" style="display: none; margin-top: 10px;">
+                    <div id="idDivComparison"></div>
+                </div>
             </div>
+
+
+
+
+
             <div class="row" style="margin-top: 12px;">
                 <div class="col-md-12">
                     <div>
