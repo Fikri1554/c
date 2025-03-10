@@ -669,13 +669,13 @@ class Dashboard extends CI_Controller {
 
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
-				$color = '#f15b40';
+				$color = '#001F5B';
 			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
-				$color = '#ffc20f';  
+				$color = '#4258B1';  
 			} else if ($totalOnleave > $batasMedium) {
 				$category = 'High';
-				$color = '#62bb47';  
+				$color = '#84b0e3';  
 			}
 
 			$data[] = array(
@@ -690,6 +690,7 @@ class Dashboard extends CI_Controller {
 		header('Content-Type: application/json');
 		echo json_encode($data);
 	}
+	
 	
 	function rankContractExpiry()
 	{

@@ -296,7 +296,6 @@ class DataContext extends CI_Controller {
 		}
 	}
 
-
 	function getVesselType($return = "")
 	{
 		$opt = "<option value=''>Select Vessel Type</option>"; 
@@ -309,7 +308,6 @@ class DataContext extends CI_Controller {
 			$opt .= "<option value=\"" . htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "\">" 
 					. htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "</option>";
 		}
-
 		if ($return == "") {
 			return $opt;
 		} else {

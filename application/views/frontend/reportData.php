@@ -54,7 +54,12 @@
     }
 
     function transmital() {
-
+        var idPerson = $("#txtIdPerson").val();
+        if (idPerson == "") {
+            alert("Person Empty..!!!");
+            return false;
+        }
+        window.open("<?php echo base_url('report/transmital');?>/" + idPerson + "/", "_blank");
     }
 
     function reloadPage() {

@@ -376,8 +376,8 @@
                 dataType: 'json',
                 success: function(data) {
                     const categories = data.map(item => item.school);
-                    let seriesData;
-                    let onboardData = data.map(item => item.onboard_crew);
+                    var seriesData;
+                    var onboardData = data.map(item => item.onboard_crew);
 
                     if (category === "Onboard") {
                         seriesData = onboardData;
@@ -391,9 +391,9 @@
                             'col-md-12').addClass('col-md-6');
                     } else {
                         seriesData = data.map(item => item.onboard_crew + item.onleave_crew);
-                        $('#comparisonContainer').show();
-                        $('#idDivtotalSchoolContainer, #comparisonContainer').removeClass(
-                            'col-md-12').addClass('col-md-6');
+                        $('#comparisonContainer').hide();
+                        $('#idDivtotalSchoolContainer').removeClass('col-md-6').addClass(
+                            'col-md-12');
                     }
 
                     Highcharts.chart('idDivtotalSchool', {
@@ -435,8 +435,7 @@
                         },
                         tooltip: {
                             formatter: function() {
-                                return `<b>${data[this.point.index].school}</b><br>
-                            ${category} Crew: ${seriesData[this.point.index]}`;
+                                return `<b>${data[this.point.index].school}</b><br>${category} Crew: ${seriesData[this.point.index]}`;
                             }
                         },
                         plotOptions: {
@@ -459,7 +458,7 @@
                         }]
                     });
 
-                    if (category === "Onleave" || category === "All") {
+                    if (category === "Onleave") {
                         Highcharts.chart('idDivComparison', {
                             chart: {
                                 type: 'bar',
@@ -499,8 +498,7 @@
                             },
                             tooltip: {
                                 formatter: function() {
-                                    return `<b>${data[this.point.index].school}</b><br>
-                                Onboard Crew: ${onboardData[this.point.index]}`;
+                                    return `<b>${data[this.point.index].school}</b><br>Onboard Crew: ${onboardData[this.point.index]}`;
                                 }
                             },
                             plotOptions: {
@@ -539,6 +537,7 @@
     });
 
 
+
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url('dashboard/getCadangan'); ?>',
@@ -546,10 +545,19 @@
             dataType: 'json',
             success: function(data) {
                 const columns = 6;
+                data.sort((a, b) => {
+                    const colorOrder = {
+                        '#001F5B': 0,
+                        '#4258B1': 1,
+                        '#84b0e3': 2
+                    };
+                    return colorOrder[a.color] - colorOrder[b.color];
+                });
+
                 const heatmapData = data.map((item, index) => ({
-                    x: (columns - 1) - (index %
+                    x: Math.floor(index / columns),
+                    y: (columns - 1) - (index %
                         columns),
-                    y: Math.floor(index / columns),
                     value: item.total_onleave,
                     onboard: item.total_onboard,
                     rank: item.rank,
@@ -587,10 +595,10 @@
                     tooltip: {
                         formatter: function() {
                             return `
-                    <b>${this.point.rank}</b><br>
-                    Crew Off-Duty: ${this.point.value}<br>
-                    Crew On-Duty: ${this.point.onboard}<br>
-                    `;
+                            <b>${this.point.rank}</b><br>
+                            Crew Off-Duty: ${this.point.value}<br>
+                            Crew On-Duty: ${this.point.onboard}<br>
+                        `;
                         },
                     },
                     series: [{
@@ -611,7 +619,7 @@
                             style: {
                                 fontSize: '15px',
                                 fontWeight: 'bold',
-                                color: '#000',
+                                color: '#fff',
                                 textOutline: 'none'
                             },
                         },
@@ -628,8 +636,9 @@
                 console.error('Error fetching data:', status, error);
             },
         });
-
     });
+
+
 
     $(document).ready(function() {
         $.ajax({
@@ -1349,7 +1358,7 @@
 
             <div class="row" style="margin-top: 12px;">
                 <div class="col-md-12 text-center">
-                    <h3 style="font-weight: bold;">Top 10 Schools by</h3>
+                    <h3 style="font-weight: bold;">Select Top School By:</h3>
                     <div style="width: 200px; margin: 10px auto;">
                         <select id="crewCategory" class="form-control">
                             <option value="Onboard">Onboard</option>
@@ -1365,10 +1374,6 @@
                     <div id="idDivComparison"></div>
                 </div>
             </div>
-
-
-
-
 
             <div class="row" style="margin-top: 12px;">
                 <div class="col-md-12">

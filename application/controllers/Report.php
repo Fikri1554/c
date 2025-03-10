@@ -80,11 +80,74 @@ class Report extends CI_Controller {
 			{
 				$this->getDataCVSuntechno($idPerson,$kdCmp);
 			}else{
-				$this->getDataCVOtherForm($idPerson,$kdCmp);//report default AES
+				$this->getDataCVOtherForm($idPerson,$kdCmp);
 			}
 		}
 	}
 
+	function transmital($idPerson = "")
+	{
+		$dataOut = array();
+		
+		
+		$sqlCert = "SELECT certname, docno, issdate, expdate FROM tblcertdoc 
+					WHERE idperson = '".$idPerson."' AND deletests = '0' ORDER BY certname ASC";
+		$certResults = $this->MCrewscv->getDataQuery($sqlCert, array($idPerson));
+
+		
+		$sqlCrew = "SELECT 
+                    TRIM(CONCAT(mp.fname, ' ', mp.mname, ' ', mp.lname)) AS fullName,
+                    mr.nmrank AS rankName,
+                    mv.nmvsl AS vesselName
+                FROM tblcontract tc
+                JOIN mstpersonal mp ON tc.idperson = mp.idperson
+                LEFT JOIN mstrank mr ON tc.signonrank = mr.kdrank
+                LEFT JOIN mstvessel mv ON tc.signonvsl = mv.kdvsl
+                WHERE tc.idperson = '".$idPerson."' AND tc.deletests = '0'
+                ";
+		$crewResult = $this->MCrewscv->getDataQuery($sqlCrew, array($idPerson));
+		
+		$crewName = $crewResult ? $crewResult[0]->fullName : 'Unknown';
+		$crewRank = $crewResult ? $crewResult[0]->rankName : 'Unknown';
+		$vesselName = $crewResult ? $crewResult[0]->vesselName : 'Unknown';
+		
+		$certTable = '';
+		if (!empty($certResults)) {
+			foreach ($certResults as $cert) {
+				$certTable = '';
+				if (!empty($certResults)) {
+					foreach ($certResults as $cert) {
+						$certTable .= '<tr>';
+						$certTable .= '<td class="cert-name" style="text-align: left;">' . htmlspecialchars($cert->certname) . '</td>';
+						$certTable .= '<td><input type="text" style="width: 5%; border: none; text-align: center;"></td>';
+						$certTable .= '<td style="border: none; text-align: center;">' . ($cert->issdate ? date('d M Y', strtotime($cert->issdate)) : 'N/A') . '</td>';
+						$certTable .= '<td style="border: none; text-align: center;">' . ($cert->expdate ? date('d M Y', strtotime($cert->expdate)) : 'N/A') . '</td>';
+						$certTable .= '<td class="document-number" style="border-bottom: 1px solid black; text-align: left;">' . htmlspecialchars($cert->docno) . '</td>';
+						$certTable .= '</tr>';
+					}
+				}
+
+			}
+		}
+
+		$dataOut['crewName'] = $crewName;
+		$dataOut['crewRank'] = $crewRank;
+		$dataOut['vesselName'] = $vesselName; 
+		$dataOut['certTable'] = $certTable; 
+
+		$nama_dokumen = "Transmital_Person_" . $idPerson;
+		require("application/views/frontend/pdf/mpdf60/mpdf.php");
+		$mpdf = new mPDF('utf-8', 'A4');
+
+		ob_start();
+		$this->load->view('frontend/exportTransmital', $dataOut);
+		$html = ob_get_contents();
+		ob_end_clean();
+		$mpdf->WriteHTML(utf8_encode($html));
+		$mpdf->Output($nama_dokumen . ".pdf", 'I');
+		exit;
+	}
+  
 	function getDataCVOtherForm($idPerson = "",$company = "")
 	{
 		$dataContext = new DataContext();
@@ -97,7 +160,6 @@ class Report extends CI_Controller {
 				LEFT JOIN tblkota B ON A.pob = B.KdKota
 				LEFT JOIN tblnegara C ON A.nationalid = C.KdNegara
 				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."' " ;
-
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
 		if(count($rsl) > 0)
