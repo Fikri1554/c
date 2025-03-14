@@ -89,24 +89,22 @@ class Report extends CI_Controller {
 	{
 		$dataOut = array();
 		
-		
 		$sqlCert = "SELECT certname, docno, issdate, expdate FROM tblcertdoc 
 					WHERE idperson = '".$idPerson."' AND deletests = '0' ORDER BY certname ASC";
 		$certResults = $this->MCrewscv->getDataQuery($sqlCert, array($idPerson));
 
-		
 		$sqlCrew = "SELECT 
-                    TRIM(CONCAT(mp.fname, ' ', mp.mname, ' ', mp.lname)) AS fullName,
-                    mr.nmrank AS rankName,
-                    mv.nmvsl AS vesselName
-                FROM tblcontract tc
-                JOIN mstpersonal mp ON tc.idperson = mp.idperson
-                LEFT JOIN mstrank mr ON tc.signonrank = mr.kdrank
-                LEFT JOIN mstvessel mv ON tc.signonvsl = mv.kdvsl
-                WHERE tc.idperson = '".$idPerson."' AND tc.deletests = '0'
-                ";
-		$crewResult = $this->MCrewscv->getDataQuery($sqlCrew, array($idPerson));
+					TRIM(CONCAT(mp.fname, ' ', mp.mname, ' ', mp.lname)) AS fullName,
+					mr.nmrank AS rankName,
+					mv.nmvsl AS vesselName
+				FROM tblcontract tc
+				JOIN mstpersonal mp ON tc.idperson = mp.idperson
+				LEFT JOIN mstrank mr ON tc.signonrank = mr.kdrank
+				LEFT JOIN mstvessel mv ON tc.signonvsl = mv.kdvsl
+				WHERE tc.idperson = '".$idPerson."' AND tc.deletests = '0'";
 		
+		$crewResult = $this->MCrewscv->getDataQuery($sqlCrew, array($idPerson));
+
 		$crewName = $crewResult ? $crewResult[0]->fullName : 'Unknown';
 		$crewRank = $crewResult ? $crewResult[0]->rankName : 'Unknown';
 		$vesselName = $crewResult ? $crewResult[0]->vesselName : 'Unknown';
@@ -114,26 +112,34 @@ class Report extends CI_Controller {
 		$certTable = '';
 		if (!empty($certResults)) {
 			foreach ($certResults as $cert) {
-				$certTable = '';
-				if (!empty($certResults)) {
-					foreach ($certResults as $cert) {
-						$certTable .= '<tr>';
-						$certTable .= '<td class="cert-name" style="text-align: left;">' . htmlspecialchars($cert->certname) . '</td>';
-						$certTable .= '<td><input type="text" style="width: 5%; border: none; text-align: center;"></td>';
-						$certTable .= '<td style="border: none; text-align: center;">' . ($cert->issdate ? date('d M Y', strtotime($cert->issdate)) : 'N/A') . '</td>';
-						$certTable .= '<td style="border: none; text-align: center;">' . ($cert->expdate ? date('d M Y', strtotime($cert->expdate)) : 'N/A') . '</td>';
-						$certTable .= '<td class="document-number" style="border-bottom: 1px solid black; text-align: left;">' . htmlspecialchars($cert->docno) . '</td>';
-						$certTable .= '</tr>';
-					}
-				}
-
+				$certTable .= '<tr>';
+				$certTable .= '<td class="cert-name" style="text-align: left;">' . htmlspecialchars($cert->certname) . '</td>';
+				$certTable .= '<td><input type="text" style="width: 50px; border: none; text-align: center;"></td>';
+				$certTable .= '<td style="border: none; text-align: center;">' . ($cert->issdate ? date('d M Y', strtotime($cert->issdate)) : 'N/A') . '</td>';
+				$certTable .= '<td style="border: none; text-align: center;">' . ($cert->expdate ? date('d M Y', strtotime($cert->expdate)) : 'N/A') . '</td>';
+				$certTable .= '<td class="document-number" style="border-bottom: 1px solid black; text-align: left;">' . htmlspecialchars($cert->docno) . '</td>';
+				$certTable .= '</tr>';
+	
+			}
+			
+			$certTable .= '<tr>';
+				$certTable .= '<td colspan="5" style="text-align: left; font-weight: bold;">Other Certificate:</td>';
+			$certTable .= '</tr>';
+			for ($i=1; $i <= 5; $i++) { 
+				$certTable .= '<tr>';
+				$certTable .= '<td class="cert-name" style="text-align: left; border-bottom: 1px dotted black;"></td>';
+				$certTable .= '<td><input type="text" style="width: 50px; border: none; text-align: center; "></td>';
+				$certTable .= '<td style="border-bottom: 1px dotted black; text-align: center;"></td>';
+				$certTable .= '<td style="border-bottom: 1px dotted black; text-align: center;"></td>';
+				$certTable .= '<td style="border-bottom: 1px dotted black; text-align: center;"></td>';
+				$certTable .= '</tr>';
 			}
 		}
 
 		$dataOut['crewName'] = $crewName;
 		$dataOut['crewRank'] = $crewRank;
-		$dataOut['vesselName'] = $vesselName; 
-		$dataOut['certTable'] = $certTable; 
+		$dataOut['vesselName'] = $vesselName;
+		$dataOut['certTable'] = $certTable;
 
 		$nama_dokumen = "Transmital_Person_" . $idPerson;
 		require("application/views/frontend/pdf/mpdf60/mpdf.php");
@@ -147,6 +153,7 @@ class Report extends CI_Controller {
 		$mpdf->Output($nama_dokumen . ".pdf", 'I');
 		exit;
 	}
+
   
 	function getDataCVOtherForm($idPerson = "",$company = "")
 	{
@@ -692,20 +699,22 @@ class Report extends CI_Controller {
 		$this->load->view("frontend/exportPersonalIdAdnyana",$dataOut);
 	}
 
-	function getDataCVSuntechno($idPerson = "",$company = "")
+	function getDataCVSuntechno($idPerson = "", $company = "")
 	{
 		$dataContext = new DataContext();
 		$dataOut = array();
 		$dateNow = date("Y-m-d");
 		$dateNowTime = date("Y-m-d h:i:s");
 
-		$sql = "SELECT A.*,TRIM(CONCAT(A.fname,' ',A.mname,' ' ,A.lname)) AS fullName,B.NmKota,C.NmNegara,D.NmKota As pKota,DATE_FORMAT( FROM_DAYS(DATEDIFF(CURRENT_DATE, dob)),'%y') AS age
+		$sql = "SELECT A.*, TRIM(CONCAT(A.fname,' ', A.mname,' ' , A.lname)) AS fullName, 
+					B.NmKota, C.NmNegara, D.NmKota AS pKota, 
+					DATE_FORMAT(FROM_DAYS(DATEDIFF(CURRENT_DATE, dob)), '%y') AS age
 				FROM mstpersonal A
 				LEFT JOIN tblkota B ON A.pob = B.KdKota
 				LEFT JOIN tblnegara C ON A.nationalid = C.KdNegara
 				LEFT JOIN tblkota D ON A.pcity = D.KdKota
-				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."' " ;
-		
+				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."'";
+
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
 		if(count($rsl) > 0)
@@ -725,7 +734,7 @@ class Report extends CI_Controller {
 			$dataOut['kotaLahir'] = $rsl[0]->NmKota;
 			$dataOut['vesselFor'] = $rsl[0]->vesselfor;
 			$dataOut['negara'] = $rsl[0]->NmNegara;
-			$dataOut['maritalSt'] = $rsl[0]->maritalstsid;			
+			$dataOut['maritalSt'] = $rsl[0]->maritalstsid;            
 			$dataOut['contactNo'] = $rsl[0]->telpno;
 			$dataOut['rank'] = $rsl[0]->applyfor;
 			$dataOut['wght'] = $rsl[0]->wght." kg";
@@ -751,15 +760,32 @@ class Report extends CI_Controller {
 			$trIsm .= "</tr>";
 
 			$dataOut['trIsm'] = $trIsm;
-			$dataOut['yearyOpSun'] = $rsl[0]->yearoperat;
-			$dataOut['yearyRankSun'] = $rsl[0]->yearrank;
-			$dataOut['trSeaService'] = $this->getSeaServiceRecord($idPerson,"suntechno");
+
+			$sqlContract = "SELECT COUNT(*) AS total_contracts 
+							FROM tblcontract 
+							WHERE idperson = '".$idPerson."' 
+							AND kdcmprec = '005' 
+							AND signoffdt IS NOT NULL";
+
+			$contractResult = $this->MCrewscv->getDataQuery($sqlContract);
+			$dataOut['yearyOpSun'] = ($contractResult[0]->total_contracts) ? $contractResult[0]->total_contracts : 0;
+
+			$sqlRank = "SELECT SUM(TIMESTAMPDIFF(YEAR, signondt, signoffdt)) AS total_years 
+						FROM tblcontract 
+						WHERE idperson = '".$idPerson."' 
+						AND kdcmprec = '005' 
+						AND signoffdt IS NOT NULL";
+
+			$rankResult = $this->MCrewscv->getDataQuery($sqlRank);
+			$dataOut['yearyRankSun'] = ($rankResult[0]->total_years) ? $rankResult[0]->total_years : 0;
+
+			$dataOut['trSeaService'] = $this->getSeaServiceRecord($idPerson, "suntechno");
 			$dataOut['teamLead'] = $this->detilperdir($idPerson);
 		}
 
-		
-		$this->load->view("frontend/exportPersonalIdSuntechno",$dataOut);
+		$this->load->view("frontend/exportPersonalIdSuntechno", $dataOut);
 	}
+
 
 	function getDataCVStellar($idPerson = "",$company = "")
 	{
@@ -1405,7 +1431,7 @@ class Report extends CI_Controller {
 
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
-		foreach ($rsl as $key => $val)
+		foreach ($rsl as $key => $val) 
 		{
 			$fromDate = $dataContext->convertReturnName($val->fmdtexp);
 			$toDate = $dataContext->convertReturnName($val->todtexp);
@@ -1474,7 +1500,6 @@ class Report extends CI_Controller {
 				$trNya .= "</tr>";
 			}
 		}
-
 
 		return $trNya;
 	}

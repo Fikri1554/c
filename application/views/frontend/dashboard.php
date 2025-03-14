@@ -376,8 +376,8 @@
                 dataType: 'json',
                 success: function(data) {
                     const categories = data.map(item => item.school);
-                    var seriesData;
-                    var onboardData = data.map(item => item.onboard_crew);
+                    let seriesData;
+                    let onboardData = data.map(item => item.onboard_crew);
 
                     if (category === "Onboard") {
                         seriesData = onboardData;
@@ -403,12 +403,7 @@
                             height: 600
                         },
                         title: {
-                            text: `Top 10 Schools by Crew (${category})`,
-                            style: {
-                                fontSize: '20px',
-                                fontWeight: 'bold',
-                                color: '#333'
-                            }
+                            text: `Top 10 Schools by Crew (${category})`
                         },
                         xAxis: {
                             categories: categories,
@@ -417,10 +412,10 @@
                             },
                             labels: {
                                 style: {
-                                    fontSize: '14px'
+                                    fontSize: '16px',
+                                    fontWeight: 'bold'
                                 }
-                            },
-                            gridLineWidth: 1
+                            }
                         },
                         yAxis: {
                             min: 0,
@@ -444,10 +439,55 @@
                                     enabled: true,
                                     style: {
                                         fontSize: '16px',
-                                        color: 'black'
+                                        fontWeight: 'bold',
+                                        color: 'black',
+                                        textOutline: 'none'
                                     }
                                 },
-                                groupPadding: 0.1
+                                cursor: category === "Onboard" ? 'pointer' : 'default',
+                                point: {
+                                    events: {
+                                        click: function() {
+                                            if (category !== "Onboard")
+                                                return;
+
+                                            const schoolData = data[this.index];
+                                            const crewDetails = schoolData
+                                                .crew_details || [];
+
+                                            $('#modalTitle').text(
+                                                `Detail Crew for ${schoolData.school}`
+                                            );
+                                            $('.modal-header').css('background-color',
+                                                '#078415');
+
+                                            const tbody = $(
+                                                '#idBodyModalCrewDetailByInstitution'
+                                            );
+                                            tbody.empty();
+                                            if (crewDetails.length > 0) {
+                                                crewDetails.forEach((crew, i) => {
+                                                    tbody.append(`
+                                                        <tr>
+                                                            <td style="text-align: center;">${i + 1}</td>
+                                                            <td>${crew}</td>
+                                                        </tr>
+                                                    `);
+                                                });
+
+                                            } else {
+                                                tbody.append(`
+                                                    <tr>
+                                                        <td colspan="2" style="text-align: center;">No crew data available.</td>
+                                                    </tr>
+                                                `);
+                                            }
+
+                                            $('#detailModal').modal('show');
+                                        }
+                                    }
+                                }
+
                             }
                         },
                         series: [{
@@ -537,7 +577,6 @@
     });
 
 
-
     $(document).ready(function() {
         $.ajax({
             url: '<?php echo base_url('dashboard/getCadangan'); ?>',
@@ -595,10 +634,10 @@
                     tooltip: {
                         formatter: function() {
                             return `
-                            <b>${this.point.rank}</b><br>
-                            Crew Off-Duty: ${this.point.value}<br>
-                            Crew On-Duty: ${this.point.onboard}<br>
-                        `;
+                                <b>${this.point.rank}</b><br>
+                                Crew Off-Duty: ${this.point.value}<br>
+                                Crew On-Duty: ${this.point.onboard}<br>
+                            `;
                         },
                     },
                     series: [{
@@ -637,8 +676,6 @@
             },
         });
     });
-
-
 
     $(document).ready(function() {
         $.ajax({
@@ -830,9 +867,10 @@
                 console.error("Element with ID 'idCheckboxVesselClient' not found!")
             }
         }
-    })
+    });
 
     function searchVesselClient() {
+
         var selectedVesselClient = [];
 
         if ($("#selectAllVesselsClientShip").is(":checked")) {
@@ -894,7 +932,7 @@
                 );
                 $("#listKapalClient_2").html(
                     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
-                    vesselListClient.slice(halfClient).map(vessel =>
+                    vesselListClient.slice(0, halfClient).map(vessel =>
                         `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
                     "</ul>"
                 );

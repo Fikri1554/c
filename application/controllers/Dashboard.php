@@ -574,8 +574,11 @@ class Dashboard extends CI_Controller {
 		$sql = "
 			SELECT 
 				T.namescl AS nama_sekolah,
-				COUNT(CASE WHEN B.signoffdt = '0000-00-00' THEN A.idperson END) AS jumlah_onboard,
-				COUNT(CASE WHEN B.signoffdt != '0000-00-00' AND B.signoffdt <= CURDATE() THEN A.idperson END) AS jumlah_onleave
+				COUNT(B.idperson) AS jumlah_onboard,
+				GROUP_CONCAT(
+					CONCAT_WS(' ', A.fname, A.mname, A.lname, '(', R.nmrank, ')')
+					ORDER BY A.fname SEPARATOR ', '
+				) AS nama_crew_rank
 			FROM tblscl T
 			LEFT JOIN mstpersonal A ON T.idperson = A.idperson
 			LEFT JOIN tblcontract B ON A.idperson = B.idperson
@@ -585,6 +588,7 @@ class Dashboard extends CI_Controller {
 				AND R.urutan > 0
 				AND T.deletests = '0'
 				AND B.deletests = '0'
+				AND B.signoffdt = '0000-00-00' -- Hanya crew yang masih onboard
 			GROUP BY T.namescl
 			ORDER BY jumlah_onboard DESC
 			LIMIT 10;
@@ -600,9 +604,10 @@ class Dashboard extends CI_Controller {
 				return array(
 					'school' => $row->nama_sekolah,
 					'onboard_crew' => (int)$row->jumlah_onboard,
-					'onleave_crew' => (int)$row->jumlah_onleave,
+					'crew_details' => $row->nama_crew_rank ? explode(', ', $row->nama_crew_rank) : array()
 				);
 			}, $result);
+
 
 			echo json_encode($data);
 

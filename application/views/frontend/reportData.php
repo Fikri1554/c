@@ -155,9 +155,8 @@
                                     <div class="row">
                                         <div class="col-md-5 col-xs-12">
                                             <button class="btn btn-primary btn-sm btn-block" title="Cetak"
-                                                onclick="printDataPrincipal();" id="btnPrintPrincipal"
-                                                disabled="disabled">
-                                                <i class="fa fa-print"></i> Print
+                                                onclick="printDataPrincipal();" id="btnPrintPrincipal" <i
+                                                class="fa fa-print"></i> Print
                                             </button>
                                         </div>
 

@@ -187,7 +187,6 @@ class ExpiredCertificate extends CI_Controller {
 					{
 						$whereNya .= " AND A.doctp LIKE '%seaman%' ";
 					}
-
 					if($txtSearch != "")
 					{
 						if($slcSearchType == "crew")

@@ -10,10 +10,12 @@
     <table style="width: 100%; border-collapse: collapse;">
         <tr>
             <td><img src="<?php echo base_url('assets/img/logo_aes.png'); ?>" style="width: 50px;"></td>
-            <td style="font-size: 18px; font-weight: bold; text-align: left;">PT. ANDHINI EKA KARYA SEJAHTERA</td>
+            <td style="font-size: 18px; font-weight: bold; text-align: left;">ANDHIKA GROUP</td>
             <td style="text-align: right; font-size: 8px;">SRPS LICENSE NO:SIUPPAK 12.12 Tahun 2014</td>
             <td><img src="<?php echo base_url('assets/img/iso.png'); ?>" style="width: 50px;"></td>
-            <td><img src="<?php echo base_url('assets/img/compliance.png'); ?>" style="width: 50px;"></td>
+            <td><img src="<?php echo base_url('assets/img/compliance.png'); ?>"
+                    style="width: 50px; margin-left: -35px;">
+            </td>
         </tr>
     </table>
     <table style="width: 100%;">
@@ -69,10 +71,23 @@
             (<?php echo htmlspecialchars($crewRank); ?>), (<?php echo htmlspecialchars($crewName); ?>)
         </p>
         <p>I, Master of the above vessel acknowledge receipt of the above certificates & documents from the crew and
-            will advice JKT - CD of any discrepancies upon receipt and will advice JKT - CD 1 months notice. Should any
-            of the above becomes invalid / expire during the service of the crew onboard the vessel.</p>
-        <p><strong>Signature & Name</strong>: _______________________________</p>
+            will advise JKT - CD of any discrepancies upon receipt and will advise JKT - CD 1 month's notice. Should any
+            of the above become invalid/expire during the service of the crew onboard the vessel.</p>
+
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <div
+                style="background: #ffffcc; border-left: 5px solid #ffcc00; padding: 10px; font-weight: bold; width: 50%;">
+                <h3 style="margin: 0;">FISIK SUDAH DI CEK SESUAI ATURAN</h3>
+            </div>
+            <div style="text-align: right; margin-top: -45px;">
+                <p><strong>Signature & Name</strong>: ___________________________________</p>
+            </div>
+        </div>
     </div>
+
+
+
+
 </body>
 
 </html>

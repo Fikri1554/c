@@ -32,8 +32,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 
-<body
-    style="background-color: <?php echo (basename($_SERVER['PHP_SELF']) == 'dashboard.php') ? '#ffffff' : '#d1e9ef'; ?>;">
+<body style="background-color: <?php echo (basename($_SERVER['PHP_SELF']) == 'dashboard.php') ? '#ffffff' : '#d1e9ef'; ?>; font-family: Calibri, Candara, Segoe, 
+    Segoe UI,Optima, Arial, sans-serif;">
     <div class="clearfix visible-lg-block visible-md-block">
         <section class="header" style="padding-top:10px;padding-bottom:5px;">
             <div class="container">
