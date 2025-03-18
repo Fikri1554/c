@@ -39,6 +39,9 @@
 
         $("#btnPrintPrincipal").attr("disabled", false);
         $("#btnExportPrincipal").attr("disabled", false);
+        $("#btnPrintTransmital").attr("disabled", false);
+        $("#btnPrintTraining").attr("disabled", false);
+        $("#btnPrintReport").attr("disabled", false);
     }
 
     function printDataPrincipal() {
@@ -65,6 +68,81 @@
     function reloadPage() {
         window.location = "<?php echo base_url('report/');?>";
     }
+
+    function saveData() {
+        var formData = new FormData();
+        formData.append("txtIdEditTrain", $("#txtIdEditTrain").val());
+        formData.append("txtemployeeName", $("#txtemployeeName").val());
+        formData.append("txtdesignation", $("#txtdesignation").val());
+        formData.append("txtDateOfTraining", $("#txtDateOfTraining").val());
+        formData.append("txtplaceOfTraining", $("#txtplaceOfTraining").val());
+        formData.append("txtsubject", $("#txtsubject").val());
+        formData.append("txtDateOfEvaluation", $("#txtDateOfEvaluation").val());
+        formData.append("txtevaluator", $("#txtevaluator").val());
+
+        $("#idLoading").show();
+        $.ajax("<?php echo base_url('report/saveDataFormEvaluation'); ?>", {
+            method: "POST",
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                alert(response);
+                reloadPage();
+                $("#idLoading").hide();
+            },
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        let btnAdd = document.getElementById("btnAdd");
+        let btnCancel = document.getElementById("btnCancel");
+
+        if (btnAdd) {
+            btnAdd.addEventListener("click", function() {
+                let table = document.getElementById("tableContainer");
+                let form = document.getElementById("formContainer");
+
+                btnAdd.style.opacity = "0";
+                setTimeout(() => {
+                    btnAdd.style.display = "none";
+                }, 300);
+
+                table.style.opacity = "0";
+                setTimeout(() => {
+                    table.style.display = "none";
+                    form.style.display = "block";
+                    setTimeout(() => {
+                        form.style.opacity = "1";
+                    }, 50);
+                }, 300);
+            });
+        }
+
+        if (btnCancel) {
+            btnCancel.addEventListener("click", function() {
+                let table = document.getElementById("tableContainer");
+                let form = document.getElementById("formContainer");
+
+                form.style.opacity = "0";
+                setTimeout(() => {
+                    form.style.display = "none";
+                    table.style.display = "block";
+                    setTimeout(() => {
+                        table.style.opacity = "1";
+                    }, 50);
+                }, 300);
+
+                setTimeout(() => {
+                    btnAdd.style.display = "block";
+                    setTimeout(() => {
+                        btnAdd.style.opacity = "1";
+                    }, 50);
+                }, 300);
+            });
+        }
+    });
     </script>
 </head>
 
@@ -129,15 +207,6 @@
                                 </div>
                             </legend>
                             <div class="row">
-                                <div class="col-md-7"></div>
-                                <div class="col-md-2">
-                                    <button class="btn btn-success btn-sm btn-block" title="Cetak"
-                                        onclick="transmital();" id="btnPrintPrincipal">
-                                        <i class="fa fa-print"></i> Transmital
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="row" style="margin-top: 10px;">
                                 <div class="col-md-7 col-xs-12">
                                     <div class="row">
                                         <div class="col-md-3 col-xs-12">
@@ -155,18 +224,34 @@
                                     <div class="row">
                                         <div class="col-md-5 col-xs-12">
                                             <button class="btn btn-primary btn-sm btn-block" title="Cetak"
-                                                onclick="printDataPrincipal();" id="btnPrintPrincipal" <i
-                                                class="fa fa-print"></i> Print
+                                                onclick="printDataPrincipal();" id="btnPrintPrincipal"
+                                                style="margin-top: 10px;">
+                                                <i class="fa fa-print"></i> Print
                                             </button>
                                         </div>
-
-
                                         <div class="col-md-5 col-xs-12">
-                                            <!-- <button class="btn btn-info btn-sm btn-block" title="Export Excel" onclick="" id="btnExportPrincipal" disabled="disabled">
-												<i class="fa fa-file-excel-o"></i>&nbsp Export
-											</button> -->
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 10px;">
+                                <div class="col-md-4">
+                                    <button class="btn btn-success btn-sm btn-block" title="Cetak"
+                                        onclick="transmital();" id="btnPrintTransmital" disabled="disabled">
+                                        <i class="fa fa-print"></i> Transmital
+                                    </button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-danger btn-sm btn-block" title="Cetak" id="btnPrintTraining"
+                                        disabled="disabled" data-toggle="modal" data-target="#trainingEvaluationModal">
+                                        <i class="fa fa-print"></i> Training Evaluation
+                                    </button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak" id="btnPrintReport"
+                                        disabled="disabled">
+                                        <i class="fa fa-print"></i> Report Evaluation
+                                    </button>
                                 </div>
                             </div>
                             <!-- <legend style="margin-top:15px;">Data Convert</legend>
@@ -274,5 +359,173 @@
         </div>
     </div>
 </body>
+
+<div class="modal fade" id="trainingEvaluationModal" tabindex="-1" aria-labelledby="modalTitle">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 10px;background-color:#16839B;">
+                <h5 class="modal-title" id="modalTitle" style="color: white;">Training Evaluation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <button type="button" class="btn btn-primary" id="btnAdd"><i class='fa fa-plus-circle'></i> Add
+                    Data</button>
+
+                <div id="formContainer"
+                    style="display: none; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease-in-out;">
+                    <form id="trainingForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="txtemployeeName">Employee Name</label>
+                                    <input type="text" class="form-control" id="txtemployeeName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtdesignation">Designation</label>
+                                    <input type="text" class="form-control" id="txtdesignation" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtDateOfTraining">Date Of Training</label>
+                                    <input type="date" class="form-control" id="txtDateOfTraining" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtplaceOfTraining">Place Of Training</label>
+                                    <input type="text" class="form-control" id="txtplaceOfTraining" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtsubject">Subject</label>
+                                    <input type="text" class="form-control" id="txtsubject" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtDateOfEvaluation">Date Of Evaluation</label>
+                                    <input type="date" class="form-control" id="txtDateOfEvaluation" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtevaluator">Evaluator Name & Designation</label>
+                                    <input type="text" class="form-control" id="txtevaluator" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Employee Understanding with the job after training:</label>
+                                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score1" value="1"> 1
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score1" value="2"> 2
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score1" value="3"> 3
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score1" value="4"> 4
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Improvement for employee with Quality/Productivity and skill after
+                                        training:</label>
+                                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score2" value="1"> 1
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score2" value="2"> 2
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score2" value="3"> 3
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score2" value="4"> 4
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Improvement for employee in initiations and idea after training:</label>
+                                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score3" value="1"> 1
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score3" value="2"> 2
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score3" value="3"> 3
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score3" value="4"> 4
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>General performance about this employee after training:</label>
+                                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score4" value="1"> 1
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score4" value="2"> 2
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score4" value="3"> 3
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox" name="score4" value="4"> 4
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Suggestion for material and style to improve employee's job
+                                        performance:</label>
+                                    <textarea class="form-control" id="suggestion"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Advise and expectation in the next training program:</label>
+                                    <textarea class="form-control" id="advise"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+                        <input type="hidden" id="txtIdEditTrain" value="">
+                        <button type="submit" class="btn btn-success" id="btnSubmit">Submit</button>
+                        <button type="button" class="btn btn-danger" id="btnCancel">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="table-responsive" id="tableContainer" style="margin-top: 10px;">
+                    <table class="table table-bordered table-striped" id="tblTrainEvaluation">
+                        <thead>
+                            <tr style="background-color:#067780;color:#FFF;height:30px;">
+                                <th style="text-align:center;">Employee Name</th>
+                                <th style="text-align:center;">Designation</th>
+                                <th style="text-align:center;">Date Of Training</th>
+                                <th style="text-align:center;">Place Of Training</th>
+                                <th style="text-align:center;">Subject</th>
+                                <th style="text-align:center;">Date Of Evaluation</th>
+                                <th style="text-align:center;">Evaluator Name & Designation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="idTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 </html>

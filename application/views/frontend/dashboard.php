@@ -595,8 +595,7 @@
 
                 const heatmapData = data.map((item, index) => ({
                     x: Math.floor(index / columns),
-                    y: (columns - 1) - (index %
-                        columns),
+                    y: (columns - 1) - (index % columns),
                     value: item.total_onleave,
                     onboard: item.total_onboard,
                     rank: item.rank,
@@ -667,7 +666,39 @@
                         enabled: false,
                     },
                     legend: {
-                        enabled: false
+                        enabled: true,
+                        title: {
+                            text: 'Legend',
+                        },
+                        align: 'right',
+                        layout: 'vertical',
+                        verticalAlign: 'middle',
+                        symbolHeight: 12,
+                        symbolWidth: 12,
+                        itemStyle: {
+                            fontSize: '12px'
+                        }
+                    },
+                    colorAxis: {
+                        dataClasses: [{
+                                from: 0,
+                                to: 0,
+                                color: '#001F5B',
+                                name: '0 (Low)'
+                            },
+                            {
+                                from: 1,
+                                to: 1,
+                                color: '#4258B1',
+                                name: '1 (Medium)'
+                            },
+                            {
+                                from: 2,
+                                to: 2,
+                                color: '#84b0e3',
+                                name: '2 (High)'
+                            }
+                        ]
                     }
                 });
             },
@@ -676,6 +707,8 @@
             },
         });
     });
+
+
 
     $(document).ready(function() {
         $.ajax({
@@ -1487,7 +1520,6 @@
                             <tr style="background-color:#078415; color: #FFF; height: 40px;">
                                 <th style="text-align: center; width: 5%;">No</th>
                                 <th style="text-align: left; width: 60%;">Crew Name & Rank / Position</th>
-
                             </tr>
                         </thead>
                         <tbody id="idBodyModalCrewDetailByInstitution"></tbody>

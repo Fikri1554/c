@@ -154,6 +154,39 @@ class Report extends CI_Controller {
 		exit;
 	}
 
+	function saveDataFormEvaluation()
+	{
+		$data = $_POST;
+		$dataIns = array();
+		$stData = "";
+		$txtIdEditTrain = $data['txtIdEditTrain']; 
+		$userDateTimeNow = $this->session->userdata('userCrewSystem')."/".date('Ymd')."/".date('H:i:s');
+
+		try {
+			$dataIns['employeeName'] = $data['txtemployeeName'];
+			$dataIns['desgination'] = $data['txtdesignation'];
+			$dataIns['dateOfTraining']= $data['txtDateOfTraining'];
+			$dataIns['placeOfTraining'] = $data['txtplaceOfTraining'];
+			$dataIns['subject'] = $data['txtsubject'];
+			$dataIns['dateOfEvaluation'] = $data['txtDateOfEvaluation'];
+			$dataIns['evaluatorNameDesgination'] = $data['txtevaluator'];
+
+			if($txtIdEditTrain == "")
+			{
+				$dataIns['addusrdate'] = $userDateTimeNow;
+				$this->MCrewscv->insData("tblevaluation",$dataIns);
+			}else{
+				$dataIns['updusrdate'] = $userDateTimeNow;
+				$whereNya = "id = '".$txtIdEditTrain."'";
+				$this->MCrewscv->updateData($whereNya,$dataIns,"tblevaluation");
+			}
+			$stData = "Save Success..!!";
+		} catch (Exception $ex) {
+			$stData = "Failed =>".$ex->getMessage();
+		}
+
+		print $stData;
+	}
   
 	function getDataCVOtherForm($idPerson = "",$company = "")
 	{

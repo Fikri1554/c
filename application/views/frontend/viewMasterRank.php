@@ -43,7 +43,6 @@ function saveData() {
         processData: false,
         success: function(response) {
             alert(response);
-            reloadPage();
             $("#idLoading").hide();
         },
     });
