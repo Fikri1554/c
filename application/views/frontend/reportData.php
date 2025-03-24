@@ -72,6 +72,7 @@
     function saveData() {
         var formData = new FormData();
         formData.append("txtIdEditTrain", $("#txtIdEditTrain").val());
+        formData.append("txtIdPerson", $("#txtIdPerson").val());
         formData.append("txtemployeeName", $("#txtemployeeName").val());
         formData.append("txtdesignation", $("#txtdesignation").val());
         formData.append("txtDateOfTraining", $("#txtDateOfTraining").val());
@@ -79,19 +80,85 @@
         formData.append("txtsubject", $("#txtsubject").val());
         formData.append("txtDateOfEvaluation", $("#txtDateOfEvaluation").val());
         formData.append("txtevaluator", $("#txtevaluator").val());
+        formData.append("suggestion", $("#suggestion").val());
+        formData.append("advise", $("#advise").val());
+
+        $("input[name='score1']:checked").each(function() {
+            formData.append("score1[]", $(this).val());
+        });
+        $("input[name='score2']:checked").each(function() {
+            formData.append("score2[]", $(this).val());
+        });
+        $("input[name='score3']:checked").each(function() {
+            formData.append("score3[]", $(this).val());
+        });
+        $("input[name='score4']:checked").each(function() {
+            formData.append("score4[]", $(this).val());
+        });
 
         $("#idLoading").show();
-        $.ajax("<?php echo base_url('report/saveDataFormEvaluation'); ?>", {
+
+        $.ajax({
+            url: "<?php echo base_url('report/saveData'); ?>",
             method: "POST",
             data: formData,
             cache: false,
             contentType: false,
             processData: false,
+            dataType: "json",
             success: function(response) {
-                alert(response);
-                reloadPage();
                 $("#idLoading").hide();
+
+                if (response.status === "success") {
+                    alert(response.message);
+
+                    let idperson = $("#txtIdPerson").val();
+                    $.ajax({
+                        type: "POST",
+                        url: "<?php echo base_url('report/getTrainingEvaluation'); ?>",
+                        data: {
+                            idperson: idperson
+                        },
+                        dataType: "json",
+                        success: function(response) {
+                            $("#idTbodyTraining").html(response.trTraining);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching updated data:", error);
+                        }
+                    });
+
+                    $("#trainingForm")[0].reset();
+                    $("#formContainer").css("opacity", "0");
+                    setTimeout(() => {
+                        $("#formContainer").hide();
+                        $("#tableContainer").show();
+                        setTimeout(() => {
+                            $("#tableContainer").css("opacity", "1");
+                        }, 50);
+                    }, 300);
+
+                    setTimeout(() => {
+                        $("#btnAdd").show();
+                        setTimeout(() => {
+                            $("#btnAdd").css("opacity", "1");
+                        }, 50);
+                    }, 300);
+                } else {
+                    alert("Error: " + response.message);
+                }
             },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", xhr.responseText);
+                alert("Error: " + xhr.status + " - " + xhr.statusText);
+                $("#idLoading").hide();
+            }
+        });
+    }
+
+    function updateRowNumbers() {
+        $("#idTbodyTraining tr").each(function(index) {
+            $(this).find("td:first").text(index + 1);
         });
     }
 
@@ -103,6 +170,8 @@
             btnAdd.addEventListener("click", function() {
                 let table = document.getElementById("tableContainer");
                 let form = document.getElementById("formContainer");
+
+                document.getElementById("trainingForm").reset();
 
                 btnAdd.style.opacity = "0";
                 setTimeout(() => {
@@ -143,6 +212,109 @@
             });
         }
     });
+
+    $(document).ready(function() {
+        $("#btnPrintTraining").on("click", function() {
+            let idperson = $("#txtIdPerson").val();
+
+            if (idperson) {
+                $.ajax({
+                    type: "POST",
+                    url: "<?php echo base_url('report/getTrainingEvaluation'); ?>",
+                    data: {
+                        idperson: idperson
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        $("#idTbodyTraining").html(response.trTraining);
+                        $("#trainingEvaluationModal").modal("show");
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching data:", error);
+                    }
+                });
+            } else {
+                alert("Please select an employee first.");
+            }
+        });
+    });
+
+    function setCheckboxValue(name, value) {
+        $('input[name="' + name + '"]').each(function() {
+            if ($(this).val() == value) {
+                $(this).prop('checked', true);
+            } else {
+                $(this).prop('checked', false);
+            }
+        });
+    }
+
+    function editData(id) {
+        $.ajax({
+            url: '<?php echo base_url('report/getDataEdit'); ?>',
+            type: 'POST',
+            data: {
+                txtIdEditTrain: id
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === "success") {
+                    $('#txtIdEditTrain').val(id);
+                    $('#txtemployeeName').val(response.employeeName);
+                    $('#txtdesignation').val(response.designation);
+                    $('#txtDateOfTraining').val(response.dateOfTraining);
+                    $('#txtplaceOfTraining').val(response.placeOfTraining);
+                    $('#txtsubject').val(response.subject);
+                    $('#txtDateOfEvaluation').val(response.dateOfEvaluation);
+                    $('#txtevaluator').val(response.evaluatorNameDesignation);
+                    $('#suggestion').val(response.training_material_suggestion);
+                    $('#advise').val(response.future_training_expectation);
+
+
+                    setCheckboxValue('score1', response.employee_job_understanding);
+                    setCheckboxValue('score2', response.quality_productivity_skill);
+                    setCheckboxValue('score3', response.initiative_and_ideas);
+                    setCheckboxValue('score4', response.general_performance);
+
+                    let table = document.getElementById("tableContainer");
+                    let form = document.getElementById("formContainer");
+                    let btnAdd = document.getElementById("btnAdd");
+
+                    table.style.opacity = "0";
+                    setTimeout(() => {
+                        table.style.display = "none";
+                        form.style.display = "block";
+                        setTimeout(() => {
+                            form.style.opacity = "1";
+                        }, 50);
+                    }, 300);
+
+                    setTimeout(() => {
+                        btnAdd.style.opacity = "0";
+                        setTimeout(() => {
+                            btnAdd.style.display = "none";
+                        }, 50);
+                    }, 300);
+                    $("#btnAdd").hide();
+                    $("#tableContainer").hide();
+                } else {
+                    alert("Gagal mengambil data.");
+                }
+            },
+            error: function() {
+                alert("Terjadi kesalahan saat mengambil data.");
+            }
+        });
+    }
+
+    function ViewPrint(id) {
+        var idPerson = $("#txtIdPerson").val();
+        if (idPerson === "") {
+            alert("Person Empty..!!!");
+            return false;
+        }
+        window.open("<?php echo base_url('report/printTrainEvaluation'); ?>/" + id + "/" + idPerson + "/", "_blank");
+    }
     </script>
 </head>
 
@@ -249,109 +421,11 @@
                                 </div>
                                 <div class="col-md-4">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" id="btnPrintReport"
-                                        disabled="disabled">
-                                        <i class="fa fa-print"></i> Report Evaluation
+                                        disabled="disabled" data-toggle="modal" data-target="#crewEvaluationModal">
+                                        <i class=" fa fa-print"></i> Report Evaluation
                                     </button>
                                 </div>
                             </div>
-                            <!-- <legend style="margin-top:15px;">Data Convert</legend>
-							<div class="row">
-								<div class="col-md-7 col-xs-12">
-									<div class="row">
-										<div class="col-md-3 col-xs-12">
-											<label for="slcCompanyPrins">Status</label>
-											<span style="float:right;"><b>:</b></span>
-										</div>
-										<div class="col-md-4 col-xs-12">
-											<select class="form-control input-sm" id="slcStatusDataConv">
-												<option value="all">All</option>
-					                            <option value="nonaktif">Non Aktif</option>
-					                            <option value="notforemp">Not for Emp.</option>
-					                            <option value="onboard">On Board</option>
-					                            <option value="onleave">On Leave</option>
-											</select>
-										</div>
-									</div>
-									<div class="row" style="margin-top:5px;">
-										<div class="col-md-3 col-xs-12">
-											<label for="slcCompanyPrins">Page</label>
-											<span style="float:right;"><b>:</b></span>
-										</div>
-										<div class="col-md-8 col-xs-12">
-											<select class="form-control input-sm" id="slcStatusDataConv">
-												<option value="personal_data">Personal Data</option>
-												<option value="personal_id">Personal Id</option>
-												<option value="family">Family Details</option>
-												<option value="certificate">All Certificate / Document</option>
-												<option value="compliance">Compliance Certificate</option>
-												<option value="sea">Sea Experiance</option>
-												<option value="general">General</option>
-												<option value="language">Language Knowledge</option>
-												<option value="education">Education Attainment</option>
-												<option value="contract">Contract</option>
-												<option value="other">Others</option>
-											</select>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-5 col-xs-12">
-									<div class="row">
-										<div class="col-md-5 col-xs-12">
-											<button class="btn btn-primary btn-sm btn-block" title="Cetak" onclick="">
-												<i class="fa fa-print"></i> Print
-											</button>
-										</div>
-										<div class="col-md-5 col-xs-12">
-											<button class="btn btn-info btn-sm btn-block" title="Export Excel" onclick="">
-												<i class="fa fa-file-excel-o"></i>&nbsp Export
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-							<legend style="margin-top:15px;">Monthly Changes</legend>
-							<div class="row">
-								<div class="col-md-7 col-xs-12">
-									<div class="row">
-										<div class="col-md-3 col-xs-12">
-											<label for="slcCompanyMonthly">Company</label>
-											<span style="float:right;"><b>:</b></span>
-										</div>
-										<div class="col-md-4 col-xs-12">
-											<select class="form-control input-sm" id="slcCompanyMonthly">
-												<?php echo $optCompany; ?>
-											</select>
-										</div>
-									</div>
-									<div class="row" style="margin-top:5px;">
-										<div class="col-md-3 col-xs-12">
-											<label for="txtDate_Start">Start Date</label>
-											<span style="float:right;"><b>:</b></span>
-										</div>
-										<div class="col-md-5 col-xs-12">
-											<input type="text" class="form-control input-sm" id="txtDate_Start" placeholder="Start Date">
-										</div>
-									</div>
-									<div class="row" style="margin-top:5px;">
-										<div class="col-md-3 col-xs-12">
-											<label for="txtDate_End">End Date</label>
-											<span style="float:right;"><b>:</b></span>
-										</div>
-										<div class="col-md-5 col-xs-12">
-											<input type="text" class="form-control input-sm" id="txtDate_End" placeholder="End Date">
-										</div>
-									</div>
-								</div>
-								<div class="col-md-5 col-xs-12">
-									<div class="row">
-										<div class="col-md-5 col-xs-12">
-											<button class="btn btn-primary btn-sm btn-block" title="Cetak" onclick="">
-												<i class="fa fa-print"></i> Print
-											</button>
-										</div>
-									</div>
-								</div>
-							</div> -->
                         </div>
                     </div>
                 </div>
@@ -359,6 +433,180 @@
         </div>
     </div>
 </body>
+
+<div class="modal fade" id="crewEvaluationModal" tabindex="-1" aria-labelledby="modalTitle">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 10px;background-color:#16839B;">
+                <h5 class="modal-title" id="modalTitle" style="color: white;">Crew Evaluation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <button type="button" class="btn btn-primary mb-3" id="btnAddCrew">
+                    <i class='fa fa-plus-circle'></i> Add Data
+                </button>
+                <div class="table-responsive" id="tableContainer" style="margin-top: 10px;">
+                    <table class="table table-bordered table-striped" id="tblTrainEvaluation">
+                        <thead>
+                            <tr style="background-color:#067780; color:#FFF; height:35px;">
+                                <th style="text-align:center; width: 40px;">No</th>
+                                <th style="text-align:left; padding-left:10px;">Employee Name</th>
+                                <th style="text-align:center;">Designation</th>
+                                <th style="text-align:center;">Date Of Training</th>
+                                <th style="text-align:center;">Place Of Training</th>
+                                <th style="text-align:center;">Subject</th>
+                                <th style="text-align:center;">Date Of Evaluation</th>
+                                <th style="text-align:center;">Evaluator Name & Designation</th>
+                                <th style="text-align:center; width:250px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="idTbodyTraining">
+                            <?php echo isset($trTraining) ? $trTraining : ''; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <form id="crewForm">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Vessel</label>
+                            <input type="text" class="form-control" name="vessel">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Seafarer's Name</label>
+                            <input type="text" class="form-control" name="seafarer_name">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Rank</label>
+                            <input type="text" class="form-control" name="rank">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Date of Report</label>
+                            <input type="date" class="form-control" name="date_of_report">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Reporting Period From</label>
+                            <input type="date" class="form-control" name="reporting_from">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">To</label>
+                            <input type="date" class="form-control" name="reporting_to">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h4 style="font-family: calibri; margin-bottom: 10px;">Reason for the Report:</h3>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="reason" value="Midway">
+                                    <label class="form-check-label">Midway through contract</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="reason" value="SigningOff">
+                                    <label class="form-check-label">Seafarer signing off vessel</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="reason" value="Leaving">
+                                    <label class="form-check-label">Reporting crew leaving vessel</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="reason"
+                                        value="SpecialRequest">
+                                    <label class="form-check-label">Special request</label>
+                                </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Criteria</th>
+                                    <th>Excellent (4)</th>
+                                    <th>Good (3)</th>
+                                    <th>Fair (2)</th>
+                                    <th>Poor (1)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ability/Knowledge of Job</td>
+                                    <td><input type="radio" name="ability" value="4"></td>
+                                    <td><input type="radio" name="ability" value="3"></td>
+                                    <td><input type="radio" name="ability" value="2"></td>
+                                    <td><input type="radio" name="ability" value="1"></td>
+                                </tr>
+                                <tr>
+                                    <td>Safety Consciousness</td>
+                                    <td><input type="radio" name="safety" value="4"></td>
+                                    <td><input type="radio" name="safety" value="3"></td>
+                                    <td><input type="radio" name="safety" value="2"></td>
+                                    <td><input type="radio" name="safety" value="1"></td>
+                                </tr>
+                                <tr>
+                                    <td>Dependability & Integrity</td>
+                                    <td><input type="radio" name="integrity" value="4"></td>
+                                    <td><input type="radio" name="integrity" value="3"></td>
+                                    <td><input type="radio" name="integrity" value="2"></td>
+                                    <td><input type="radio" name="integrity" value="1"></td>
+                                </tr>
+                                <!-- Tambahkan kriteria lainnya -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr>
+
+                    <!-- Row 5: General Comments -->
+                    <div class="mb-3">
+                        <label class="form-label">General Comments</label>
+                        <textarea class="form-control" name="comments_master" rows="1" placeholder="Master's comments"
+                            style="margin-bottom: 10px;"></textarea>
+                        <textarea class="form-control mt-2" name="comments_officer" rows="1"
+                            placeholder="Reporting Officer's comments"></textarea>
+                    </div>
+
+                    <!-- Row 6: Re-employ & Promote -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Re-employ</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reemploy" value="Yes">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reemploy" value="No">
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Promote</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="promote" value="Yes">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="promote" value="No">
+                                <label class="form-check-label">No</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="promote" value="Conditional">
+                                <label class="form-check-label">Yes, provided the following conditions are met</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="modal fade" id="trainingEvaluationModal" tabindex="-1" aria-labelledby="modalTitle">
     <div class="modal-dialog modal-lg">
@@ -431,7 +679,7 @@
                                     <label>Improvement for employee with Quality/Productivity and skill after
                                         training:</label>
                                     <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                        <label style="di    splay: flex; align-items: center; gap: 5px;">
                                             <input type="checkbox" name="score2" value="1"> 1
                                         </label>
                                         <label style="display: flex; align-items: center; gap: 5px;">
@@ -495,31 +743,35 @@
                             </div>
 
                         </div>
-                        <input type="hidden" id="txtIdEditTrain" value="">
-                        <button type="submit" class="btn btn-success" id="btnSubmit">Submit</button>
                         <button type="button" class="btn btn-danger" id="btnCancel">Cancel</button>
                     </form>
                 </div>
-
                 <div class="table-responsive" id="tableContainer" style="margin-top: 10px;">
                     <table class="table table-bordered table-striped" id="tblTrainEvaluation">
                         <thead>
-                            <tr style="background-color:#067780;color:#FFF;height:30px;">
-                                <th style="text-align:center;">Employee Name</th>
+                            <tr style="background-color:#067780; color:#FFF; height:35px;">
+                                <th style="text-align:center; width: 40px;">No</th>
+                                <th style="text-align:left; padding-left:10px;">Employee Name</th>
                                 <th style="text-align:center;">Designation</th>
                                 <th style="text-align:center;">Date Of Training</th>
                                 <th style="text-align:center;">Place Of Training</th>
                                 <th style="text-align:center;">Subject</th>
                                 <th style="text-align:center;">Date Of Evaluation</th>
                                 <th style="text-align:center;">Evaluator Name & Designation</th>
+                                <th style="text-align:center; width:250px;">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="idTbody"></tbody>
+                        <tbody id="idTbodyTraining">
+                            <?php echo isset($trTraining) ? $trTraining : ''; ?>
+                        </tbody>
                     </table>
                 </div>
             </div>
 
             <div class="modal-footer">
+                <input type="hidden" id="txtIdEditTrain" value="">
+                <input type="hidden" id="txtIdPerson" value="">
+                <button type="button" class="btn btn-success" onclick="saveData();">Submit</button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>

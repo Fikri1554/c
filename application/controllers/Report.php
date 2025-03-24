@@ -58,7 +58,7 @@ class Report extends CI_Controller {
 			print json_encode($dataOut);
 		}
 	}
-
+	
 	function navReport($idPerson = "",$kdCmp = "")
 	{
 		$dataContext = new DataContext();
@@ -83,6 +83,122 @@ class Report extends CI_Controller {
 				$this->getDataCVOtherForm($idPerson,$kdCmp);
 			}
 		}
+	}
+
+	function printTrainEvaluation($id = "", $idPerson = "")
+	{
+		$dataOut = array();
+		$sql = "SELECT * FROM tblevaluation WHERE deletests = '0' AND id = '".$id."' AND idperson = '".$idPerson."'";
+
+		$rsl = $this->MCrewscv->getDataQuery($sql);
+
+		$employeeName = '';
+		$designation = '';
+		$dateOfTraining = '';
+		$placeOfTraining = '';
+		$subject = '';
+		$dateOfEvaluation = '';
+		$evaluatorNameDesignation = '';
+		
+		if (!empty($rsl) && count($rsl) > 0) {
+			$row = $rsl[0]; 
+
+			$employeeName = !empty($row->employeeName) ? htmlspecialchars($row->employeeName) : 'N/A';
+			$designation = !empty($row->designation) ? htmlspecialchars($row->designation) : 'N/A';
+			$dateOfTraining = !empty($row->dateOfTraining) ? htmlspecialchars($row->dateOfTraining) : 'N/A';
+			$placeOfTraining = !empty($row->placeOfTraining) ? htmlspecialchars($row->placeOfTraining) : 'N/A';
+			$subject = !empty($row->subject) ? htmlspecialchars($row->subject) : 'N/A';
+			$dateOfEvaluation = !empty($row->dateOfEvaluation) ? htmlspecialchars($row->dateOfEvaluation) : 'N/A';
+			$evaluatorNameDesignation = !empty($row->evaluatorNameDesignation) ? htmlspecialchars($row->evaluatorNameDesignation) : 'N/A';
+			$trainingMaterialSuggestion = !empty($row->training_material_suggestion) ? htmlspecialchars($row->training_material_suggestion) : 'N/A';
+			$futureTrainingExpectation = !empty($row->future_training_expectation) ? htmlspecialchars($row->future_training_expectation) : 'N/A';
+
+			function getCheckmark($value, $expected) {
+				return ((int) $value === (int) $expected) ? '&#10004;' : ''; 
+			}
+
+			$evalTable = "";
+			foreach ($rsl as $row) {
+				$evalTable .= '<tr>';
+
+				$evalTable .= '<td>1</td>';
+				$evalTable .= '<td>Employee Understanding with the job after training</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->employee_job_understanding, 1) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->employee_job_understanding, 2) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->employee_job_understanding, 3) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->employee_job_understanding, 4) . '</td>';
+				$evalTable .= '</tr>';
+
+				$evalTable .= '<tr>';
+				$evalTable .= '<td>2</td>';
+				$evalTable .= '<td>Improvement for employee with Quality / productivity and skill after training</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->quality_productivity_skill, 1) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->quality_productivity_skill, 2) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->quality_productivity_skill, 3) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->quality_productivity_skill, 4) . '</td>';
+				$evalTable .= '</tr>';
+
+				$evalTable .= '<tr>';
+				$evalTable .= '<td>3</td>';
+				$evalTable .= '<td>Improvement for employee in initiations and idea after training</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->initiative_and_ideas, 1) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->initiative_and_ideas, 2) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->initiative_and_ideas, 3) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->initiative_and_ideas, 4) . '</td>';
+				$evalTable .= '</tr>';
+
+				$evalTable .= '<tr>';
+				$evalTable .= '<td>4</td>';
+				$evalTable .= '<td>General performance about this employee after training</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->general_performance, 1) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->general_performance, 2) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->general_performance, 3) . '</td>';
+				$evalTable .= '<td style="text-align:center;">' . getCheckmark($row->general_performance, 4) . '</td>';
+				$evalTable .= '</tr>';
+
+				$evalTable .= '<tr>';
+				$evalTable .= '<td>5</td>';
+				$evalTable .= '<td>Suggestion for material and style to improve employee\'s job performance</td>';
+				$evalTable .= '<td colspan="4" style="padding: 10px; height: 80px; vertical-align: top; border: 1px solid #000;">
+								' . nl2br(htmlspecialchars($row->training_material_suggestion)) . '
+							</td>';
+				$evalTable .= '</tr>';
+
+				$evalTable .= '<tr>';
+				$evalTable .= '<td>6</td>';
+				$evalTable .= '<td>Advise and expectation in the next training program</td>';
+				$evalTable .= '<td colspan="4" style="padding: 10px; height: 80px; vertical-align: top; border: 1px solid #000;">
+								' . nl2br(htmlspecialchars($row->future_training_expectation)) . '
+							</td>';
+				$evalTable .= '</tr>';
+
+
+			}
+
+		}
+
+		$dataOut = array(
+			'employeeName' => $employeeName,
+			'designation' => $designation,
+			'dateOfTraining' => $dateOfTraining,
+			'placeOfTraining' => $placeOfTraining,
+			'subject' => $subject,
+			'dateOfEvaluation' => $dateOfEvaluation,
+			'evaluatorNameDesignation' => $evaluatorNameDesignation,
+			'training_material_suggestion' => $trainingMaterialSuggestion,
+			'future_training_expectation' => $futureTrainingExpectation,
+			'evalTable' => $evalTable
+		);
+
+		require("application/views/frontend/pdf/mpdf60/mpdf.php");
+		$mpdf = new mPDF('utf-8', 'A4');
+		ob_start();
+		$this->load->view('frontend/exportTrainEvaluation', $dataOut);
+		$html = ob_get_contents();
+		ob_end_clean();
+		$mpdf->WriteHTML(utf8_encode($html));
+		$mpdf->Output("Training_Evaluation.pdf", 'I');
+		exit;
 	}
 
 	function transmital($idPerson = "")
@@ -141,7 +257,7 @@ class Report extends CI_Controller {
 		$dataOut['vesselName'] = $vesselName;
 		$dataOut['certTable'] = $certTable;
 
-		$nama_dokumen = "Transmital_Person_" . $idPerson;
+		$nama_dokumen = "Transmital_Name_" . $crewName;
 		require("application/views/frontend/pdf/mpdf60/mpdf.php");
 		$mpdf = new mPDF('utf-8', 'A4');
 
@@ -154,7 +270,85 @@ class Report extends CI_Controller {
 		exit;
 	}
 
-	function saveDataFormEvaluation()
+
+	function getTrainingEvaluation() {
+		$idPerson = $this->input->post('idperson');
+		$dataOut = array();
+		$trTraining = "";
+		$no = 1;
+
+		$sql = "SELECT * FROM tblevaluation WHERE idperson = '".$idPerson."' AND deletests = '0'";
+		$rsl = $this->MCrewscv->getDataQuery($sql, array($idPerson));
+
+		if (count($rsl) > 0) {
+			foreach ($rsl as $val) {
+				$btnAct = "<div class=\"btn-group\" role=\"group\">";
+				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteData('".$val->id."');\">
+								<i class='fa fa-trash'></i> Delete
+							</button>";
+				$btnAct .= "<button class=\"btn btn-primary btn-xs\" style=\"margin-right: 10px;\" title=\"Edit\" onclick=\"editData('".$val->id."');\">
+								<i class='fa fa-edit'></i> Edit
+							</button>";
+				$btnAct .= "<button class=\"btn btn-success btn-xs\" title=\"View\" onclick=\"ViewPrint('".$val->id."');\">
+								<i class='fa fa-eye'></i> View
+							</button>";
+				$btnAct .= "</div>";
+
+				$trTraining .= "<tr data-id=\"".$val->id."\" style=\"vertical-align: middle;\">";
+				$trTraining .= "<td style=\"text-align:center;\">".$no."</td>";
+				$trTraining .= "<td style=\"text-align:left; padding-left:10px;\">".$val->employeeName."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$val->designation."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$val->dateOfTraining."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$val->placeOfTraining."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$val->subject."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$val->dateOfEvaluation."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$val->evaluatorNameDesignation."</td>";
+				$trTraining .= "<td style=\"text-align:center;\">".$btnAct."</td>";
+				$trTraining .= "</tr>";
+
+				$no++;
+			}
+		}
+
+		$dataOut['trTraining'] = $trTraining;
+		echo json_encode($dataOut);
+	}
+
+
+	function getDataEdit()
+	{
+		$dataOut = array();
+		$id = $this->input->post('txtIdEditTrain', true);
+
+		$sql = "SELECT * FROM tblevaluation WHERE id = '".$id."'";
+		$rsl = $this->MCrewscv->getDataQuery($sql, array($id));
+
+		if (!empty($rsl)) {
+			$dataOut = array(
+				'status' => 'success',
+				'employeeName' => $rsl[0]->employeeName,
+				'designation' => $rsl[0]->designation,
+				'dateOfTraining' => $rsl[0]->dateOfTraining,
+				'placeOfTraining' => $rsl[0]->placeOfTraining,
+				'subject' => $rsl[0]->subject,
+				'dateOfEvaluation' => $rsl[0]->dateOfEvaluation,
+				'evaluatorNameDesignation' => $rsl[0]->evaluatorNameDesignation,
+				'employee_job_understanding' => $rsl[0]->employee_job_understanding,
+				'quality_productivity_skill' => $rsl[0]->quality_productivity_skill,
+				'initiative_and_ideas' => $rsl[0]->initiative_and_ideas,
+				'general_performance' => $rsl[0]->general_performance,
+				'training_material_suggestion' => $rsl[0]->training_material_suggestion,
+				'future_training_expectation' => $rsl[0]->future_training_expectation
+			);
+		} else {
+			$dataOut['status'] = 'error';
+			$dataOut['message'] = 'Data not found';
+		}
+
+		echo json_encode($dataOut);
+	}
+
+	function saveData()
 	{
 		$data = $_POST;
 		$dataIns = array();
@@ -164,30 +358,52 @@ class Report extends CI_Controller {
 
 		try {
 			$dataIns['employeeName'] = $data['txtemployeeName'];
-			$dataIns['desgination'] = $data['txtdesignation'];
-			$dataIns['dateOfTraining']= $data['txtDateOfTraining'];
+			$dataIns['designation'] = $data['txtdesignation'];
+			$dataIns['dateOfTraining'] = $data['txtDateOfTraining'];
 			$dataIns['placeOfTraining'] = $data['txtplaceOfTraining'];
 			$dataIns['subject'] = $data['txtsubject'];
 			$dataIns['dateOfEvaluation'] = $data['txtDateOfEvaluation'];
-			$dataIns['evaluatorNameDesgination'] = $data['txtevaluator'];
+			$dataIns['evaluatorNameDesignation'] = $data['txtevaluator'];
+			$dataIns['idperson'] = $data['txtIdPerson'];
 
-			if($txtIdEditTrain == "")
-			{
+			
+			$dataIns['employee_job_understanding'] = isset($data['score1']) ? implode(",", $data['score1']) : "";
+			$dataIns['quality_productivity_skill'] = isset($data['score2']) ? implode(",", $data['score2']) : "";
+			$dataIns['initiative_and_ideas'] = isset($data['score3']) ? implode(",", $data['score3']) : "";
+			$dataIns['general_performance'] = isset($data['score4']) ? implode(",", $data['score4']) : "";
+			$dataIns['training_material_suggestion'] = $data['suggestion'];
+			$dataIns['future_training_expectation'] = $data['advise'];
+
+			if(empty($txtIdEditTrain)) {
 				$dataIns['addusrdate'] = $userDateTimeNow;
-				$this->MCrewscv->insData("tblevaluation",$dataIns);
-			}else{
+				$insertId = $this->MCrewscv->insData("tblevaluation", $dataIns);
+				$mode = "insert";
+				$id = $insertId;
+			} else {
 				$dataIns['updusrdate'] = $userDateTimeNow;
 				$whereNya = "id = '".$txtIdEditTrain."'";
-				$this->MCrewscv->updateData($whereNya,$dataIns,"tblevaluation");
+				$this->MCrewscv->updateData($whereNya, $dataIns, "tblevaluation");
+				$mode = "update";
+				$id = $txtIdEditTrain;
 			}
-			$stData = "Save Success..!!";
+
+			$stData = array(
+				"status" => "success",
+				"message" => "Save Success..!!",
+				"mode" => $mode,
+				"id" => $id
+			);
 		} catch (Exception $ex) {
-			$stData = "Failed =>".$ex->getMessage();
+			$stData = array(
+				"status" => "error",
+				"message" => "Failed => ".$ex->getMessage()
+			);
 		}
 
-		print $stData;
+		echo json_encode($stData);
 	}
-  
+
+
 	function getDataCVOtherForm($idPerson = "",$company = "")
 	{
 		$dataContext = new DataContext();
