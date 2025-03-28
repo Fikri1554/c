@@ -193,9 +193,9 @@ class DataContext extends CI_Controller {
 
 	function getRankByOption($return = "",$typeVal = "")
 	{
-		$opt = "";
+		$opt = "<option value=''> - </option>";
 
-		$rsl = $this->MCrewscv->getData("*","mstrank","deletests = '0'","nmrank ASC");
+		$rsl = $this->MCrewscv->getData("*","mstrank","deletests = '0' AND urutan > 0","nmrank ASC");
 		foreach ($rsl as $key => $val)
 		{
 			if($typeVal == "name")

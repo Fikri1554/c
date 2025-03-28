@@ -69,7 +69,7 @@
         window.location = "<?php echo base_url('report/');?>";
     }
 
-    function saveData() {
+    function saveDataTrainEvaluation() {
         var formData = new FormData();
         formData.append("txtIdEditTrain", $("#txtIdEditTrain").val());
         formData.append("txtIdPerson", $("#txtIdPerson").val());
@@ -99,7 +99,7 @@
         $("#idLoading").show();
 
         $.ajax({
-            url: "<?php echo base_url('report/saveData'); ?>",
+            url: "<?php echo base_url('report/saveDataTrainEvaluation'); ?>",
             method: "POST",
             data: formData,
             cache: false,
@@ -156,11 +156,160 @@
         });
     }
 
-    function updateRowNumbers() {
-        $("#idTbodyTraining tr").each(function(index) {
-            $(this).find("td:first").text(index + 1);
+    function saveDataCrewEvaluation() {
+        var formData = new FormData();
+        var idPerson = $("#txtIdPerson").val();
+        var txtIdEditCrew = $("#txtIdEditCrew").val();
+
+        function validateDate(id) {
+            let date = $("#" + id).val();
+            return date && date !== "0000-00-00" ? date : null;
+        }
+
+        formData.append("txtIdEditCrew", txtIdEditCrew || '');
+        formData.append("txtIdPerson", idPerson || '');
+        formData.append("txtVessel", $("#slcVesselHeader").val() || '');
+        formData.append("txtSeafarerName", $("#txtSeafarerName").val() || '');
+        formData.append("txtRank", $("#slcRankHeader").val() || '');
+        formData.append("txtDateOfReport", validateDate("txtDateOfReport") || '');
+        formData.append("txtReportingPeriodFrom", validateDate("txtReportingPeriodFrom") || '');
+        formData.append("txtReportingPeriodTo", validateDate("txtReportingPeriodTo") || '');
+
+        formData.append("reasonMidway", $("#reasonMidway").is(":checked") ? 'Y' : '');
+        formData.append("reasonSigningOff", $("#reasonSigningOff").is(":checked") ? 'Y' : '');
+        formData.append("reasonLeaving", $("#reasonLeaving").is(":checked") ? 'Y' : '');
+        formData.append("reasonSpecialRequest", $("#reasonSpecialRequest").is(":checked") ? 'Y' : '');
+
+        formData.append("txtMasterComments", $("#txtMasterComments").val() || '');
+        formData.append("txtOfficerComments", $("#txtOfficerComments").val() || '');
+        formData.append("txtPromoted", $("input[name='txtPromoted']:checked").val() || 'N');
+        formData.append("txtfullname", $("#txtfullname").val() || '');
+        formData.append("txtreceived", $("#txtreceived").val() || '');
+        formData.append("slcRank", $("#slcRank").val() || '');
+        formData.append("txtDateReceipt", validateDate("txtDateReceipt") || '');
+
+        var criteriaList = {
+            "Ability/Knowledge of Job": "ability",
+            "Safety Consciousness": "safety",
+            "Dependability & Integrity": "integrity",
+            "Initiative": "initiative",
+            "Conduct": "conduct",
+            "Ability to get on with others": "abilityGetOn",
+            "Appearance (+ uniforms)": "appearance",
+            "Sobriety": "sobriety",
+            "English Language": "english",
+            "Leadership (Officers)": "leadership"
+        };
+
+        for (let criteriaName in criteriaList) {
+            let criteriaId = criteriaList[criteriaName];
+            let selectedValue = $("input[name='" + criteriaId + "']:checked").val() || '';
+            formData.append(criteriaId, selectedValue);
+            formData.append("txtIdentify" + criteriaId.charAt(0).toUpperCase() + criteriaId.slice(1), $("#txtIdentify" +
+                criteriaId.charAt(0).toUpperCase() + criteriaId.slice(1)).val() || '');
+        }
+
+        $("#idLoading").show();
+
+        $.ajax({
+            url: "<?php echo base_url('report/saveDataCrewEvaluation'); ?>",
+            method: "POST",
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            dataType: "json",
+            success: function(response) {
+                $("#idLoading").hide();
+                alert(response.message);
+            },
+            error: function(xhr, status, error) {
+                $("#idLoading").hide();
+                console.error("AJAX Error:", xhr.responseText);
+                alert("Error saving data. Please try again.");
+            }
         });
     }
+
+    $(document).on("click", "#btnPrintReport", function() {
+        getCrewEvaluation();
+    });
+
+    function getCrewEvaluation() {
+        var idPerson = $("#txtIdPerson").val();
+
+        $("#idTbodyCrewEvaluation").html('<tr><td colspan="8">Loading...</td></tr>');
+
+        $.ajax({
+            url: "<?php echo base_url('report/getCrewEvaluation'); ?>?_=" + new Date().getTime(),
+            method: "POST",
+            data: {
+                idperson: idPerson
+            },
+            dataType: "json",
+            cache: false,
+            success: function(response) {
+                let htmlContent = response.trCrewEvaluation ||
+                    '<tr><td colspan="8">No evaluation data found</td></tr>';
+                $("#idTbodyCrewEvaluation").html(htmlContent);
+            },
+            error: function(xhr, status, error) {
+                console.error("Error:", xhr.responseText);
+                $("#idTbodyCrewEvaluation").html('<tr><td colspan="8">Error loading data</td></tr>');
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        let btnAddCrewEvaluation = document.getElementById("btnAddCrewEvaluation");
+        let btnCancelFormCrew = document.getElementById("btnCancelFormCrew");
+
+        if (btnAddCrewEvaluation) {
+            btnAddCrewEvaluation.addEventListener("click", function() {
+                let tableCrew = document.getElementById("tableContainerCrew");
+                let formCrew = document.getElementById("formContainerCrew");
+
+                document.getElementById("crewForm").reset();
+
+                btnAddCrewEvaluation.style.opacity = "0";
+                setTimeout(() => {
+                    btnAddCrewEvaluation.style.display = "none";
+                }, 300);
+
+                tableCrew.style.opacity = "0";
+                setTimeout(() => {
+                    tableCrew.style.display = "none";
+                    formCrew.style.display = "block";
+                    setTimeout(() => {
+                        formCrew.style.opacity = "1";
+                    }, 50);
+                }, 300);
+            });
+        }
+
+        if (btnCancelFormCrew) {
+            btnCancelFormCrew.addEventListener("click", function() {
+                let tableCrew = document.getElementById("tableContainerCrew");
+                let formCrew = document.getElementById("formContainerCrew");
+
+                formCrew.style.opacity = "0";
+                setTimeout(() => {
+                    formCrew.style.display = "none";
+                    tableCrew.style.display = "block";
+                    setTimeout(() => {
+                        tableCrew.style.opacity = "1";
+                    }, 50);
+                }, 300);
+
+                setTimeout(() => {
+                    btnAddCrewEvaluation.style.display = "block";
+                    setTimeout(() => {
+                        btnAddCrewEvaluation.style.opacity = "1";
+                    }, 50);
+                }, 300);
+            });
+        }
+    });
 
     document.addEventListener("DOMContentLoaded", function() {
         let btnAdd = document.getElementById("btnAdd");
@@ -307,6 +456,137 @@
         });
     }
 
+    function editDataCrewEvaluation(id) {
+        $.ajax({
+            url: '<?php echo base_url('report/getDataEditCrewEvaluation'); ?>',
+            type: 'POST',
+            data: {
+                id: id
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === "success") {
+                    $('#txtIdEditCrew').val(id);
+                    $('#txtIdPerson').val(response.report.idperson);
+
+                    // Debug: Check if idperson is being set
+                    console.log('idperson:', response.report.idperson);
+                    console.log('txtIdPerson value:', $('#txtIdPerson').val());
+
+                    $('#slcVesselHeader').val(response.report.vessel);
+                    $('#txtSeafarerName').val(response.report.seafarer_name);
+                    $('#slcRankHeader').val(response.report.rank);
+                    $('#txtDateOfReport').val(response.report.date_of_report);
+                    $('#txtReportingPeriodFrom').val(response.report.reporting_period_from);
+                    $('#txtReportingPeriodTo').val(response.report.reporting_period_to);
+
+                    $('#reasonMidway').prop('checked', response.report.reason_midway_contract === 'Y');
+                    $('#reasonSigningOff').prop('checked', response.report.reason_signing_off === 'Y');
+                    $('#reasonLeaving').prop('checked', response.report.reason_leaving_vessel === 'Y');
+                    $('#reasonSpecialRequest').prop('checked', response.report.reason_special_request ===
+                        'Y');
+
+                    $('#txtMasterComments').val(response.report.master_comments);
+                    $('#txtOfficerComments').val(response.report.reporting_officer_comments);
+
+                    $(`input[name="txtPromoted"][value="${response.report.promote}"]`).prop('checked',
+                        true);
+
+                    $('#txtfullname').val(response.report.reporting_officer_name);
+                    $('#txtreceived').val(response.report.received_by_cm);
+                    $('#slcRank').val(response.report.reporting_officer_rank);
+                    $('#txtDateReceipt').val(response.report.date_of_receipt);
+
+                    const criteriaMapping = {
+                        'Ability/Knowledge of Job': 'ability',
+                        'Safety Consciousness': 'safety',
+                        'Dependability & Integrity': 'integrity',
+                        'Initiative': 'initiative',
+                        'Conduct': 'conduct',
+                        'Ability to get on with others': 'abilityGetOn',
+                        'Appearance (+ uniforms)': 'appearance',
+                        'Sobriety': 'sobriety',
+                        'English Language': 'english',
+                        'Leadership (Officers)': 'leadership'
+                    };
+
+                    Object.entries(criteriaMapping).forEach(([name, key]) => {
+                        const criteria = response.criteria[name] || {};
+                        const value = criteria.excellent === 'Y' ? 4 :
+                            criteria.good === 'Y' ? 3 :
+                            criteria.fair === 'Y' ? 2 :
+                            criteria.poor === 'Y' ? 1 : '';
+
+                        $(`input[name="${key}"][value="${value}"]`).prop('checked', true);
+
+                        $(`#txtIdentify${key.charAt(0).toUpperCase() + key.slice(1)}`).val(criteria
+                            .identify || '');
+                    });
+
+                    toggleFormCrew(true);
+
+                } else {
+                    alert("Failed to load data: " + (response.message || 'Unknown error'));
+                }
+            },
+            error: function(xhr) {
+                alert("Error loading data. Status: " + xhr.status);
+            }
+        });
+    }
+
+    function toggleFormCrew(showForm) {
+        if (showForm) {
+            $("#btnAddCrewEvaluation").hide();
+            $("#formContainerCrew").css("display", "block");
+            $("#tableContainerCrew").css("opacity", "0");
+            setTimeout(() => {
+                $("#tableContainerCrew").hide();
+                $("#formContainerCrew").css("opacity", "1");
+            }, 50);
+        } else {
+            $("#formContainerCrew").css("opacity", "0");
+            setTimeout(() => {
+                $("#formContainerCrew").hide();
+                $("#tableContainerCrew").show();
+                $("#btnAddCrewEvaluation").show();
+                setTimeout(() => {
+                    $("#tableContainerCrew").css("opacity", "1");
+                }, 50);
+            }, 300);
+        }
+    }
+
+    function updateRowNumbers() {
+        $("#idTbodyTraining tr").each(function(index) {
+            $(this).find("td:first").text(index + 1);
+        });
+    }
+
+    function deleteData(id, idPerson) {
+        if (confirm("Delete data...??")) {
+            $("#idLoading").show();
+
+            $.post('<?php echo base_url("report/delData"); ?>/', {
+                id: id,
+                idPerson: idPerson
+            }, function(response) {
+                $("#idLoading").hide();
+                if (response.status === "Success") {
+                    $(`tr[data-id="${id}"]`).remove();
+                    updateRowNumbers();
+                    alert("Data berhasil dihapus.");
+                } else {
+                    alert("Gagal menghapus data: " + response.message);
+                }
+            }, "json").fail(function(xhr) {
+                $("#idLoading").hide();
+                alert("Error: " + xhr.statusText);
+            });
+        }
+    }
+
+
     function ViewPrint(id) {
         var idPerson = $("#txtIdPerson").val();
         if (idPerson === "") {
@@ -444,164 +724,282 @@
                 </button>
             </div>
             <div class="modal-body">
-                <button type="button" class="btn btn-primary mb-3" id="btnAddCrew">
+                <button type="button" class="btn btn-primary mb-3" id="btnAddCrewEvaluation">
                     <i class='fa fa-plus-circle'></i> Add Data
                 </button>
-                <div class="table-responsive" id="tableContainer" style="margin-top: 10px;">
-                    <table class="table table-bordered table-striped" id="tblTrainEvaluation">
+                <div id="formContainerCrew"
+                    style="display: none; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease-in-out;">
+                    <form id="crewForm">
+                        <div class="row">
+                            <div class="col-md-2 col-xs-12">
+                                <label for="slcVesselHeader" style="font-size:12px;">Vessel :</label>
+                                <select class="form-control input-sm" id="slcVesselHeader">
+                                    <?php echo $optVessel; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Seafarer's Name</label>
+                                <input type="text" class="form-control" id="txtSeafarerName">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="slcRankHeader" style="font-size:12px;">Rank:</label>
+                                <select class="form-control input-sm" id="slcRankHeader">
+                                    <?php echo $optRank; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date of Report</label>
+                                <input type="date" class="form-control" id="txtDateOfReport">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Reporting Period From</label>
+                                <input type="date" class="form-control" id="txtReportingPeriodFrom">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">To</label>
+                                <input type="date" class="form-control" id="txtReportingPeriodTo">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4 style="font-family: calibri; margin-bottom: 10px;">Reason for the Report:</h4>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="reasonMidway" value="Y">
+                                    <label class="form-check-label" for="reasonMidway"
+                                        style="margin-right: 10px;">Midway
+                                        through contract</label>
+
+                                    <input class="form-check-input" type="checkbox" id="reasonSigningOff" value="Y">
+                                    <label class="form-check-label" for="reasonSigningOff"
+                                        style="margin-right: 10px;">Seafarer signing off vessel</label>
+
+                                    <input class="form-check-input" type="checkbox" id="reasonLeaving" value="Y">
+                                    <label class="form-check-label" for="reasonLeaving"
+                                        style="margin-right: 10px;">Reporting crew leaving vessel</label>
+
+                                    <input class="form-check-input" type="checkbox" id="reasonSpecialRequest" value="Y">
+                                    <label class="form-check-label" for="reasonSpecialRequest"
+                                        style="margin-right: 10px;">Special request</label>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Criteria</th>
+                                        <th>Excellent (4)</th>
+                                        <th>Good (3)</th>
+                                        <th>Fair (2)</th>
+                                        <th>Poor (1)</th>
+                                        <th>Identify Training Needs</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Ability/Knowledge of Job</td>
+                                        <td><input type="radio" name="ability" value="4"></td>
+                                        <td><input type="radio" name="ability" value="3"></td>
+                                        <td><input type="radio" name="ability" value="2"></td>
+                                        <td><input type="radio" name="ability" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyAbility">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Safety Consciousness</td>
+                                        <td><input type="radio" name="safety" value="4"></td>
+                                        <td><input type="radio" name="safety" value="3"></td>
+                                        <td><input type="radio" name="safety" value="2"></td>
+                                        <td><input type="radio" name="safety" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifySafety">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dependability & Integrity</td>
+                                        <td><input type="radio" name="integrity" value="4"></td>
+                                        <td><input type="radio" name="integrity" value="3"></td>
+                                        <td><input type="radio" name="integrity" value="2"></td>
+                                        <td><input type="radio" name="integrity" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyIntegrity">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Initiative</td>
+                                        <td><input type="radio" name="initiative" value="4"></td>
+                                        <td><input type="radio" name="initiative" value="3"></td>
+                                        <td><input type="radio" name="initiative" value="2"></td>
+                                        <td><input type="radio" name="initiative" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyInitiative">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Conduct</td>
+                                        <td><input type="radio" name="conduct" value="4"></td>
+                                        <td><input type="radio" name="conduct" value="3"></td>
+                                        <td><input type="radio" name="conduct" value="2"></td>
+                                        <td><input type="radio" name="conduct" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyConduct">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Ability to get on with others</td>
+                                        <td><input type="radio" name="abilityGetOn" value="4"></td>
+                                        <td><input type="radio" name="abilityGetOn" value="3"></td>
+                                        <td><input type="radio" name="abilityGetOn" value="2"></td>
+                                        <td><input type="radio" name="abilityGetOn" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm"
+                                                id="txtIdentifyAbilityGetOn">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Appearance (+ uniforms)</td>
+                                        <td><input type="radio" name="appearance" value="4"></td>
+                                        <td><input type="radio" name="appearance" value="3"></td>
+                                        <td><input type="radio" name="appearance" value="2"></td>
+                                        <td><input type="radio" name="appearance" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyAppearance">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sobriety</td>
+                                        <td><input type="radio" name="sobriety" value="4"></td>
+                                        <td><input type="radio" name="sobriety" value="3"></td>
+                                        <td><input type="radio" name="sobriety" value="2"></td>
+                                        <td><input type="radio" name="sobriety" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifySobriety">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>English Language</td>
+                                        <td><input type="radio" name="english" value="4"></td>
+                                        <td><input type="radio" name="english" value="3"></td>
+                                        <td><input type="radio" name="english" value="2"></td>
+                                        <td><input type="radio" name="english" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyEnglish">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Leadership (Officers)</td>
+                                        <td><input type="radio" name="leadership" value="4"></td>
+                                        <td><input type="radio" name="leadership" value="3"></td>
+                                        <td><input type="radio" name="leadership" value="2"></td>
+                                        <td><input type="radio" name="leadership" value="1"></td>
+                                        <td><input type="text" class="form-control input-sm" id="txtIdentifyLeadership">
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label>&bullet; General Comments highlighting strengths / weaknesses:</label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Master Comments</label>
+                                <textarea class="form-control" name="comments_master" rows="6"
+                                    placeholder="Master's comments" id="txtMasterComments"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Officer Comments</label>
+                                <textarea class="form-control" name="comments_officer" rows="6"
+                                    placeholder="Reporting Officer's comments" id="txtOfficerComments"></textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Re-employ</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reemploy" value="Yes">
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reemploy" value="No">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Promote</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="txtPromoted" value="Y">
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="txtPromoted" value="N">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="txtPromoted" value="Conditional">
+                                    <label class="form-check-label">Yes, provided the following conditions are
+                                        met</label>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label>&bullet; Reporting Officer:</label>
+                            </div>
+                            <div class="col-md-2 col-xs-12">
+                                <label for="txtfullname" style="font-size:12px;">Fullname :</label>
+                                <input type="text" class="form-control input-sm" id="txtfullname">
+                            </div>
+                            <div class="col-md-2 col-xs-12">
+                                <label for="txtreceived" style="font-size:12px;">Received by CM :</label>
+                                <input type="text" class="form-control input-sm" id="txtreceived">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="slcRank" style="font-size:12px;">Rank:</label>
+                                <select class="form-control input-sm" id="slcRank">
+                                    <?php echo $optRank; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date of Receipt</label>
+                                <input type="date" class="form-control" id="txtDateReceipt">
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 10px;">
+                            <input type="hidden" id="txtIdPerson" value="">
+                            <input type="hidden" id="txtIdEditCrew" value="">
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-success btn-block btn-xs"
+                                    data-dismiss="modal">Close</button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary btn-block btn-xs"
+                                    onclick="saveDataCrewEvaluation();">Submit</button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-danger btn-block btn-xs"
+                                    id="btnCancelFormCrew">Cancel</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-responsive" id="tableContainerCrew" style="margin-top: 10px;">
+                    <table class="table table-bordered table-striped">
                         <thead>
-                            <tr style="background-color:#067780; color:#FFF; height:35px;">
-                                <th style="text-align:center; width: 40px;">No</th>
-                                <th style="text-align:left; padding-left:10px;">Employee Name</th>
-                                <th style="text-align:center;">Designation</th>
-                                <th style="text-align:center;">Date Of Training</th>
-                                <th style="text-align:center;">Place Of Training</th>
-                                <th style="text-align:center;">Subject</th>
-                                <th style="text-align:center;">Date Of Evaluation</th>
-                                <th style="text-align:center;">Evaluator Name & Designation</th>
-                                <th style="text-align:center; width:250px;">Action</th>
+                            <tr style="background-color:#067780; color:#FFF;">
+                                <th style="text-align:center; width: 40px;" rowspan="2">No</th>
+                                <th style="text-align:center; width: 100px;" rowspan="2">Vessel</th>
+                                <th style="text-align:left; width: 100px;" rowspan="2">Seafarer's Name</th>
+                                <th style="text-align:center; width: 100px;" rowspan="2">Rank</th>
+                                <th style="text-align:center; width: 100px;" rowspan="2">Date of Period</th>
+                                <th style="text-align:center;" colspan="2">Reporting Period</th>
+                                <th style="text-align:center; width: 80px;" rowspan="2">Action</th>
+                            </tr>
+                            <tr style="background-color:#067780; color:#FFF;">
+                                <th style="text-align:center; width: 80px; border-top: 1px solid white;">From</th>
+                                <th style="text-align:center; width: 80px; border-top: 1px solid white;">To</th>
                             </tr>
                         </thead>
-                        <tbody id="idTbodyTraining">
-                            <?php echo isset($trTraining) ? $trTraining : ''; ?>
+                        <tbody id="idTbodyCrewEvaluation">
+                            <?php echo isset($trCrewEvaluation) ? $trCrewEvaluation : ''; ?>
                         </tbody>
                     </table>
                 </div>
-                <form id="crewForm">
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Vessel</label>
-                            <input type="text" class="form-control" name="vessel">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Seafarer's Name</label>
-                            <input type="text" class="form-control" name="seafarer_name">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Rank</label>
-                            <input type="text" class="form-control" name="rank">
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Date of Report</label>
-                            <input type="date" class="form-control" name="date_of_report">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Reporting Period From</label>
-                            <input type="date" class="form-control" name="reporting_from">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">To</label>
-                            <input type="date" class="form-control" name="reporting_to">
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h4 style="font-family: calibri; margin-bottom: 10px;">Reason for the Report:</h3>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="reason" value="Midway">
-                                    <label class="form-check-label">Midway through contract</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="reason" value="SigningOff">
-                                    <label class="form-check-label">Seafarer signing off vessel</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="reason" value="Leaving">
-                                    <label class="form-check-label">Reporting crew leaving vessel</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="reason"
-                                        value="SpecialRequest">
-                                    <label class="form-check-label">Special request</label>
-                                </div>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="mb-3">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Criteria</th>
-                                    <th>Excellent (4)</th>
-                                    <th>Good (3)</th>
-                                    <th>Fair (2)</th>
-                                    <th>Poor (1)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Ability/Knowledge of Job</td>
-                                    <td><input type="radio" name="ability" value="4"></td>
-                                    <td><input type="radio" name="ability" value="3"></td>
-                                    <td><input type="radio" name="ability" value="2"></td>
-                                    <td><input type="radio" name="ability" value="1"></td>
-                                </tr>
-                                <tr>
-                                    <td>Safety Consciousness</td>
-                                    <td><input type="radio" name="safety" value="4"></td>
-                                    <td><input type="radio" name="safety" value="3"></td>
-                                    <td><input type="radio" name="safety" value="2"></td>
-                                    <td><input type="radio" name="safety" value="1"></td>
-                                </tr>
-                                <tr>
-                                    <td>Dependability & Integrity</td>
-                                    <td><input type="radio" name="integrity" value="4"></td>
-                                    <td><input type="radio" name="integrity" value="3"></td>
-                                    <td><input type="radio" name="integrity" value="2"></td>
-                                    <td><input type="radio" name="integrity" value="1"></td>
-                                </tr>
-                                <!-- Tambahkan kriteria lainnya -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <hr>
-
-                    <!-- Row 5: General Comments -->
-                    <div class="mb-3">
-                        <label class="form-label">General Comments</label>
-                        <textarea class="form-control" name="comments_master" rows="1" placeholder="Master's comments"
-                            style="margin-bottom: 10px;"></textarea>
-                        <textarea class="form-control mt-2" name="comments_officer" rows="1"
-                            placeholder="Reporting Officer's comments"></textarea>
-                    </div>
-
-                    <!-- Row 6: Re-employ & Promote -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Re-employ</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="reemploy" value="Yes">
-                                <label class="form-check-label">Yes</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="reemploy" value="No">
-                                <label class="form-check-label">No</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Promote</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="promote" value="Yes">
-                                <label class="form-check-label">Yes</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="promote" value="No">
-                                <label class="form-check-label">No</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="promote" value="Conditional">
-                                <label class="form-check-label">Yes, provided the following conditions are met</label>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </div>
     </div>
@@ -743,7 +1141,22 @@
                             </div>
 
                         </div>
-                        <button type="button" class="btn btn-danger" id="btnCancel">Cancel</button>
+                        <div class="row">
+                            <input type="hidden" id="txtIdEditTrain" value="">
+                            <input type="hidden" id="txtIdPerson" value="">
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-success btn-block btn-xs"
+                                    data-dismiss="modal">Close</button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-primary btn-block btn-xs"
+                                    onclick="saveDataTrainEvaluation();">Submit</button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-danger btn-block btn-xs"
+                                    id="btnCancel">Cancel</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="table-responsive" id="tableContainer" style="margin-top: 10px;">
@@ -766,13 +1179,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <div class="modal-footer">
-                <input type="hidden" id="txtIdEditTrain" value="">
-                <input type="hidden" id="txtIdPerson" value="">
-                <button type="button" class="btn btn-success" onclick="saveData();">Submit</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

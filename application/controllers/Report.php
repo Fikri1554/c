@@ -52,6 +52,8 @@ class Report extends CI_Controller {
 		$dataOut['trNya'] = $trNya;
 		if($searchNya == "")
 		{
+			$dataOut['optVessel'] = $dataContext->getVesselByOption("", "name");
+			$dataOut['optRank'] = $dataContext->getRankByOption("","name");
 			$dataOut['optCompany'] = $dataContext->getCompanyByOption("","kode");
 			$this->load->view('frontend/reportData',$dataOut);
 		}else{
@@ -270,7 +272,54 @@ class Report extends CI_Controller {
 		exit;
 	}
 
+	//PENAMBAHAN KODE BARU
+	function getCrewEvaluation() {
+		$idPerson = $this->input->post('idperson');
+		$dataOut = array();
+		$trCrewEvaluation = "";
+		$no = 1;
 
+		$sql = "SELECT * FROM crew_evaluation_report WHERE idperson = '".$idPerson."' AND deletests = '0'";
+		$rsl = $this->MCrewscv->getDataQuery($sql, array($idPerson));
+
+		if ($rsl && count($rsl) > 0) {
+			foreach ($rsl as $val) {
+				$btnAct = "<div class=\"btn-group\" role=\"group\">";
+				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteDataCrewEvaluation('".$val->id."');\">
+								<i class='fa fa-trash'></i> Delete
+							</button>";
+				$btnAct .= "<button class=\"btn btn-primary btn-xs\" style=\"margin-right: 10px;\" title=\"Edit\" onclick=\"editDataCrewEvaluation('".$val->id."');\">
+								<i class='fa fa-edit'></i> Edit
+							</button>";
+				$btnAct .= "<button class=\"btn btn-success btn-xs\" title=\"View\" onclick=\"ViewPrintCrewEvaluation('".$val->id."');\">
+								<i class='fa fa-eye'></i> View
+							</button>";
+				$btnAct .= "</div>";
+
+				$trCrewEvaluation .= "<tr data-id=\"".$val->id."\" style=\"vertical-align: middle;\">";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$no."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:left; padding-left:10px;\">".$val->vessel."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$val->seafarer_name."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$val->rank."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$val->date_of_report."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$val->reporting_period_from."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$val->reporting_period_to."</td>";
+					$trCrewEvaluation .= "<td style=\"text-align:center;\">".$btnAct."</td>";
+				$trCrewEvaluation .= "</tr>";
+
+				$no++;
+			}
+		}
+		else {
+			$trCrewEvaluation = '<tr><td colspan="8" style="text-align:center;">No evaluation data found</td></tr>';
+		}
+
+		$dataOut['trCrewEvaluation'] = $trCrewEvaluation;
+		echo json_encode($dataOut);
+		exit; 
+
+	}
+	
 	function getTrainingEvaluation() {
 		$idPerson = $this->input->post('idperson');
 		$dataOut = array();
@@ -283,7 +332,7 @@ class Report extends CI_Controller {
 		if (count($rsl) > 0) {
 			foreach ($rsl as $val) {
 				$btnAct = "<div class=\"btn-group\" role=\"group\">";
-				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteData('".$val->id."');\">
+				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteData('".$val->id."','".$val->idperson."');\">
 								<i class='fa fa-trash'></i> Delete
 							</button>";
 				$btnAct .= "<button class=\"btn btn-primary btn-xs\" style=\"margin-right: 10px;\" title=\"Edit\" onclick=\"editData('".$val->id."');\">
@@ -295,15 +344,15 @@ class Report extends CI_Controller {
 				$btnAct .= "</div>";
 
 				$trTraining .= "<tr data-id=\"".$val->id."\" style=\"vertical-align: middle;\">";
-				$trTraining .= "<td style=\"text-align:center;\">".$no."</td>";
-				$trTraining .= "<td style=\"text-align:left; padding-left:10px;\">".$val->employeeName."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$val->designation."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$val->dateOfTraining."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$val->placeOfTraining."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$val->subject."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$val->dateOfEvaluation."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$val->evaluatorNameDesignation."</td>";
-				$trTraining .= "<td style=\"text-align:center;\">".$btnAct."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$no."</td>";
+					$trTraining .= "<td style=\"text-align:left; padding-left:10px;\">".$val->employeeName."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$val->designation."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$val->dateOfTraining."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$val->placeOfTraining."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$val->subject."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$val->dateOfEvaluation."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$val->evaluatorNameDesignation."</td>";
+					$trTraining .= "<td style=\"text-align:center;\">".$btnAct."</td>";
 				$trTraining .= "</tr>";
 
 				$no++;
@@ -314,6 +363,68 @@ class Report extends CI_Controller {
 		echo json_encode($dataOut);
 	}
 
+	function getDataEditCrewEvaluation() {
+		$dataOut = array();
+		$id = $this->input->post('id', true);
+
+		try {
+			$sqlReport = "SELECT * FROM crew_evaluation_report WHERE id = '".$id."' AND deletests = '0'";
+			$reportData = $this->MCrewscv->getDataQuery($sqlReport, array($id));
+			
+			if(empty($reportData)) {
+				throw new Exception("Data not found");
+			}
+			
+			$idPerson = $reportData[0]->idperson;
+			
+			$sqlCriteria = "SELECT * FROM crew_evaluation_criteria WHERE idperson = '".$idPerson."' AND deletests = '0'";
+			$criteriaData = $this->MCrewscv->getDataQuery($sqlCriteria, array($idPerson));
+
+			$mappedCriteria = array();
+			foreach($criteriaData as $criteria) {
+				$mappedCriteria[$criteria->criteria_name] = array(
+					'excellent' => $criteria->excellent,
+					'good' => $criteria->good,
+					'fair' => $criteria->fair,
+					'poor' => $criteria->poor,
+					'identify' => $criteria->identify
+				);
+			}
+
+			$dataOut = array(
+				'status' => 'success',
+				'report' => array(
+					'idperson' => $idPerson,
+					'vessel' => $reportData[0]->vessel,
+					'seafarer_name' => $reportData[0]->seafarer_name,
+					'rank' => $reportData[0]->rank,
+					'date_of_report' => $reportData[0]->date_of_report,
+					'reporting_period_from' => $reportData[0]->reporting_period_from,
+					'reporting_period_to' => $reportData[0]->reporting_period_to,
+					'reason_midway_contract' => $reportData[0]->reason_midway_contract,
+					'reason_signing_off' => $reportData[0]->reason_signing_off,
+					'reason_leaving_vessel' => $reportData[0]->reason_leaving_vessel,
+					'reason_special_request' => $reportData[0]->reason_special_request,
+					'master_comments' => $reportData[0]->master_comments,
+					'reporting_officer_comments' => $reportData[0]->reporting_officer_comments,
+					'promote' => $reportData[0]->promote,
+					'reporting_officer_name' => $reportData[0]->reporting_officer_name,
+					'reporting_officer_rank' => $reportData[0]->reporting_officer_rank,
+					'received_by_cm' => $reportData[0]->received_by_cm,
+					'date_of_receipt' => $reportData[0]->date_of_receipt
+				),
+				'criteria' => $mappedCriteria
+			);
+
+		} catch (Exception $e) {
+			$dataOut = array(
+				'status' => 'error',
+				'message' => $e->getMessage()
+			);
+		}
+
+		echo json_encode($dataOut);
+	}
 
 	function getDataEdit()
 	{
@@ -348,7 +459,99 @@ class Report extends CI_Controller {
 		echo json_encode($dataOut);
 	}
 
-	function saveData()
+	function saveDataCrewEvaluation() {
+		$data = $_POST;
+		$dataIns = array();
+		$criteriaData = array();
+		$stData = "";
+		$txtIdEditCrew = isset($data['txtIdEditCrew']) ? $data['txtIdEditCrew'] : '';
+		$idPerson = isset($data['txtIdPerson']) ? $data['txtIdPerson'] : '';
+		$userDateTimeNow = $this->session->userdata('userCrewSystem') . "/" . date('Ymd') . "/" . date('H:i:s');
+
+		try {
+			
+			$dataIns['vessel'] = isset($data['txtVessel']) ? $data['txtVessel'] : '';
+			$dataIns['seafarer_name'] = isset($data['txtSeafarerName']) ? $data['txtSeafarerName'] : '';
+			$dataIns['rank'] = isset($data['txtRank']) ? $data['txtRank'] : '';
+			$dataIns['date_of_report'] = (!empty($data['txtDateOfReport']) && $data['txtDateOfReport'] != "0000-00-00") ? $data['txtDateOfReport'] : null;
+			$dataIns['reporting_period_from'] = (!empty($data['txtReportingPeriodFrom']) && $data['txtReportingPeriodFrom'] != "0000-00-00") ? $data['txtReportingPeriodFrom'] : null;
+			$dataIns['reporting_period_to'] = (!empty($data['txtReportingPeriodTo']) && $data['txtReportingPeriodTo'] != "0000-00-00") ? $data['txtReportingPeriodTo'] : null;
+			$dataIns['idperson'] = $idPerson;
+			
+			$dataIns['reason_midway_contract'] = isset($data['reasonMidway']) ? $data['reasonMidway'] : '';
+			$dataIns['reason_signing_off'] = isset($data['reasonSigningOff']) ? $data['reasonSigningOff'] : '';
+			$dataIns['reason_leaving_vessel'] = isset($data['reasonLeaving']) ? $data['reasonLeaving'] : '';
+			$dataIns['reason_special_request'] = isset($data['reasonSpecialRequest']) ? $data['reasonSpecialRequest'] : '';
+
+			$dataIns['master_comments'] = isset($data['txtMasterComments']) ? $data['txtMasterComments'] : '';
+			$dataIns['reporting_officer_comments'] = isset($data['txtOfficerComments']) ? $data['txtOfficerComments'] : '';
+			$dataIns['promote'] = isset($data['txtPromoted']) ? $data['txtPromoted'] : 'N';
+			$dataIns['reporting_officer_name'] = isset($data['txtfullname']) ? $data['txtfullname'] : '';
+			$dataIns['reporting_officer_rank'] = isset($data['slcRank']) ? $data['slcRank'] : '';
+			$dataIns['received_by_cm'] = isset($data['txtreceived']) ? $data['txtreceived'] : '';
+			$dataIns['date_of_receipt'] = (!empty($data['txtDateReceipt']) && $data['txtDateReceipt'] != "0000-00-00") ? $data['txtDateReceipt'] : null;
+
+			if (empty($txtIdEditCrew)) {
+				$insertId = $this->MCrewscv->insData("crew_evaluation_report", $dataIns);
+				$mode = "insert";
+				$id = $insertId;
+			} else {
+				$whereNya = "id = '" . $txtIdEditCrew . "'";
+				$this->MCrewscv->updateData($whereNya, $dataIns, "crew_evaluation_report");
+				$mode = "update";
+				$id = $txtIdEditCrew;
+			}
+
+			$criteriaList = array(
+				"Ability/Knowledge of Job" => "ability",
+				"Safety Consciousness" => "safety",
+				"Dependability & Integrity" => "integrity",
+				"Initiative" => "initiative",
+				"Conduct" => "conduct",
+				"Ability to get on with others" => "abilityGetOn",
+				"Appearance (+ uniforms)" => "appearance",
+				"Sobriety" => "sobriety",
+				"English Language" => "english",
+				"Leadership (Officers)" => "leadership"
+			);
+
+			if (!empty($txtIdEditCrew)) {
+				$this->MCrewscv->delData("crew_evaluation_criteria", "idperson = '" . $idPerson . "'");
+			}
+
+			foreach ($criteriaList as $criteriaName => $criteriaId) {
+				$value = isset($data[$criteriaId]) ? $data[$criteriaId] : '';
+				$criteriaData = array(
+					'idperson' => $idPerson,
+					'criteria_name' => $criteriaName,
+					'excellent' => ($value == '4') ? 'Y' : '',
+					'good' => ($value == '3') ? 'Y' : '',
+					'fair' => ($value == '2') ? 'Y' : '',
+					'poor' => ($value == '1') ? 'Y' : '',
+					'identify' => isset($data["txtIdentify" . ucfirst($criteriaId)]) ? $data["txtIdentify" . ucfirst($criteriaId)] : '',
+					'addUsrDate' => $userDateTimeNow
+				);
+
+				$this->MCrewscv->insData("crew_evaluation_criteria", $criteriaData);
+			}
+
+			$stData = array(
+				"status" => "success",
+				"message" => "Save Success..!!",
+				"mode" => $mode,
+				"id" => $id
+			);
+		} catch (\Throwable $th) {
+			$stData = array(
+				"status" => "error",
+				"message" => "Error: " . $th->getMessage()
+			);
+		}
+
+		echo json_encode($stData);
+	}
+
+	function saveDataTrainEvaluation()
 	{
 		$data = $_POST;
 		$dataIns = array();
@@ -401,6 +604,25 @@ class Report extends CI_Controller {
 		}
 
 		echo json_encode($stData);
+	}
+
+	function delData()
+	{
+		$userInit = $this->session->userdata('userInitCrewSystem');
+		$dateNow = date("Ymd/h:i:s");
+
+		$id = $_POST['id'];
+		$idPerson = $_POST['idPerson'];			
+
+		$dataDel = array(
+			'deletests' => "1",
+			'delUserDt' => $userInit . "/" . $dateNow
+		);
+
+		$whereNya = "id = '".$id."' AND idperson = '".$idPerson."'";
+		$this->MCrewscv->updateData($whereNya, $dataDel, "tblevaluation");
+
+		echo json_encode(array("status" => "Success"));
 	}
 
 
