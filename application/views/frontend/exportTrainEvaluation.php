@@ -8,7 +8,6 @@
     body {
         font-family: 'Calibri';
         font-size: 11px;
-        /* Ukuran font lebih kecil */
     }
 
     table {
@@ -20,13 +19,11 @@
     td {
         border: 1px solid black;
         padding: 4px;
-        /* Padding lebih kecil */
     }
 
     th {
         text-align: center;
         background-color: #f2f2f2;
-        /* Warna latar belakang untuk header */
     }
 
     .no-border {

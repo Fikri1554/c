@@ -183,6 +183,7 @@
         formData.append("txtMasterComments", $("#txtMasterComments").val() || '');
         formData.append("txtOfficerComments", $("#txtOfficerComments").val() || '');
         formData.append("txtPromoted", $("input[name='txtPromoted']:checked").val() || 'N');
+        formData.append("txtReemploy", $("input[name='txtReemploy']:checked").val() || 'N');
         formData.append("txtfullname", $("#txtfullname").val() || '');
         formData.append("txtreceived", $("#txtreceived").val() || '');
         formData.append("slcRank", $("#slcRank").val() || '');
@@ -212,7 +213,7 @@
         $("#idLoading").show();
 
         $.ajax({
-            url: "<?php echo base_url('report/saveDataCrewEvaluation'); ?>",
+            url: "<?php echo base_url('report/saveDataCrewEvaluation'); ?>?_=" + new Date().getTime(),
             method: "POST",
             data: formData,
             cache: false,
@@ -229,6 +230,7 @@
                 alert("Error saving data. Please try again.");
             }
         });
+        return false;
     }
 
     $(document).on("click", "#btnPrintReport", function() {
@@ -469,7 +471,6 @@
                     $('#txtIdEditCrew').val(id);
                     $('#txtIdPerson').val(response.report.idperson);
 
-                    // Debug: Check if idperson is being set
                     console.log('idperson:', response.report.idperson);
                     console.log('txtIdPerson value:', $('#txtIdPerson').val());
 
@@ -490,6 +491,8 @@
                     $('#txtOfficerComments').val(response.report.reporting_officer_comments);
 
                     $(`input[name="txtPromoted"][value="${response.report.promote}"]`).prop('checked',
+                        true);
+                    $(`input[name="txtReemploy"][value="${response.report.re_employ}"]`).prop('checked',
                         true);
 
                     $('#txtfullname').val(response.report.reporting_officer_name);
@@ -586,6 +589,33 @@
         }
     }
 
+    function deleteDataCrewEvaluation(id, idPerson) {
+        if (confirm("Delete this evaluation?")) {
+            $.ajax({
+                url: "<?php echo base_url('report/delDataCrewEvaluation'); ?>",
+                method: "POST",
+                data: {
+                    id: id,
+                    idPerson: idPerson
+                },
+                dataType: "json",
+                success: function(response) {
+                    if (response.status === "Success") {
+                        $("tr[data-id='" + id + "']").remove();
+                        $("#idTbodyCrewEvaluation tr").each(function(index) {
+                            $(this).find("td:first").text(index + 1);
+                        });
+                    }
+                    alert(response.message || "Deleted successfully");
+                },
+                error: function(xhr) {
+                    alert("Error deleting data");
+                    console.error(xhr.responseText);
+                }
+            });
+        }
+    }
+
 
     function ViewPrint(id) {
         var idPerson = $("#txtIdPerson").val();
@@ -594,6 +624,11 @@
             return false;
         }
         window.open("<?php echo base_url('report/printTrainEvaluation'); ?>/" + id + "/" + idPerson + "/", "_blank");
+    }
+
+    function ViewPrintCrewEvaluation(reportId, idPerson) {
+        window.open("<?php echo base_url('report/printCrewEvaluation'); ?>/" + reportId + "/" + idPerson + "/",
+            "_blank");
     }
     </script>
 </head>
@@ -729,7 +764,7 @@
                 </button>
                 <div id="formContainerCrew"
                     style="display: none; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease-in-out;">
-                    <form id="crewForm">
+                    <form id="crewForm" onsubmit="return saveDataCrewEvaluation(event);">
                         <div class="row">
                             <div class="col-md-2 col-xs-12">
                                 <label for="slcVesselHeader" style="font-size:12px;">Vessel :</label>
@@ -911,11 +946,11 @@
                             <div class="col-md-6">
                                 <label class="form-label">Re-employ</label>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="reemploy" value="Yes">
+                                    <input class="form-check-input" type="radio" name="txtReemploy" value="Y">
                                     <label class="form-check-label">Yes</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="reemploy" value="No">
+                                    <input class="form-check-input" type="radio" name="txtReemploy" value="N">
                                     <label class="form-check-label">No</label>
                                 </div>
                             </div>
@@ -949,6 +984,11 @@
                                 <label for="txtreceived" style="font-size:12px;">Received by CM :</label>
                                 <input type="text" class="form-control input-sm" id="txtreceived">
                             </div>
+                            <div class="col-md-2 col-xs-12">
+                                <label for="txtmastercoofullname" style="font-size:12px;">Master / COO Full
+                                    Name:</label>
+                                <input type="text" class="form-control input-sm" id="txtmastercoofullname">
+                            </div>
                             <div class="col-md-2">
                                 <label for="slcRank" style="font-size:12px;">Rank:</label>
                                 <select class="form-control input-sm" id="slcRank">
@@ -968,8 +1008,7 @@
                                     data-dismiss="modal">Close</button>
                             </div>
                             <div class="col-md-4">
-                                <button type="submit" class="btn btn-primary btn-block btn-xs"
-                                    onclick="saveDataCrewEvaluation();">Submit</button>
+                                <button type="submit" class="btn btn-primary btn-block btn-xs">Submit</button>
                             </div>
                             <div class="col-md-4">
                                 <button type="button" class="btn btn-danger btn-block btn-xs"

@@ -203,6 +203,119 @@ class Report extends CI_Controller {
 		exit;
 	}
 
+	function printCrewEvaluation($id = "", $idPerson = "")
+	{
+		$dataOut = array();
+		$reEmploy = 'N'; 
+		$sqlReport = "SELECT * FROM crew_evaluation_report 
+					WHERE deletests = '0' 
+					AND id = '".$id."' 
+					AND idperson = '".$idPerson."'";
+		
+		$reportData = $this->MCrewscv->getDataQuery($sqlReport);
+		
+		$sqlCriteria = "SELECT * FROM crew_evaluation_criteria
+			WHERE deletests = '0'
+			AND idperson = '".$idPerson."'
+			ORDER BY id ASC";
+
+		
+		$criteriaData = $this->MCrewscv->getDataQuery($sqlCriteria);
+
+		$vessel = '';
+		$seafarerName = '';
+		$rank = '';
+		$dateOfReport = '';
+		$reportPeriodFrom = '';
+		$reportPeriodTo = '';
+		$masterComments = '';
+		$reportingOfficerComments = '';
+		$promote = '';
+		$reportingOfficerName = '';
+		$reportingOfficerRank = '';
+		$receivedByCM = '';
+		$dateOfReceipt = '';
+		
+		$reasonMidway = '';
+		$reasonLeaving = '';
+		$reasonSigningOff = '';
+		$reasonSpecial = '';
+		
+		function getChecked($value) {
+			return ($value === 'Y') ? '&#10004;' : '';
+		}
+
+		if (!empty($reportData) && count($reportData) > 0) {
+			$row = $reportData[0];
+			
+			$vessel = !empty($row->vessel) ? htmlspecialchars($row->vessel) : 'N/A';
+			$seafarerName = !empty($row->seafarer_name) ? htmlspecialchars($row->seafarer_name) : 'N/A';
+			$rank = !empty($row->rank) ? htmlspecialchars($row->rank) : 'N/A';
+			$dateOfReport = !empty($row->date_of_report) ? date('d/m/Y', strtotime($row->date_of_report)) : 'N/A';
+			$reportPeriodFrom = !empty($row->reporting_period_from) ? date('d/m/Y', strtotime($row->reporting_period_from)) : 'N/A';
+			$reportPeriodTo = !empty($row->reporting_period_to) ? date('d/m/Y', strtotime($row->reporting_period_to)) : 'N/A';
+			$masterComments = !empty($row->master_comments) ? htmlspecialchars($row->master_comments) : '';
+			$reportingOfficerComments = !empty($row->reporting_officer_comments) ? htmlspecialchars($row->reporting_officer_comments) : '';
+			$promote = !empty($row->promote) ? htmlspecialchars($row->promote) : 'N';
+			$reportingOfficerName = !empty($row->reporting_officer_name) ? htmlspecialchars($row->reporting_officer_name) : 'N/A';
+			$reportingOfficerRank = !empty($row->reporting_officer_rank) ? htmlspecialchars($row->reporting_officer_rank) : 'N/A';
+			$receivedByCM = !empty($row->received_by_cm) ? htmlspecialchars($row->received_by_cm) : 'N/A';
+			$dateOfReceipt = !empty($row->date_of_receipt) ? date('d/m/Y', strtotime($row->date_of_receipt)) : 'N/A';
+			$reEmploy = !empty($row->re_employ) ? $row->re_employ : 'N'; 
+			
+			$reasonMidway = getChecked($row->reason_midway_contract);
+			$reasonLeaving = getChecked($row->reason_leaving_vessel);
+			$reasonSigningOff = getChecked($row->reason_signing_off);
+			$reasonSpecial = getChecked($row->reason_special_request);
+		}
+
+		$criteriaTable = '';
+		if (!empty($criteriaData)) {
+			foreach ($criteriaData as $row) {
+				$criteriaTable .= '<tr>';
+				$criteriaTable .= '<td>'.htmlspecialchars($row->criteria_name).'</td>';
+				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->excellent).'</td>';
+				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->good).'</td>';
+				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->fair).'</td>';
+				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->poor).'</td>';
+				$criteriaTable .= '<td style="text-align:center;">'.$row->identify.'</td>';
+				$criteriaTable .= '</tr>';
+			}
+		}
+
+		$dataOut = array(
+			'vessel' => $vessel,
+			'seafarerName' => $seafarerName,
+			'rank' => $rank,
+			'dateOfReport' => $dateOfReport,
+			'reportPeriodFrom' => $reportPeriodFrom,
+			'reportPeriodTo' => $reportPeriodTo,
+			'reasonMidway' => $reasonMidway,
+			'reasonLeaving' => $reasonLeaving,
+			'reasonSigningOff' => $reasonSigningOff,
+			'reasonSpecial' => $reasonSpecial,
+			'criteriaTable' => $criteriaTable,
+			'masterComments' => $masterComments,
+			'reportingOfficerComments' => $reportingOfficerComments,
+			'promote' => $promote,
+			'reportingOfficerName' => $reportingOfficerName,
+			'reportingOfficerRank' => $reportingOfficerRank,
+			'receivedByCM' => $receivedByCM,
+			'dateOfReceipt' => $dateOfReceipt,
+			'reEmploy' => $reEmploy, 
+		);
+
+		require("application/views/frontend/pdf/mpdf60/mpdf.php");
+		$mpdf = new mPDF('utf-8', 'A4');
+		ob_start();
+		$this->load->view('frontend/exportCrewEvaluation', $dataOut);
+		$html = ob_get_contents();
+		ob_end_clean();
+		$mpdf->WriteHTML(utf8_encode($html));
+		$mpdf->Output("Crew_Evaluation_Report.pdf", 'I');
+		exit;
+	}
+
 	function transmital($idPerson = "")
 	{
 		$dataOut = array();
@@ -272,7 +385,6 @@ class Report extends CI_Controller {
 		exit;
 	}
 
-	//PENAMBAHAN KODE BARU
 	function getCrewEvaluation() {
 		$idPerson = $this->input->post('idperson');
 		$dataOut = array();
@@ -285,13 +397,13 @@ class Report extends CI_Controller {
 		if ($rsl && count($rsl) > 0) {
 			foreach ($rsl as $val) {
 				$btnAct = "<div class=\"btn-group\" role=\"group\">";
-				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteDataCrewEvaluation('".$val->id."');\">
+				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteDataCrewEvaluation('".$val->id."', '".$val->idperson."');\">
 								<i class='fa fa-trash'></i> Delete
 							</button>";
 				$btnAct .= "<button class=\"btn btn-primary btn-xs\" style=\"margin-right: 10px;\" title=\"Edit\" onclick=\"editDataCrewEvaluation('".$val->id."');\">
 								<i class='fa fa-edit'></i> Edit
 							</button>";
-				$btnAct .= "<button class=\"btn btn-success btn-xs\" title=\"View\" onclick=\"ViewPrintCrewEvaluation('".$val->id."');\">
+				$btnAct .= "<button class=\"btn btn-success btn-xs\" title=\"View\" onclick=\"ViewPrintCrewEvaluation('".$val->id."', '".$val->idperson."');\">
 								<i class='fa fa-eye'></i> View
 							</button>";
 				$btnAct .= "</div>";
@@ -407,6 +519,7 @@ class Report extends CI_Controller {
 					'reason_special_request' => $reportData[0]->reason_special_request,
 					'master_comments' => $reportData[0]->master_comments,
 					'reporting_officer_comments' => $reportData[0]->reporting_officer_comments,
+					're_employ' => $reportData[0]->re_employ,
 					'promote' => $reportData[0]->promote,
 					'reporting_officer_name' => $reportData[0]->reporting_officer_name,
 					'reporting_officer_rank' => $reportData[0]->reporting_officer_rank,
@@ -486,6 +599,7 @@ class Report extends CI_Controller {
 			$dataIns['master_comments'] = isset($data['txtMasterComments']) ? $data['txtMasterComments'] : '';
 			$dataIns['reporting_officer_comments'] = isset($data['txtOfficerComments']) ? $data['txtOfficerComments'] : '';
 			$dataIns['promote'] = isset($data['txtPromoted']) ? $data['txtPromoted'] : 'N';
+			$dataIns['re_employ'] = isset($data['txtReemploy']) ? $data['txtReemploy'] : 'N';
 			$dataIns['reporting_officer_name'] = isset($data['txtfullname']) ? $data['txtfullname'] : '';
 			$dataIns['reporting_officer_rank'] = isset($data['slcRank']) ? $data['slcRank'] : '';
 			$dataIns['received_by_cm'] = isset($data['txtreceived']) ? $data['txtreceived'] : '';
@@ -625,6 +739,34 @@ class Report extends CI_Controller {
 		echo json_encode(array("status" => "Success"));
 	}
 
+	function delDataCrewEvaluation() {
+		$userInit = $this->session->userdata('userInitCrewSystem');
+		$dateNow = date("Ymd/h:i:s");
+
+		$id = $this->input->post('id');
+		$idPerson = $this->input->post('idPerson');
+
+		try {
+			$dataDel = array(
+				'deletests' => "1",
+				'delUserDt' => $userInit . "/" . $dateNow
+			);
+			
+			$whereReport = "id = '".$id."' AND idperson = '".$idPerson."'";
+			$this->MCrewscv->updateData($whereReport, $dataDel, "crew_evaluation_report");
+
+			$whereCriteria = "idperson = '".$idPerson."'";
+			$this->MCrewscv->updateData($whereCriteria, $dataDel, "crew_evaluation_criteria");
+
+			echo json_encode(array("status" => "Success"));
+			
+		} catch (Exception $e) {
+			echo json_encode(array(
+				"status" => "Error",
+				"message" => "Delete failed: " . $e->getMessage()
+			));
+		}
+	}
 
 	function getDataCVOtherForm($idPerson = "",$company = "")
 	{
