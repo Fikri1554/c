@@ -60,12 +60,11 @@ class Vaccine extends CI_Controller {
 		$dataIns = array();		
 		$dateNow = date("Ymd/h:i:s");
 		$stData = "";
-		$idEdit = $data['idEdit'];
+		$idEdit = $data['idEdit']; 
 		$idPerson = $data['idPerson'];
 		$dir = "./uploadFile";
 
-		try {
-
+		try {		
 			$dataIns['idperson'] = $idPerson;
 			$dataIns['vaccine_name'] = $data['vaccineName'];
 			$dataIns['vaccine_date'] = $data['vaccineDate'];
@@ -82,7 +81,7 @@ class Vaccine extends CI_Controller {
 				$whereNya = "id = '".$idEdit."' AND idperson = '".$idPerson."'";
 				$this->MCrewscv->updateData($whereNya,$dataIns,"tblvaccine");
 			}
-
+ 
 			if($data['cekFileUpload'] != "")
 			{
 				$dataIns = array();

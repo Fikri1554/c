@@ -460,7 +460,6 @@ class Dashboard extends CI_Controller {
 			$whereVessel = "LOWER(D.nmvsl) IN ($vesselList)";
 		}
 
-
 		$sql = "SELECT 
 					C.nmcmp AS ClientName,        
 					D.kdvsl AS kode_kapal, 
@@ -490,9 +489,6 @@ class Dashboard extends CI_Controller {
 				ORDER BY 
 					C.nmcmp, D.nmvsl
 				";
-
-
-
 		$result = $this->MCrewscv->getDataQuery($sql);
 		echo json_encode($result);
 	}
@@ -588,7 +584,7 @@ class Dashboard extends CI_Controller {
 				AND R.urutan > 0
 				AND T.deletests = '0'
 				AND B.deletests = '0'
-				AND B.signoffdt = '0000-00-00' -- Hanya crew yang masih onboard
+				AND B.signoffdt = '0000-00-00' 
 			GROUP BY T.namescl
 			ORDER BY jumlah_onboard DESC
 			LIMIT 10;
@@ -668,8 +664,8 @@ class Dashboard extends CI_Controller {
 		$data = array();
 
 		foreach ($result as $row) {
-			$totalOnboard = (int) $row->total_onboard;
-			$totalOnleave = (int) $row->total_onleave;
+			$totalOnboard = $row->total_onboard;
+			$totalOnleave = $row->total_onleave;
 			$batasMedium = 1.5 * $totalOnboard;
 
 			if ($totalOnleave <= $totalOnboard) {
@@ -695,8 +691,7 @@ class Dashboard extends CI_Controller {
 		header('Content-Type: application/json');
 		echo json_encode($data);
 	}
-	
-	
+		
 	function rankContractExpiry()
 	{
 		$sql = "

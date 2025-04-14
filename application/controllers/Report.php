@@ -346,20 +346,21 @@ class Report extends CI_Controller {
 				$certTable .= '<tr>';
 				$certTable .= '<td class="cert-name" style="text-align: left;">' . htmlspecialchars($cert->certname) . '</td>';
 				$certTable .= '<td><input type="text" style="width: 50px; border: none; text-align: center;"></td>';
-				$certTable .= '<td style="border: none; text-align: center;">' . ($cert->issdate ? date('d M Y', strtotime($cert->issdate)) : 'N/A') . '</td>';
-				$certTable .= '<td style="border: none; text-align: center;">' . ($cert->expdate ? date('d M Y', strtotime($cert->expdate)) : 'N/A') . '</td>';
+				$issDate = ($cert->issdate && $cert->issdate !== '0000-00-00') ? date('d M Y', strtotime($cert->issdate)) : '-';
+				$certTable .= '<td style="border: none; text-align: center;">' . $issDate . '</td>';
+				// Perbaikan utama pada expdate
+				$expDate = ($cert->expdate && $cert->expdate !== '0000-00-00') ? date('d M Y', strtotime($cert->expdate)) : '-';
+				$certTable .= '<td style="border: none; text-align: center;">' . $expDate . '</td>';
 				$certTable .= '<td class="document-number" style="border-bottom: 1px solid black; text-align: left;">' . htmlspecialchars($cert->docno) . '</td>';
 				$certTable .= '</tr>';
-	
-			}
-			
+			}        
 			$certTable .= '<tr>';
 				$certTable .= '<td colspan="5" style="text-align: left; font-weight: bold;">Other Certificate:</td>';
 			$certTable .= '</tr>';
-			for ($i=1; $i <= 5; $i++) { 
+			for ($i=1; $i <= 10; $i++) { 
 				$certTable .= '<tr>';
 				$certTable .= '<td class="cert-name" style="text-align: left; border-bottom: 1px dotted black;"></td>';
-				$certTable .= '<td><input type="text" style="width: 50px; border: none; text-align: center; "></td>';
+				$certTable .= '<td><input type="text" style="width: 50px; border: none; text-align: center;"></td>';
 				$certTable .= '<td style="border-bottom: 1px dotted black; text-align: center;"></td>';
 				$certTable .= '<td style="border-bottom: 1px dotted black; text-align: center;"></td>';
 				$certTable .= '<td style="border-bottom: 1px dotted black; text-align: center;"></td>';
@@ -1374,23 +1375,43 @@ class Report extends CI_Controller {
 
 			$dataOut['trIsm'] = $trIsm;
 
-			$sqlContract = "SELECT COUNT(*) AS total_contracts 
+			
+			$sqlContract = "SELECT signondt, signoffdt 
 							FROM tblcontract 
 							WHERE idperson = '".$idPerson."' 
 							AND kdcmprec = '005' 
 							AND signoffdt IS NOT NULL";
-
 			$contractResult = $this->MCrewscv->getDataQuery($sqlContract);
-			$dataOut['yearyOpSun'] = ($contractResult[0]->total_contracts) ? $contractResult[0]->total_contracts : 0;
 
-			$sqlRank = "SELECT SUM(TIMESTAMPDIFF(YEAR, signondt, signoffdt)) AS total_years 
+			$totalMonthsOp = 0;
+			foreach ($contractResult as $row) {
+				$signon = new DateTime($row->signondt);
+				$signoff = new DateTime($row->signoffdt);
+				$interval = $signon->diff($signoff);
+				$totalMonthsOp += ($interval->y * 12) + $interval->m;
+			}
+			$yearsOp = floor($totalMonthsOp / 12);
+			$monthsOp = $totalMonthsOp % 12;
+			$dataOut['yearyOpSun'] = "{$yearsOp} years {$monthsOp} months";
+
+			$sqlRank = "SELECT signondt, signoffdt 
 						FROM tblcontract 
 						WHERE idperson = '".$idPerson."' 
 						AND kdcmprec = '005' 
 						AND signoffdt IS NOT NULL";
-
 			$rankResult = $this->MCrewscv->getDataQuery($sqlRank);
-			$dataOut['yearyRankSun'] = ($rankResult[0]->total_years) ? $rankResult[0]->total_years : 0;
+
+			$totalMonthsRank = 0;
+			foreach ($rankResult as $row) {
+				$signon = new DateTime($row->signondt);
+				$signoff = new DateTime($row->signoffdt);
+				$interval = $signon->diff($signoff);
+				$totalMonthsRank += ($interval->y * 12) + $interval->m;
+			}
+			$yearsRank = floor($totalMonthsRank / 12);
+			$monthsRank = $totalMonthsRank % 12;
+			$dataOut['yearyRankSun'] = "{$yearsRank} years {$monthsRank} months";
+
 
 			$dataOut['trSeaService'] = $this->getSeaServiceRecord($idPerson, "suntechno");
 			$dataOut['teamLead'] = $this->detilperdir($idPerson);
@@ -1415,7 +1436,7 @@ class Report extends CI_Controller {
 				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."' " ;
 
 		$rsl = $this->MCrewscv->getDataQuery($sql);
-		//echo "<pre>";print_r($rsl);exit;
+		
 		if(count($rsl) > 0)
 		{
 			$degreeNya = $dataContext->getDataByReq("degree","tbllang","idperson = '".$idPerson."' AND language LIKE '%english%' AND deletests = '0' ");
@@ -1457,7 +1478,6 @@ class Report extends CI_Controller {
 			$dataOut['lastCompany'] = $tempExpRank["cmpExp"];
 			$dataOut['signDate'] = $dataContext->convertReturnBulanTglTahun($rsl[0]->signdt);
 
-			
 			$dataOut['famtelp'] = $rsl[0]->famtelp;
 			$dataCertDocCoc = $this->certDocReg($idPerson,"COC");
 			$dataOut['cocName'] = "COC ".$dataCertDocCoc['name'];

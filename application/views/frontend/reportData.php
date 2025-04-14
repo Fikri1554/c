@@ -421,7 +421,6 @@
                     $('#suggestion').val(response.training_material_suggestion);
                     $('#advise').val(response.future_training_expectation);
 
-
                     setCheckboxValue('score1', response.employee_job_understanding);
                     setCheckboxValue('score2', response.quality_productivity_skill);
                     setCheckboxValue('score3', response.initiative_and_ideas);
