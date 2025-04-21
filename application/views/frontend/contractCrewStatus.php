@@ -388,6 +388,55 @@
 
         window.addEventListener("scroll", updateStickyHeader);
     });
+
+    function openEvaluasiModal(idPerson) {
+        $("#txtModalGenLinkIdPerson").val(idPerson);
+        $('#evaluasiModal').data('idperson', idPerson).modal('show');
+    }
+
+    function generateLink(department) {
+        const idPerson = $('#txtModalGenLinkIdPerson').val();
+        const params = {
+            txtModalGenLinkIdPerson: idPerson,
+            department: department
+        };
+
+        $.ajax({
+            url: '<?php echo base_url('extendCrewEvaluation/generateLink'); ?>',
+            type: 'POST',
+            data: params,
+            success: function(response) {
+                const res = JSON.parse(response);
+                const link = res.url;
+                const resultBox = `
+                    <div class="mt-4">
+                        <label class="form-label">Link Evaluasi:</label>
+                        <div class="input-group">
+                            <input type="text" id="generatedLink" class="form-control" value="${link}" readonly>
+                            <button class="btn btn-success" onclick="copyGeneratedLink()" style="margin-top: 10px;">Copy</button>
+                        </div>
+                    </div>
+                `;
+                $('.modal-body').html(resultBox);
+            },
+            error: function(xhr, status, error) {
+                alert("Gagal generate link!");
+                console.error(error);
+            }
+        });
+    }
+
+    function copyGeneratedLink() {
+        const input = document.getElementById("generatedLink");
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            $('#evaluasiModal').modal('hide');
+            alert("Link telah disalin ke clipboard!");
+        }).catch((err) => {
+            console.error("Gagal copy: ", err);
+        });
+    }
     </script>
 </head>
 
@@ -952,6 +1001,25 @@
     </div>
     <button onclick="topFunction()" id="myBtnToOnTop" title="Go to top"><i
             class="glyphicon glyphicon-eject"></i></button>
+
+    <div class="modal fade" id="evaluasiModal" tabindex="-1" aria-labelledby="evaluasiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #067780;">
+                    <h5 class="modal-title" id="evaluasiModalLabel" style="color: white;">Pilih Department</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <input type="hidden" id="txtModalGenLinkIdPerson" value="">
+                    <button class="btn btn-primary m-5" onclick="generateLink('DECK')">🚢 DECK</button>
+                    <button class="btn btn-warning m-5" onclick="generateLink('ENGINE')">⚙️
+                        ENGINE</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -41,7 +41,7 @@
         $("#btnExportPrincipal").attr("disabled", false);
         $("#btnPrintTransmital").attr("disabled", false);
         $("#btnPrintTraining").attr("disabled", false);
-        $("#btnPrintReport").attr("disabled", false);
+        $("#btnPrintReport").prop("disabled", false);
     }
 
     function printDataPrincipal() {
@@ -629,6 +629,23 @@
         window.open("<?php echo base_url('report/printCrewEvaluation'); ?>/" + reportId + "/" + idPerson + "/",
             "_blank");
     }
+
+    $(document).ready(function() {
+        $("#btnPrintReport").click(function() {
+
+            var idPerson = $("#txtIdPerson").val();
+            if (!idPerson) {
+                alert("Silakan pilih person terlebih dahulu!");
+                return;
+            }
+
+            var encryptedId = btoa(btoa(btoa(idPerson)));
+            var url = "<?php echo base_url('ExtendCrewEvaluation/getData'); ?>/" +
+                encodeURIComponent(encryptedId);
+
+            window.open(url, '_blank');
+        });
+    });
     </script>
 </head>
 
@@ -735,8 +752,8 @@
                                 </div>
                                 <div class="col-md-4">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" id="btnPrintReport"
-                                        disabled="disabled" data-toggle="modal" data-target="#crewEvaluationModal">
-                                        <i class=" fa fa-print"></i> Report Evaluation
+                                        disabled="disabled">
+                                        <i class=" fa fa-print"></i> Generate Link
                                     </button>
                                 </div>
                             </div>

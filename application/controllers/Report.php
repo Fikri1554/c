@@ -52,7 +52,7 @@ class Report extends CI_Controller {
 		$dataOut['trNya'] = $trNya;
 		if($searchNya == "")
 		{
-			$dataOut['optVessel'] = $dataContext->getVesselByOption("", "name");
+			$dataOut['optVessel'] = $dataContext->getVesselByOption("", "kode");
 			$dataOut['optRank'] = $dataContext->getRankByOption("","name");
 			$dataOut['optCompany'] = $dataContext->getCompanyByOption("","kode");
 			$this->load->view('frontend/reportData',$dataOut);
