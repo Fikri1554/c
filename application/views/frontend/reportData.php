@@ -41,7 +41,7 @@
         $("#btnExportPrincipal").attr("disabled", false);
         $("#btnPrintTransmital").attr("disabled", false);
         $("#btnPrintTraining").attr("disabled", false);
-        $("#btnPrintReport").prop("disabled", false);
+        $("#btnPrintReport").attr("disabled", false);
     }
 
     function printDataPrincipal() {
@@ -172,8 +172,8 @@
         formData.append("txtSeafarerName", $("#txtSeafarerName").val() || '');
         formData.append("txtRank", $("#slcRankHeader").val() || '');
         formData.append("txtDateOfReport", validateDate("txtDateOfReport") || '');
-        formData.append("txtReportingPeriodFrom", validateDate("txtReportingPeriodFrom") || '');
-        formData.append("txtReportingPeriodTo", validateDate("txtReportingPeriodTo") || '');
+        formData.append("txtDateReportingPeriodFrom", validateDate("txtDateReportingPeriodFrom") || '');
+        formData.append("txtDateReportingPeriodTo", validateDate("txtDateReportingPeriodTo") || '');
 
         formData.append("reasonMidway", $("#reasonMidway").is(":checked") ? 'Y' : '');
         formData.append("reasonSigningOff", $("#reasonSigningOff").is(":checked") ? 'Y' : '');
@@ -186,6 +186,7 @@
         formData.append("txtReemploy", $("input[name='txtReemploy']:checked").val() || 'N');
         formData.append("txtfullname", $("#txtfullname").val() || '');
         formData.append("txtreceived", $("#txtreceived").val() || '');
+        formData.append("txtmastercoofullname", $("#txtmastercoofullname").val() || '');
         formData.append("slcRank", $("#slcRank").val() || '');
         formData.append("txtDateReceipt", validateDate("txtDateReceipt") || '');
 
@@ -222,7 +223,45 @@
             dataType: "json",
             success: function(response) {
                 $("#idLoading").hide();
-                alert(response.message);
+                if (response.status === "success") {
+                    alert(response.message);
+
+                    let idperson = $("#txtIdPerson").val();
+                    $.ajax({
+                        type: "POST",
+                        url: "<?php echo base_url('report/getCrewEvaluation'); ?>",
+                        data: {
+                            idperson: idperson
+                        },
+                        dataType: "json",
+                        success: function(response) {
+                            $("#idTbodyCrewEvaluation").html(response.trCrewEvaluation);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching updated data:", error);
+                        }
+                    });
+
+                    $("#crewForm")[0].reset();
+                    $("#formContainerCrew").css("opacity", "0");
+                    setTimeout(() => {
+                        $("#formContainerCrew").hide();
+                        $("#tableContainerCrew").show();
+                        setTimeout(() => {
+                            $("#tableContainerCrew").css("opacity", "1");
+                        }, 50);
+                    }, 300);
+
+                    setTimeout(() => {
+                        $("#btnAddCrewEvaluation").show();
+                        setTimeout(() => {
+                            $("#btnAddCrewEvaluation").css("opacity", "1");
+                        }, 50);
+                    }, 300);
+                } else {
+                    alert("Error: " + response.message);
+                }
+
             },
             error: function(xhr, status, error) {
                 $("#idLoading").hide();
@@ -377,7 +416,7 @@
                     },
                     dataType: "json",
                     success: function(response) {
-                        $("#idTbodyTraining").html(response.trTraining);
+                        $("#idTbodyCrewEvaluation").html(response.trTraining);
                         $("#trainingEvaluationModal").modal("show");
                     },
                     error: function(xhr, status, error) {
@@ -420,6 +459,7 @@
                     $('#txtevaluator').val(response.evaluatorNameDesignation);
                     $('#suggestion').val(response.training_material_suggestion);
                     $('#advise').val(response.future_training_expectation);
+
 
                     setCheckboxValue('score1', response.employee_job_understanding);
                     setCheckboxValue('score2', response.quality_productivity_skill);
@@ -477,8 +517,8 @@
                     $('#txtSeafarerName').val(response.report.seafarer_name);
                     $('#slcRankHeader').val(response.report.rank);
                     $('#txtDateOfReport').val(response.report.date_of_report);
-                    $('#txtReportingPeriodFrom').val(response.report.reporting_period_from);
-                    $('#txtReportingPeriodTo').val(response.report.reporting_period_to);
+                    $('#ttxtDateReportingPeriodFrom').val(response.report.reporting_period_from);
+                    $('#txtDateReportingPeriodTo').val(response.report.reporting_period_to);
 
                     $('#reasonMidway').prop('checked', response.report.reason_midway_contract === 'Y');
                     $('#reasonSigningOff').prop('checked', response.report.reason_signing_off === 'Y');
@@ -497,6 +537,7 @@
                     $('#txtfullname').val(response.report.reporting_officer_name);
                     $('#txtreceived').val(response.report.received_by_cm);
                     $('#slcRank').val(response.report.reporting_officer_rank);
+                    $("#txtmastercoofullname").val(response.report.mastercoofullname);
                     $('#txtDateReceipt').val(response.report.date_of_receipt);
 
                     const criteriaMapping = {
@@ -616,36 +657,10 @@
     }
 
 
-    function ViewPrint(id) {
-        var idPerson = $("#txtIdPerson").val();
-        if (idPerson === "") {
-            alert("Person Empty..!!!");
-            return false;
-        }
-        window.open("<?php echo base_url('report/printTrainEvaluation'); ?>/" + id + "/" + idPerson + "/", "_blank");
-    }
-
-    function ViewPrintCrewEvaluation(reportId, idPerson) {
-        window.open("<?php echo base_url('report/printCrewEvaluation'); ?>/" + reportId + "/" + idPerson + "/",
+    function ViewPrintCrewEvaluation(idPerson) {
+        window.open("<?php echo base_url('report/exportPDFCrewEvaluation'); ?>/" + idPerson + "/",
             "_blank");
     }
-
-    $(document).ready(function() {
-        $("#btnPrintReport").click(function() {
-
-            var idPerson = $("#txtIdPerson").val();
-            if (!idPerson) {
-                alert("Silakan pilih person terlebih dahulu!");
-                return;
-            }
-
-            var encryptedId = btoa(btoa(btoa(idPerson)));
-            var url = "<?php echo base_url('ExtendCrewEvaluation/getData'); ?>/" +
-                encodeURIComponent(encryptedId);
-
-            window.open(url, '_blank');
-        });
-    });
     </script>
 </head>
 
@@ -723,37 +738,30 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-5 col-xs-12">
-                                    <div class="row">
-                                        <div class="col-md-5 col-xs-12">
-                                            <button class="btn btn-primary btn-sm btn-block" title="Cetak"
-                                                onclick="printDataPrincipal();" id="btnPrintPrincipal"
-                                                style="margin-top: 10px;">
-                                                <i class="fa fa-print"></i> Print
-                                            </button>
-                                        </div>
-                                        <div class="col-md-5 col-xs-12">
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                             <div class="row" style="margin-top: 10px;">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
+                                    <button class="btn btn-primary btn-sm btn-block" title="Cetak"
+                                        onclick="printDataPrincipal();" id="btnPrintPrincipal">
+                                        <i class="fa fa-print"></i> PRINT CV
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
                                     <button class="btn btn-success btn-sm btn-block" title="Cetak"
                                         onclick="transmital();" id="btnPrintTransmital" disabled="disabled">
                                         <i class="fa fa-print"></i> Transmital
                                     </button>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <button class="btn btn-danger btn-sm btn-block" title="Cetak" id="btnPrintTraining"
                                         disabled="disabled" data-toggle="modal" data-target="#trainingEvaluationModal">
                                         <i class="fa fa-print"></i> Training Evaluation
                                     </button>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" id="btnPrintReport"
-                                        disabled="disabled">
-                                        <i class=" fa fa-print"></i> Generate Link
+                                        disabled="disabled" data-toggle="modal" data-target="#crewEvaluationModal">
+                                        <i class=" fa fa-print"></i> Report Evaluation
                                     </button>
                                 </div>
                             </div>
@@ -775,9 +783,6 @@
                 </button>
             </div>
             <div class="modal-body">
-                <button type="button" class="btn btn-primary mb-3" id="btnAddCrewEvaluation">
-                    <i class='fa fa-plus-circle'></i> Add Data
-                </button>
                 <div id="formContainerCrew"
                     style="display: none; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease-in-out;">
                     <form id="crewForm" onsubmit="return saveDataCrewEvaluation(event);">
@@ -800,20 +805,23 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Date of Report</label>
-                                <input type="date" class="form-control" id="txtDateOfReport">
+                                <input type="text" class="form-control" id="txtDateOfReport">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Reporting Period From</label>
-                                <input type="date" class="form-control" id="txtReportingPeriodFrom">
+                                <input type="text" class="form-control" id="txtDateReportingPeriodFrom">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">To</label>
-                                <input type="date" class="form-control" id="txtReportingPeriodTo">
+                                <input type="text" class="form-control" id="txtDateReportingPeriodTo">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-12">
-                                <h4 style="font-family: calibri; margin-bottom: 10px;">Reason for the Report:</h4>
+                                <h4 style="font-family: calibri; margin-bottom: 10px; font-weight: bold;">&bullet;
+                                    Reason
+                                    for the
+                                    Report:</h4>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="reasonMidway" value="Y">
                                     <label class="form-check-label" for="reasonMidway"
@@ -960,7 +968,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <label class="form-label">Re-employ</label>
+                                <label class="form-label">&bullet; Re-employ</label>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="txtReemploy" value="Y">
                                     <label class="form-check-label">Yes</label>
@@ -971,7 +979,7 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Promote</label>
+                                <label class="form-label">&bullet; Promote</label>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="txtPromoted" value="Y">
                                     <label class="form-check-label">Yes</label>
@@ -1238,7 +1246,5 @@
         </div>
     </div>
 </div>
-
-
 
 </html>

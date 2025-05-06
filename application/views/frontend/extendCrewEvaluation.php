@@ -35,29 +35,30 @@
             return date && date !== "0000-00-00" ? date : null;
         }
 
-        formData.append("txtIdPerson", idPerson || '');
-        formData.append("txtIdEditCrew", $("#txtIdEditCrew").val() || '');
-        formData.append("slcVesselHeader", $("#slcVesselHeader").val() || '');
-        formData.append("txtSeafarerName", $("#txtSeafarerName").val() || '');
-        formData.append("slcRankHeader", $("#slcRankHeader").val() || '');
-        formData.append("txtDateOfReport", validateDate("txtDateOfReport") || '');
-        formData.append("txtDateReportingPeriodFrom", validateDate("txtDateReportingPeriodFrom") || '');
-        formData.append("txtDateReportingPeriodTo", validateDate("txtDateReportingPeriodTo") || '');
+        formData.append("txtIdPerson", idPerson);
+
+        formData.append("vessel", $("#vessel").val());
+        formData.append("personName", $("#personName").val());
+        formData.append("rank", $("#rank").val());
+        formData.append("txtDateOfReport", validateDate("txtDateOfReport"));
+        formData.append("txtDateOfReportingPeriodFrom", validateDate("txtDateOfReportingPeriodFrom"));
+        formData.append("txtDateOfReportingPeriodTo", validateDate("txtDateOfReportingPeriodTo"));
+        formData.append("txtDateReceipt", validateDate("txtDateReceipt"));
 
         formData.append("reasonMidway", $("#reasonMidway").is(":checked") ? 'Y' : '');
         formData.append("reasonSigningOff", $("#reasonSigningOff").is(":checked") ? 'Y' : '');
         formData.append("reasonLeaving", $("#reasonLeaving").is(":checked") ? 'Y' : '');
         formData.append("reasonSpecialRequest", $("#reasonSpecialRequest").is(":checked") ? 'Y' : '');
 
-        formData.append("txtMasterComments", $("#txtMasterComments").val() || '');
-        formData.append("txtOfficerComments", $("#txtOfficerComments").val() || '');
+        formData.append("txtMasterComments", $("#txtMasterComments").length ? $("#txtMasterComments").val() : '');
+
+        formData.append("txtOfficerComments", $("#txtOfficerComments").val());
+        formData.append("chiefName", $("#chiefName").val());
+        formData.append("chiefRank", $("#chiefRank").val())
+        formData.append("masterName", $("#masterName").val());
         formData.append("txtPromoted", $("input[name='txtPromoted']:checked").val() || 'N');
         formData.append("txtReemploy", $("input[name='txtReemploy']:checked").val() || 'N');
-        formData.append("txtfullname", $("#txtfullname").val() || '');
-        formData.append("txtreceived", $("#txtreceived").val() || '');
-        formData.append("txtmastercoofullname", $("#txtmastercoofullname").val() || '');
-        formData.append("slcRank", $("#slcRank").val() || '');
-        formData.append("txtDateReceipt", validateDate("txtDateReceipt") || '');
+        formData.append("txtreceived", $("#txtreceived").val());
 
         var criteriaList = {
             "Ability/Knowledge of Job": "ability",
@@ -80,6 +81,7 @@
                 criteriaId.charAt(0).toUpperCase() + criteriaId.slice(1)).val() || '');
         }
 
+
         $("#idLoading").show();
 
         $.ajax({
@@ -92,20 +94,23 @@
             dataType: "json",
             success: function(response) {
                 $("#idLoading").hide();
-                alert(response.message);
-                // if (response.status === "success") {
-                //     alert(response.message);
-
-                //     var reportId = response.id;
-                //     var encryptedReportId = btoa(btoa(btoa(reportId)));
-
-                //     var url = "<?php echo base_url('extendCrewEvaluation/printCrewEvaluation'); ?>/" +
-                //         encodeURIComponent(encryptedReportId);
-
-                //     window.open(url, '_blank');
-                // } else {
-                //     alert("Error: " + response.message);
-                // }
+                if (response.status === "success") {
+                    alert(response.message);
+                    var encryptedId = encodeURIComponent(idPerson);
+                    var printUrl = "<?php echo base_url('extendCrewEvaluation/printCrewEvaluation/'); ?>" +
+                        "/" +
+                        encryptedId;
+                    var printWindow = window.open(printUrl, '_blank');
+                    if (printWindow) {
+                        printWindow.focus();
+                    }
+                    $("#formCrewEvaluation").find("input[type=text], input[type=date], textarea").val("");
+                    $("#formCrewEvaluation").find("input[type=radio], input[type=checkbox]").prop("checked",
+                        false);
+                    $("#formCrewEvaluation").find("select").val("");
+                } else {
+                    alert("Error: " + response.message);
+                }
             },
             error: function(xhr, status, error) {
                 $("#idLoading").hide();
@@ -118,7 +123,7 @@
 </head>
 
 <body style="background-color: #d1e9ef; font-family: Calibri, Candara, Segoe, 
-    Segoe UI,Optima, Arial, sans-serif;">>
+    Segoe UI,Optima, Arial, sans-serif;">
     <div class="clearfix visible-lg-block visible-md-block">
         <section class="header" style="padding-top:10px;padding-bottom:5px;">
             <div class="container">
@@ -146,22 +151,18 @@
         </div>
     </section>
     <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <div class="row">
+        <div class="row" id="formCrewEvaluation">
             <div class="col-md-2 col-xs-12">
-                <label for="slcVesselHeader" style="font-size:12px;">Vessel :</label>
-                <select class="form-control input-sm" id="slcVesselHeader">
-                    <?php echo $optVessel; ?>
-                </select>
+                <label style="font-size:16px;">Vessel :</label>
+                <input type="text" id="vessel" class="form-control" value="<?php echo $vessel; ?>" readonly>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Seafarer's Name</label>
-                <input type="text" class="form-control" id="txtSeafarerName">
+                <input type="text" id="personName" class="form-control" value="<?php echo $personName; ?>" readonly>
             </div>
             <div class="col-md-2">
-                <label for="slcRankHeader" style="font-size:12px;">Rank:</label>
-                <select class="form-control input-sm" id="slcRankHeader">
-                    <?php echo $optRank; ?>
-                </select>
+                <label style="font-size:12px;">Rank:</label>
+                <input type="text" id="rank" class="form-control" value="<?php echo $rank; ?>" readonly>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Date of Report</label>
@@ -169,11 +170,11 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Reporting Period From</label>
-                <input type="date" class="form-control" id="txtReportingPeriodFrom">
+                <input type="date" class="form-control" id="txtDateOfReportingPeriodFrom">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Reporting Period To</label>
-                <input type="date" class="form-control" id="txtReportingPeriodTo">
+                <input type="date" class="form-control" id="txtDateOfReportingPeriodTo">
             </div>
         </div>
         <div class="row">
@@ -311,18 +312,11 @@
                 <label>&bullet; General Comments highlighting strengths / weaknesses:</label>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Master Comments</label>
-                <textarea class="form-control" name="comments_master" rows="6" placeholder="Master's comments"
-                    id="txtMasterComments"></textarea>
-            </div>
-            <div class="col-md-6">
                 <label class="form-label">Officer Comments</label>
                 <textarea class="form-control" name="comments_officer" rows="6"
                     placeholder="Reporting Officer's comments" id="txtOfficerComments"></textarea>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <label class="form-label">Re-employ</label>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="txtReemploy" value="Y">
@@ -333,7 +327,7 @@
                     <label class="form-check-label">No</label>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <label class="form-label">Promote</label>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="txtPromoted" value="Y">
@@ -356,31 +350,25 @@
                 <label>&bullet; Reporting Officer:</label>
             </div>
             <div class="col-md-2 col-xs-12">
-                <label for="txtfullname" style="font-size:12px;">Fullname :</label>
-                <input type="text" class="form-control input-sm" id="txtfullname">
+                <label style="font-size:12px;">Fullname :</label>
+                <input type="text" id="chiefName" class="form-control" value="<?php echo $chiefName; ?>" readonly>
             </div>
-            <div class="col-md-2 col-xs-12">
-                <label for="txtreceived" style="font-size:12px;">Received by CM :</label>
-                <input type="text" class="form-control input-sm" id="txtreceived">
+            <div class="col-md-2">
+                <label style="font-size:12px;">Rank:</label>
+                <input type="text" id="chiefRank" class="form-control" value="<?php echo $chiefRank; ?>" readonly>
             </div>
             <div class="col-md-2 col-xs-12">
                 <label for="txtmastercoofullname" style="font-size:12px;">Master / COO Full
                     Name:</label>
-                <input type="text" class="form-control input-sm" id="txtmastercoofullname">
+                <input type="text" id="masterName" class="form-control" value="<?php echo $masterName; ?>" readonly>
             </div>
-            <div class="col-md-2">
-                <label for="slcRank" style="font-size:12px;">Rank:</label>
-                <select class="form-control input-sm" id="slcRank">
-                    <?php echo $optRank; ?>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Date of Receipt</label>
-                <input type="date" class="form-control" id="txtDateReceipt">
+            <div class="col-md-2 col-xs-12">
+                <label for="txtreceived" style="font-size:12px;">Received by CM :</label>
+                <input type="text" class="form-control input-sm" id="txtreceived" value="EVA MARLIANA" readonly>
             </div>
         </div>
         <div class="row" style="margin-top: 10px;">
-            <input type="hidden" id="txtIdPerson" value="<?php echo $idPerson; ?>">
+            <input type="hidden" id="txtIdPerson" value="<?php echo $idpersonEncrypted; ?>">
             <input type="hidden" id="txtIdEditCrew" value="">
             <div class="col-md-4">
                 <button class="btn btn-primary btn-block btn-xs" onclick="saveDataCrewEvaluation();">Submit</button>

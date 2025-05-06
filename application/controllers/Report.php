@@ -203,87 +203,70 @@ class Report extends CI_Controller {
 		exit;
 	}
 
-	function printCrewEvaluation($id = "", $idPerson = "")
-	{
+	function exportPDFCrewEvaluation($id_report) {
 		$dataOut = array();
-		$reEmploy = 'N'; 
-		$sqlReport = "SELECT * FROM crew_evaluation_report 
-					WHERE deletests = '0' 
-					AND id = '".$id."' 
-					AND idperson = '".$idPerson."'";
-		
-		$reportData = $this->MCrewscv->getDataQuery($sqlReport);
-		
-		$sqlCriteria = "SELECT * FROM crew_evaluation_criteria
-			WHERE deletests = '0'
-			AND idperson = '".$idPerson."'
-			ORDER BY id ASC";
-
-		
-		$criteriaData = $this->MCrewscv->getDataQuery($sqlCriteria);
-
-		$vessel = '';
-		$seafarerName = '';
-		$rank = '';
-		$dateOfReport = '';
-		$reportPeriodFrom = '';
-		$reportPeriodTo = '';
-		$masterComments = '';
-		$reportingOfficerComments = '';
-		$promote = '';
-		$reportingOfficerName = '';
-		$reportingOfficerRank = '';
-		$receivedByCM = '';
-		$dateOfReceipt = '';
-		
-		$reasonMidway = '';
-		$reasonLeaving = '';
-		$reasonSigningOff = '';
-		$reasonSpecial = '';
-		
+		$label_reject = "";
+		 
 		function getChecked($value) {
 			return ($value === 'Y') ? '&#10004;' : '';
 		}
+		
+		$sqlReport = "SELECT * FROM crew_evaluation_report WHERE id = '".$id_report."' AND deletests = 0";		
+		$reportData = $this->MCrewscv->getDataQuery($sqlReport);
 
-		if (!empty($reportData) && count($reportData) > 0) {
-			$row = $reportData[0];
-			
-			$vessel = !empty($row->vessel) ? htmlspecialchars($row->vessel) : 'N/A';
-			$seafarerName = !empty($row->seafarer_name) ? htmlspecialchars($row->seafarer_name) : 'N/A';
-			$rank = !empty($row->rank) ? htmlspecialchars($row->rank) : 'N/A';
-			$dateOfReport = !empty($row->date_of_report) ? date('d/m/Y', strtotime($row->date_of_report)) : 'N/A';
-			$reportPeriodFrom = !empty($row->reporting_period_from) ? date('d/m/Y', strtotime($row->reporting_period_from)) : 'N/A';
-			$reportPeriodTo = !empty($row->reporting_period_to) ? date('d/m/Y', strtotime($row->reporting_period_to)) : 'N/A';
-			$masterComments = !empty($row->master_comments) ? htmlspecialchars($row->master_comments) : '';
-			$reportingOfficerComments = !empty($row->reporting_officer_comments) ? htmlspecialchars($row->reporting_officer_comments) : '';
-			$promote = !empty($row->promote) ? htmlspecialchars($row->promote) : 'N';
-			$reportingOfficerName = !empty($row->reporting_officer_name) ? htmlspecialchars($row->reporting_officer_name) : 'N/A';
-			$reportingOfficerRank = !empty($row->reporting_officer_rank) ? htmlspecialchars($row->reporting_officer_rank) : 'N/A';
-			$receivedByCM = !empty($row->received_by_cm) ? htmlspecialchars($row->received_by_cm) : 'N/A';
-			$dateOfReceipt = !empty($row->date_of_receipt) ? date('d/m/Y', strtotime($row->date_of_receipt)) : 'N/A';
-			$reEmploy = !empty($row->re_employ) ? $row->re_employ : 'N'; 
-			
-			$reasonMidway = getChecked($row->reason_midway_contract);
-			$reasonLeaving = getChecked($row->reason_leaving_vessel);
-			$reasonSigningOff = getChecked($row->reason_signing_off);
-			$reasonSpecial = getChecked($row->reason_special_request);
+		$row = $reportData[0];
+
+		$vessel = $row->vessel;
+		$seafarerName = $row->seafarer_name;
+		$rank = $row->rank;
+		$dateOfReport = $row->date_of_report;
+		$reportPeriodFrom = $row->reporting_period_from;
+		$reportPeriodTo = $row->reporting_period_to;
+		$masterComments = $row->master_comments;
+		$reportingOfficerComments = $row->reporting_officer_comments;
+		$promote = $row->promote;
+		$reportingOfficerName = $row->reporting_officer_name;
+		$reportingOfficerRank = $row->reporting_officer_rank;
+		$mastercoofullname = $row->mastercoofullname;
+		$receivedByCM = $row->received_by_cm;
+		$dateOfReceipt = $row->date_of_receipt;
+		$reEmploy = $row->re_employ;
+		$remark_reject = $row->remark_reject;
+		
+		if ($row->st_reject == 'Y') {
+			$label_reject = '<span class="badge badge-danger" style="font-size:18px;padding:10px;background-color:red;margin-left:20px;">REJECTED</span>';
 		}
 
+		$reasonMidway = getChecked($row->reason_midway_contract);
+		$reasonLeaving = getChecked($row->reason_leaving_vessel);
+		$reasonSigningOff = getChecked($row->reason_signing_off);
+		$reasonSpecial = getChecked($row->reason_special_request);
+
+		$qrCodePathChief = !empty($row->qrcode_reporting_chief) ? base_url('assets/imgQRCodeCrewCV/' . $row->qrcode_reporting_chief) : '';
+		$qrCodePathMaster = !empty($row->qrcode_reporting_master) ? base_url('assets/imgQRCodeCrewCV/' . $row->qrcode_reporting_master) : '';
+		$qrCodePathSeafarer = !empty($row->qrcode_seafarer) ? base_url('assets/imgQRCodeCrewCV/' . $row->qrcode_seafarer) : '';
+		$qrCodePathCM = !empty($row->qrcode_reporting_cm) ? base_url('assets/imgQRCodeCrewCV/' . $row->qrcode_reporting_cm) : '';
+
+		$sqlCriteria = "SELECT * FROM crew_evaluation_criteria 
+						WHERE deletests = '0' AND id_report = '".intval($id_report)."' ORDER BY id ASC";
+		$criteriaData = $this->MCrewscv->getDataQuery($sqlCriteria);
+
 		$criteriaTable = '';
-		if (!empty($criteriaData)) {
-			foreach ($criteriaData as $row) {
+		if (count($criteriaData) > 0) {
+			foreach ($criteriaData as $criteriaRow) {
 				$criteriaTable .= '<tr>';
-				$criteriaTable .= '<td>'.htmlspecialchars($row->criteria_name).'</td>';
-				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->excellent).'</td>';
-				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->good).'</td>';
-				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->fair).'</td>';
-				$criteriaTable .= '<td style="text-align:center;">'.getChecked($row->poor).'</td>';
-				$criteriaTable .= '<td style="text-align:center;">'.$row->identify.'</td>';
+					$criteriaTable .= '<td style="border: 1px solid black; padding: 10px; text-align: left;">'.$criteriaRow->criteria_name.'</td>';
+					$criteriaTable .= '<td style="border: 1px solid black; padding: 10px; text-align: center;">'.getChecked($criteriaRow->excellent).'</td>';
+					$criteriaTable .= '<td style="border: 1px solid black; padding: 10px; text-align: center;">'.getChecked($criteriaRow->good).'</td>';
+					$criteriaTable .= '<td style="border: 1px solid black; padding: 10px; text-align: center;">'.getChecked($criteriaRow->fair).'</td>';
+					$criteriaTable .= '<td style="border: 1px solid black; padding: 10px; text-align: center;">'.getChecked($criteriaRow->poor).'</td>';
+					$criteriaTable .= '<td style="border: 1px solid black; padding: 10px; text-align: center;">'.$criteriaRow->identify.'</td>';
 				$criteriaTable .= '</tr>';
 			}
 		}
-
+		
 		$dataOut = array(
+			'id_report' => $id_report,
 			'vessel' => $vessel,
 			'seafarerName' => $seafarerName,
 			'rank' => $rank,
@@ -300,19 +283,26 @@ class Report extends CI_Controller {
 			'promote' => $promote,
 			'reportingOfficerName' => $reportingOfficerName,
 			'reportingOfficerRank' => $reportingOfficerRank,
+			'mastercoofullname' => $mastercoofullname,
 			'receivedByCM' => $receivedByCM,
 			'dateOfReceipt' => $dateOfReceipt,
-			'reEmploy' => $reEmploy, 
+			'reEmploy' => $reEmploy,
+			'qrCodeImg' => $qrCodePathChief,
+			'qrCodePathMaster' => $qrCodePathMaster,
+			'qrCodePathSeafarer' => $qrCodePathSeafarer,
+			'qrCodePathCM' => $qrCodePathCM,
+			'remark_reject' => $remark_reject,
+			'label_reject' => $label_reject,
 		);
 
 		require("application/views/frontend/pdf/mpdf60/mpdf.php");
 		$mpdf = new mPDF('utf-8', 'A4');
 		ob_start();
-		$this->load->view('frontend/exportCrewEvaluation', $dataOut);
+		$this->load->view('frontend/exportPDFCrewEvaluation', $dataOut);
 		$html = ob_get_contents();
 		ob_end_clean();
 		$mpdf->WriteHTML(utf8_encode($html));
-		$mpdf->Output("Crew_Evaluation_Report.pdf", 'I');
+		$mpdf->Output("Crew_Evaluation_Report_".$seafarerName.".pdf", 'I');
 		exit;
 	}
 
@@ -346,10 +336,9 @@ class Report extends CI_Controller {
 				$certTable .= '<tr>';
 				$certTable .= '<td class="cert-name" style="text-align: left;">' . htmlspecialchars($cert->certname) . '</td>';
 				$certTable .= '<td><input type="text" style="width: 50px; border: none; text-align: center;"></td>';
-				$issDate = ($cert->issdate && $cert->issdate !== '0000-00-00') ? date('d M Y', strtotime($cert->issdate)) : '-';
+				$issDate = ($cert->issdate && $cert->issdate !== '0000-00-00') ? date('d M Y', strtotime($cert->issdate)) : 'N/A';
 				$certTable .= '<td style="border: none; text-align: center;">' . $issDate . '</td>';
-				// Perbaikan utama pada expdate
-				$expDate = ($cert->expdate && $cert->expdate !== '0000-00-00') ? date('d M Y', strtotime($cert->expdate)) : '-';
+				$expDate = ($cert->expdate && $cert->expdate !== '0000-00-00') ? date('d M Y', strtotime($cert->expdate)) : 'Unlimited';
 				$certTable .= '<td style="border: none; text-align: center;">' . $expDate . '</td>';
 				$certTable .= '<td class="document-number" style="border-bottom: 1px solid black; text-align: left;">' . htmlspecialchars($cert->docno) . '</td>';
 				$certTable .= '</tr>';
@@ -391,19 +380,15 @@ class Report extends CI_Controller {
 		$dataOut = array();
 		$trCrewEvaluation = "";
 		$no = 1;
+		$btnAct = "";
 
 		$sql = "SELECT * FROM crew_evaluation_report WHERE idperson = '".$idPerson."' AND deletests = '0'";
 		$rsl = $this->MCrewscv->getDataQuery($sql, array($idPerson));
 
 		if ($rsl && count($rsl) > 0) {
 			foreach ($rsl as $val) {
-				$btnAct = "<div class=\"btn-group\" role=\"group\">";
-				$btnAct .= "<button class=\"btn btn-danger btn-xs\" style=\"margin-right: 10px;\" title=\"Delete\" onclick=\"deleteDataCrewEvaluation('".$val->id."', '".$val->idperson."');\">
-								<i class='fa fa-trash'></i> Delete
-							</button>";
-				$btnAct .= "<button class=\"btn btn-primary btn-xs\" style=\"margin-right: 10px;\" title=\"Edit\" onclick=\"editDataCrewEvaluation('".$val->id."');\">
-								<i class='fa fa-edit'></i> Edit
-							</button>";
+				$btnAct = "";
+				
 				$btnAct .= "<button class=\"btn btn-success btn-xs\" title=\"View\" onclick=\"ViewPrintCrewEvaluation('".$val->id."', '".$val->idperson."');\">
 								<i class='fa fa-eye'></i> View
 							</button>";
@@ -524,6 +509,7 @@ class Report extends CI_Controller {
 					'promote' => $reportData[0]->promote,
 					'reporting_officer_name' => $reportData[0]->reporting_officer_name,
 					'reporting_officer_rank' => $reportData[0]->reporting_officer_rank,
+					'mastercoofullname' => $reportData[0]->mastercoofullname,
 					'received_by_cm' => $reportData[0]->received_by_cm,
 					'date_of_receipt' => $reportData[0]->date_of_receipt
 				),
@@ -588,8 +574,8 @@ class Report extends CI_Controller {
 			$dataIns['seafarer_name'] = isset($data['txtSeafarerName']) ? $data['txtSeafarerName'] : '';
 			$dataIns['rank'] = isset($data['txtRank']) ? $data['txtRank'] : '';
 			$dataIns['date_of_report'] = (!empty($data['txtDateOfReport']) && $data['txtDateOfReport'] != "0000-00-00") ? $data['txtDateOfReport'] : null;
-			$dataIns['reporting_period_from'] = (!empty($data['txtReportingPeriodFrom']) && $data['txtReportingPeriodFrom'] != "0000-00-00") ? $data['txtReportingPeriodFrom'] : null;
-			$dataIns['reporting_period_to'] = (!empty($data['txtReportingPeriodTo']) && $data['txtReportingPeriodTo'] != "0000-00-00") ? $data['txtReportingPeriodTo'] : null;
+			$dataIns['reporting_period_from'] = (!empty($data['txtDateReportingPeriodFrom']) && $data['txtDateReportingPeriodFrom'] != "0000-00-00") ? $data['txtDateReportingPeriodFrom'] : null;
+			$dataIns['reporting_period_to'] = (!empty($data['txtDateReportingPeriodTo']) && $data['txtDateReportingPeriodTo'] != "0000-00-00") ? $data['txtDateReportingPeriodTo'] : null;
 			$dataIns['idperson'] = $idPerson;
 			
 			$dataIns['reason_midway_contract'] = isset($data['reasonMidway']) ? $data['reasonMidway'] : '';
@@ -603,8 +589,10 @@ class Report extends CI_Controller {
 			$dataIns['re_employ'] = isset($data['txtReemploy']) ? $data['txtReemploy'] : 'N';
 			$dataIns['reporting_officer_name'] = isset($data['txtfullname']) ? $data['txtfullname'] : '';
 			$dataIns['reporting_officer_rank'] = isset($data['slcRank']) ? $data['slcRank'] : '';
+			$dataIns{'mastercoofullname'} = isset($data['txtmastercoofullname']) ? $data['txtmastercoofullname'] : '';
 			$dataIns['received_by_cm'] = isset($data['txtreceived']) ? $data['txtreceived'] : '';
 			$dataIns['date_of_receipt'] = (!empty($data['txtDateReceipt']) && $data['txtDateReceipt'] != "0000-00-00") ? $data['txtDateReceipt'] : null;
+			$data['addUsrDate'] = $userDateTimeNow;
 
 			if (empty($txtIdEditCrew)) {
 				$insertId = $this->MCrewscv->insData("crew_evaluation_report", $dataIns);
@@ -739,7 +727,7 @@ class Report extends CI_Controller {
 
 		echo json_encode(array("status" => "Success"));
 	}
-
+ 
 	function delDataCrewEvaluation() {
 		$userInit = $this->session->userdata('userInitCrewSystem');
 		$dateNow = date("Ymd/h:i:s");
@@ -752,15 +740,20 @@ class Report extends CI_Controller {
 				'deletests' => "1",
 				'delUserDt' => $userInit . "/" . $dateNow
 			);
-			
-			$whereReport = "id = '".$id."' AND idperson = '".$idPerson."'";
+			  
+			$whereReport = array(
+				"id" => $id,
+				"idperson" => $idPerson
+			);
 			$this->MCrewscv->updateData($whereReport, $dataDel, "crew_evaluation_report");
-
-			$whereCriteria = "idperson = '".$idPerson."'";
+ 
+			$whereCriteria = array(
+				"idperson" => $idPerson
+			);
 			$this->MCrewscv->updateData($whereCriteria, $dataDel, "crew_evaluation_criteria");
 
 			echo json_encode(array("status" => "Success"));
-			
+
 		} catch (Exception $e) {
 			echo json_encode(array(
 				"status" => "Error",
@@ -768,6 +761,7 @@ class Report extends CI_Controller {
 			));
 		}
 	}
+
 
 	function getDataCVOtherForm($idPerson = "",$company = "")
 	{
@@ -1375,43 +1369,45 @@ class Report extends CI_Controller {
 
 			$dataOut['trIsm'] = $trIsm;
 
-			
-			$sqlContract = "SELECT signondt, signoffdt 
+			$sqlContract = "SELECT COUNT(*) AS total_contracts 
 							FROM tblcontract 
 							WHERE idperson = '".$idPerson."' 
 							AND kdcmprec = '005' 
 							AND signoffdt IS NOT NULL";
 			$contractResult = $this->MCrewscv->getDataQuery($sqlContract);
 
-			$totalMonthsOp = 0;
-			foreach ($contractResult as $row) {
-				$signon = new DateTime($row->signondt);
-				$signoff = new DateTime($row->signoffdt);
-				$interval = $signon->diff($signoff);
-				$totalMonthsOp += ($interval->y * 12) + $interval->m;
-			}
-			$yearsOp = floor($totalMonthsOp / 12);
-			$monthsOp = $totalMonthsOp % 12;
-			$dataOut['yearyOpSun'] = "{$yearsOp} years {$monthsOp} months";
+			$sqlContractMonth = "SELECT SUM(TIMESTAMPDIFF(MONTH, signondt, signoffdt)) AS total_months 
+								FROM tblcontract 
+								WHERE idperson = '".$idPerson."' 
+								AND kdcmprec = '005' 
+								AND signoffdt IS NOT NULL";
+			$contractMonthResult = $this->MCrewscv->getDataQuery($sqlContractMonth);
 
-			$sqlRank = "SELECT signondt, signoffdt 
+			$totalMonthsOp = ($contractMonthResult[0]->total_months) ? $contractMonthResult[0]->total_months : 0;
+			$yearsOp = ($contractResult[0]->total_contracts) ? $contractResult[0]->total_contracts : 0;
+			$monthsOnlyOp = $totalMonthsOp % 12;
+
+			$dataOut['yearyOpSun'] = $yearsOp . ' years ' . $monthsOnlyOp . ' months';
+
+			$sqlRank = "SELECT SUM(TIMESTAMPDIFF(YEAR, signondt, signoffdt)) AS total_years 
 						FROM tblcontract 
 						WHERE idperson = '".$idPerson."' 
 						AND kdcmprec = '005' 
 						AND signoffdt IS NOT NULL";
 			$rankResult = $this->MCrewscv->getDataQuery($sqlRank);
 
-			$totalMonthsRank = 0;
-			foreach ($rankResult as $row) {
-				$signon = new DateTime($row->signondt);
-				$signoff = new DateTime($row->signoffdt);
-				$interval = $signon->diff($signoff);
-				$totalMonthsRank += ($interval->y * 12) + $interval->m;
-			}
-			$yearsRank = floor($totalMonthsRank / 12);
-			$monthsRank = $totalMonthsRank % 12;
-			$dataOut['yearyRankSun'] = "{$yearsRank} years {$monthsRank} months";
+			$sqlRankMonth = "SELECT SUM(TIMESTAMPDIFF(MONTH, signondt, signoffdt)) AS total_months 
+							FROM tblcontract 
+							WHERE idperson = '".$idPerson."' 
+							AND kdcmprec = '005' 
+							AND signoffdt IS NOT NULL";
+			$rankMonthResult = $this->MCrewscv->getDataQuery($sqlRankMonth);
 
+			$totalMonthsRank = ($rankMonthResult[0]->total_months) ? $rankMonthResult[0]->total_months : 0;
+			$yearsRank = ($rankResult[0]->total_years) ? $rankResult[0]->total_years : 0;
+			$monthsOnlyRank = $totalMonthsRank % 12;
+
+			$dataOut['yearyRankSun'] = $yearsRank . ' years ' . $monthsOnlyRank . ' months';
 
 			$dataOut['trSeaService'] = $this->getSeaServiceRecord($idPerson, "suntechno");
 			$dataOut['teamLead'] = $this->detilperdir($idPerson);
@@ -1436,7 +1432,7 @@ class Report extends CI_Controller {
 				WHERE A.deletests = '0' AND A.idperson = '".$idPerson."' " ;
 
 		$rsl = $this->MCrewscv->getDataQuery($sql);
-		
+		//echo "<pre>";print_r($rsl);exit;
 		if(count($rsl) > 0)
 		{
 			$degreeNya = $dataContext->getDataByReq("degree","tbllang","idperson = '".$idPerson."' AND language LIKE '%english%' AND deletests = '0' ");
@@ -1478,6 +1474,7 @@ class Report extends CI_Controller {
 			$dataOut['lastCompany'] = $tempExpRank["cmpExp"];
 			$dataOut['signDate'] = $dataContext->convertReturnBulanTglTahun($rsl[0]->signdt);
 
+			
 			$dataOut['famtelp'] = $rsl[0]->famtelp;
 			$dataCertDocCoc = $this->certDocReg($idPerson,"COC");
 			$dataOut['cocName'] = "COC ".$dataCertDocCoc['name'];
@@ -2031,7 +2028,7 @@ class Report extends CI_Controller {
 
 					if($rsl[0]->expdate == "0000-00-00")
 					{
-						$expDate = "Permanent";
+						$expDate = "Unlimited";
 					}else{
 						$expDate = $dataContext->convertReturnName($rsl[0]->expdate);
 					}
@@ -2700,7 +2697,4 @@ class Report extends CI_Controller {
 
 		$this->load->view("frontend/exportExpiredCert",$dataOut);
 	}
-
-	
-
 }

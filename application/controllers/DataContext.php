@@ -308,6 +308,7 @@ class DataContext extends CI_Controller {
 			$opt .= "<option value=\"" . htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "\">" 
 					. htmlspecialchars($val->DefType, ENT_QUOTES, 'UTF-8') . "</option>";
 		}
+		
 		if ($return == "") {
 			return $opt;
 		} else {
@@ -318,7 +319,7 @@ class DataContext extends CI_Controller {
 	function getCrewVesselType($return = "")
 	{
 		$opt = "<option value=''>Select Vessel Type</option>"; 
-
+		
 		$whereNya = "Deletests = '0' AND DefType IN ('Bulk Carrier', 'OIL TANKER', 'CHEMICAL TANKER', 'FLOATING CRANE', 'TUG BOAT')";
 
 		$rsl = $this->MCrewscv->getData("*", "tbltype", $whereNya, "NmType ASC");

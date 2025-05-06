@@ -391,11 +391,17 @@
 
     function openEvaluasiModal(idPerson) {
         $("#txtModalGenLinkIdPerson").val(idPerson);
-        $('#evaluasiModal').data('idperson', idPerson).modal('show');
+        $('#generatedLinkContainer').html("");
+
+        $('#evaluasiModal')
+            .data('idperson', idPerson)
+            .modal('show');
     }
+
 
     function generateLink(department) {
         const idPerson = $('#txtModalGenLinkIdPerson').val();
+
         const params = {
             txtModalGenLinkIdPerson: idPerson,
             department: department
@@ -408,22 +414,37 @@
             success: function(response) {
                 const res = JSON.parse(response);
                 const link = res.url;
+
                 const resultBox = `
-                    <div class="mt-4">
-                        <label class="form-label">Link Evaluasi:</label>
-                        <div class="input-group">
-                            <input type="text" id="generatedLink" class="form-control" value="${link}" readonly>
-                            <button class="btn btn-success" onclick="copyGeneratedLink()" style="margin-top: 10px;">Copy</button>
-                        </div>
-                    </div>
-                `;
-                $('.modal-body').html(resultBox);
+                <label class="form-label">Link Evaluasi:</label>
+                <div class="input-group">
+                    <input type="text" id="generatedLink" class="form-control" value="${link}" readonly>
+                    <button class="btn btn-success" onclick="copyGeneratedLink()">Copy</button>
+                </div>
+            `;
+                $('#generatedLinkContainer').html(resultBox);
+
+                fillFormData(department, res);
             },
             error: function(xhr, status, error) {
                 alert("Gagal generate link!");
                 console.error(error);
             }
         });
+    }
+
+    function fillFormData(department, data) {
+        $('#slcVesselHeader').val(data.vessel);
+        $('#txtSeafarerName').val(data.personName);
+        $('#slcRankHeader').val(data.rank);
+        if (department === 'DECK') {
+            $('#txtfullname').val(data.coName);
+            $('#slcRank').val('Chief Officer');
+        } else if (department === 'ENGINE') {
+            $('#txtfullname').val(data.ceName);
+            $('#slcRank').val('Chief Engineer');
+        }
+        $('#txtmastercoofullname').val(data.masterName);
     }
 
     function copyGeneratedLink() {
@@ -1013,13 +1034,12 @@
                     <button class="btn btn-primary m-5" onclick="generateLink('DECK')">🚢 DECK</button>
                     <button class="btn btn-warning m-5" onclick="generateLink('ENGINE')">⚙️
                         ENGINE</button>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-dismiss="modal">Tutup</button>
+                    <div id="generatedLinkContainer" class="mt-3"></div>
                 </div>
             </div>
         </div>
     </div>
+
 </body>
 
 </html>

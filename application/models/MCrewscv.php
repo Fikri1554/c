@@ -9,6 +9,8 @@ class MCrewscv extends CI_Model
 
     function getDataQuery($query = "")
     {
+		$this->db = $this->load->database('default', TRUE);
+		
     	$dataOut = array();
     	$dataOut = $this->db->query($query)->result();
     	return $dataOut;
@@ -16,6 +18,8 @@ class MCrewscv extends CI_Model
 
     function getData($slc = "",$db = "",$whereNya = "",$order = "",$grp = "")
 	{
+		$this->db = $this->load->database('default', TRUE);
+		
 		$this->db->select($slc);
 		$this->db->from($db);
 		if($whereNya != "")
@@ -38,6 +42,8 @@ class MCrewscv extends CI_Model
 
 	function getJoin2($slc = "",$db1 = "",$db2 = "",$joinOn = "",$typeJoin = "",$whereNya = "",$order = "",$grp = "")
 	{
+		$this->db = $this->load->database('default', TRUE);
+		
 		$this->db->select($slc);
 		$this->db->from($db1);
 		$this->db->join($db2,$joinOn,$typeJoin);
@@ -61,6 +67,8 @@ class MCrewscv extends CI_Model
 
 	function insData($db = "",$insData = "",$return = "")
 	{
+		$this->db = $this->load->database('default', TRUE);
+		
 		$this->db->insert($db,$insData);
 
 		if($return != "")
@@ -71,17 +79,43 @@ class MCrewscv extends CI_Model
 
 	function delData($db = "",$idWhere = "")
 	{
+		$this->db = $this->load->database('default', TRUE);
+		
 		$this->db->where($idWhere);
   		$this->db->delete($db);
 	}
 
 	function updateData($whereNya = "",$data = "",$tbl = "")
 	{
+		$this->db = $this->load->database('default', TRUE);
+		
 		$this->db->where($whereNya);
 		$this->db->update($tbl,$data);
 	}
 
+	function getDataQueryDB6($query = "")
+    {
+    	$dataOut = array();
+    	$this->db6 = $this->load->database('myapps', TRUE);    	
+    	$dataOut = $this->db6->query($query)->result();
+    	return $dataOut;
+    }
 
+	function insDataDb6($dataIns = "",$dbNya = "")
+	{
+		$this->db6 = $this->load->database('myapps', TRUE);
+		$this->db6->insert($dbNya,$dataIns);
+		$getIdNya = $this->db6->insert_id();
+		return $getIdNya;
+	}
+
+	function updateDataDb6($tbl = "",$dataUpdate = "",$whereNya = "")
+	{
+		$this->db6 = $this->load->database('myapps', TRUE);
+
+		$this->db6->where($whereNya);
+		$this->db6->update($tbl,$dataUpdate);
+	}
 
 }
 ?>
