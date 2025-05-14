@@ -370,6 +370,37 @@ class DataContext extends CI_Controller {
 			print json_encode($options);
 		}
 	}
+	
+	function getVesselSelectbyOption($return = "")
+	{
+		$options = "<option value=''>-- Select Vessel --</option>";
+		$whereNya = "Deletests = '0' AND st_display = 'Y' AND nmvsl NOT IN (
+			'MV. ANDHIKA ALISHA', 
+			'MV. ANDHIKA ATHALIA', 
+			'MT. ANDHIKA VIDYANATA', 
+			'MV. ANDHIKA KANISHKA', 
+			'MV. ANDHIKA PARAMESTI', 
+			'MV. ANDHIKA SHAKILLA', 
+			'MV. BULK HALMAHERA', 
+			'MV. BULK BATAVIA', 
+			'MV. BULK NUSANTARA'
+		)";
+
+		$rsl = $this->MCrewscv->getData("*", "mstvessel", $whereNya, "nmvsl ASC");
+
+		if ($rsl) {
+			foreach ($rsl as $row) {
+				$options .= "<option value='" . $row->nmvsl . "'>" . $row->nmvsl . "</option>";
+			}
+		}
+
+		if ($return == "") {
+			return $options;
+		} else {
+			print json_encode($options);
+		}
+	}
+
 
 	function getVesselClientShipOption($return = "")
 	{

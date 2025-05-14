@@ -223,7 +223,7 @@ class ExtendCrewEvaluation extends CI_Controller {
 		if ($row->st_reject == 'Y') {
 			$label_reject = '<span class="badge badge-danger" style="font-size:18px;padding:10px;background-color:red;margin-left:20px;">REJECTED</span>';
 		}
-
+  
 		$reasonMidway = getChecked($row->reason_midway_contract);
 		$reasonLeaving = getChecked($row->reason_leaving_vessel);
 		$reasonSigningOff = getChecked($row->reason_signing_off);
@@ -288,7 +288,7 @@ class ExtendCrewEvaluation extends CI_Controller {
 		$this->load->view('frontend/exportPDFCrewEvaluation', $dataOut);
 		$html = ob_get_contents();
 		ob_end_clean();
-		$mpdf->WriteHTML(utf8_encode($html)); v 
+		$mpdf->WriteHTML(utf8_encode($html)); 
 		$mpdf->Output("Crew_Evaluation_Report_".$seafarerName.".pdf", 'I');
 		exit;
 	}
@@ -423,7 +423,7 @@ class ExtendCrewEvaluation extends CI_Controller {
 		} else if ($reportData[0]->st_submit_cm == 'Y') {
 			$Btnact = '<button type="button" class="btn btn-primary btn-block" id="btnPrintCrewEvaluation" onclick="exportPDF();">Print Crew Evaluation</button>';
 		}
-
+      
 		$dataOut = array(
 			'id_report' => $reportData[0]->id,
 			'vessel' => $vessel,
@@ -540,7 +540,7 @@ class ExtendCrewEvaluation extends CI_Controller {
 		
 		return $outNo;
 	}
-
+ 
 	function addDataMyAppLetter($txtIdEditCrew = "") 
 	{
 		$dateNow = date("Y-m-d");

@@ -38,6 +38,8 @@ class Dashboard extends CI_Controller {
 		$dataOut['totalCrew'] = number_format($onBoard+$onLeave,0);
 		$dataOut['vesselType'] = $dataContext->getVesselOwnShipOption();
 		$dataOut['vesselTypeClient'] = $dataContext->getVesselClientShipOption();
+		$dataOut['selectVessel'] = $dataContext->getVesselSelectbyOption();
+		$dataOut['TypeVessel'] = $dataContext->getVesselType();
 
 		$this->load->view('frontend/dashboard',$dataOut);
 	}
@@ -493,7 +495,6 @@ class Dashboard extends CI_Controller {
 		echo json_encode($result);
 	}
 
-
 	function contractBarChart()
 	{
 		$dataContext = new DataContext();
@@ -532,7 +533,7 @@ class Dashboard extends CI_Controller {
 
 		foreach ($result as $row) {
 			$monthName = date("F", strtotime($row->EstimatedSignOffDate)); 
-
+		
 			$data[] = array(
 				'month' => $monthName,
 				'estimated_signoff_date' => $dataContext->convertReturnName($row->EstimatedSignOffDate),
@@ -557,7 +558,7 @@ class Dashboard extends CI_Controller {
 			});
 		}
 
-		header('Content-Type: application/json');
+		//header('Content-Type: application/json');
 		echo json_encode(array(
 			'crewData' => $data, 
 			'rankSummary' => $rankCounts,
@@ -604,7 +605,6 @@ class Dashboard extends CI_Controller {
 				);
 			}, $result);
 
-
 			echo json_encode($data);
 
 		} catch (Exception $e) {
@@ -615,25 +615,26 @@ class Dashboard extends CI_Controller {
 
 	function getCadangan()
 	{
-		$dataContext = new DataContext();
-		$totalKapal = count($dataContext->getVessel()); 
-
-		$totalOnboard = $this->getCrewOnboard();
-		$totalOnleave = $this->getCrewOnLeave();
-
+		$data = $_POST;
+		$vesselTypeCategory = "";
+		
+		$vesselTypeCategory = $data['vesselTypeCategory'];
+		
 		$sql = "SELECT 
 					RANK.kdrank, 
 					RANK.nmrank, 
 					COUNT(A.idperson) AS total_onleave,
-					(SELECT COUNT(P.idperson)
-					FROM mstpersonal P
-					LEFT JOIN tblcontract Q ON P.idperson = Q.idperson
-					WHERE 
-						P.deletests = '0' AND 
-						Q.deletests = '0' AND 
-						Q.signoffdt = '0000-00-00' AND 
-						P.inaktif = '0' AND 
-						Q.signonrank = RANK.kdrank
+					(
+						SELECT COUNT(P.idperson)
+						FROM mstpersonal P
+						LEFT JOIN tblcontract Q ON P.idperson = Q.idperson
+						WHERE 
+							P.deletests = '0' AND 
+							P.inaktif = '0' AND
+							Q.deletests = '0' AND 
+							Q.signoffdt = '0000-00-00' AND 
+							Q.signonrank = RANK.kdrank AND
+							P.crew_vessel_type = '{$vesselTypeCategory}'
 					) AS total_onboard
 				FROM 
 					mstrank RANK
@@ -647,6 +648,7 @@ class Dashboard extends CI_Controller {
 					AND B.deletests = '0' 
 					AND A.inAktif = '0' 
 					AND A.inBlacklist = '0' 
+					AND A.crew_vessel_type = '{$vesselTypeCategory}'
 					AND B.idcontract IN (
 						SELECT MAX(idcontract) 
 						FROM tblcontract 
@@ -662,23 +664,24 @@ class Dashboard extends CI_Controller {
 
 		$result = $this->MCrewscv->getDataQuery($sql);
 		$data = array();
-
+		
 		foreach ($result as $row) {
 			$totalOnboard = $row->total_onboard;
 			$totalOnleave = $row->total_onleave;
 			$batasMedium = 1.5 * $totalOnboard;
-
+ 
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
 				$color = '#001F5B';
 			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
 				$color = '#4258B1';  
-			} else if ($totalOnleave > $batasMedium) {
+			} else {
 				$category = 'High';
 				$color = '#84b0e3';  
 			}
-
+			
+			
 			$data[] = array(
 				'rank' => $row->nmrank,
 				'total_onleave' => $totalOnleave,
@@ -686,11 +689,13 @@ class Dashboard extends CI_Controller {
 				'category' => $category,
 				'color' => $color
 			);
+			
 		}
 
 		header('Content-Type: application/json');
 		echo json_encode($data);
 	}
+
 		
 	function rankContractExpiry()
 	{

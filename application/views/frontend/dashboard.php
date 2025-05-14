@@ -576,136 +576,158 @@
         loadChart('Onboard');
     });
 
-
     $(document).ready(function() {
-        $.ajax({
-            url: '<?php echo base_url('dashboard/getCadangan'); ?>',
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                const columns = 6;
-                data.sort((a, b) => {
-                    const colorOrder = {
-                        '#001F5B': 0,
-                        '#4258B1': 1,
-                        '#84b0e3': 2
-                    };
-                    return colorOrder[a.color] - colorOrder[b.color];
-                });
+        $('#vesselTypeCategory').prop('disabled', true);
 
-                const heatmapData = data.map((item, index) => ({
-                    x: Math.floor(index / columns),
-                    y: (columns - 1) - (index % columns),
-                    value: item.total_onleave,
-                    onboard: item.total_onboard,
-                    rank: item.rank,
-                    category: item.category,
-                    color: item.color
-                }));
+        $('#vesselType').on('change', function() {
+            const selected = $(this).val();
 
-                Highcharts.chart('idDivHeatMap', {
-                    chart: {
-                        type: 'heatmap',
-                        plotBorderWidth: 1,
-                        height: 500,
-                        width: 1150,
-                        backgroundColor: null
-                    },
-                    title: {
-                        text: 'Ship Reserves per Rank (Heatmap)',
-                        align: 'center',
-                        style: {
-                            fontSize: '20px',
-                        }
-                    },
-                    xAxis: {
-                        labels: {
-                            enabled: false
+            if (selected === "") {
+                $('#vesselTypeCategory').prop('disabled', true).val("");
+            } else if (selected === "All") {
+                $('#vesselTypeCategory').prop('disabled', true).val("");
+            } else if (selected === "Client") {
+                $('#vesselTypeCategory').prop('disabled', true).val("");
+            } else {
+                $('#vesselTypeCategory').prop('disabled', false);
+            }
+        });
+
+        $('#vesselTypeCategory').on('change', function() {
+            const vesselType = $('#vesselType').val();
+            const vesselTypeCategory = $(this).val();
+
+            if (vesselType === "" || vesselTypeCategory === "") {
+                return;
+            }
+
+            $.ajax({
+                url: '<?php echo base_url('dashboard/getCadangan'); ?>',
+                type: 'POST',
+                data: {
+                    vesselTypeCategory: vesselTypeCategory
+                },
+                dataType: "json",
+                success: function(data) {
+                    const columns = 6;
+                    data.sort((a, b) => {
+                        const colorOrder = {
+                            '#001F5B': 0,
+                            '#4258B1': 1,
+                            '#84b0e3': 2
+                        };
+                        return colorOrder[a.color] - colorOrder[b.color];
+                    });
+                    const heatmapData = data.map((item, index) => ({
+                        x: Math.floor(index / columns),
+                        y: (columns - 1) - (index % columns),
+                        value: item.total_onleave,
+                        onboard: item.total_onboard,
+                        rank: item.rank,
+                        category: item.category,
+                        color: item.color
+                    }));
+                    Highcharts.chart('idDivHeatMap', {
+                        chart: {
+                            type: 'heatmap',
+                            plotBorderWidth: 1,
+                            height: 500,
+                            width: 1150,
+                            backgroundColor: null
                         },
-                        title: null,
-                    },
-                    yAxis: {
-                        labels: {
-                            enabled: false
+                        title: {
+                            text: null
                         },
-                        title: null,
-                    },
-                    tooltip: {
-                        formatter: function() {
-                            return `
+                        xAxis: {
+                            labels: {
+                                enabled: false
+                            },
+                            title: null,
+                        },
+                        yAxis: {
+                            labels: {
+                                enabled: false
+                            },
+                            title: null,
+                        },
+                        tooltip: {
+                            formatter: function() {
+                                return `
                                 <b>${this.point.rank}</b><br>
                                 Crew Off-Duty: ${this.point.value}<br>
                                 Crew On-Duty: ${this.point.onboard}<br>
                             `;
+                            },
                         },
-                    },
-                    series: [{
-                        borderWidth: 0.5,
-                        data: heatmapData.map((item) => ({
-                            x: item.x,
-                            y: item.y,
-                            value: item.value,
-                            onboard: item.onboard,
-                            rank: item.rank,
-                            color: item.color
-                        })),
-                        dataLabels: {
+                        series: [{
+                            borderWidth: 0.5,
+                            data: heatmapData.map((item) => ({
+                                x: item.x,
+                                y: item.y,
+                                value: item.value,
+                                onboard: item.onboard,
+                                rank: item.rank,
+                                color: item.color
+                            })),
+                            dataLabels: {
+                                enabled: true,
+                                formatter: function() {
+                                    return this.point.rank;
+                                },
+                                style: {
+                                    fontSize: '15px',
+                                    fontWeight: 'bold',
+                                    color: '#fff',
+                                    textOutline: 'none'
+                                },
+                            },
+                        }],
+                        credits: {
+                            enabled: false,
+                        },
+                        legend: {
                             enabled: true,
-                            formatter: function() {
-                                return this.point.rank;
+                            title: {
+                                text: 'Legend',
                             },
-                            style: {
-                                fontSize: '15px',
-                                fontWeight: 'bold',
-                                color: '#fff',
-                                textOutline: 'none'
-                            },
-                        },
-                    }],
-                    credits: {
-                        enabled: false,
-                    },
-                    legend: {
-                        enabled: true,
-                        title: {
-                            text: 'Legend',
-                        },
-                        align: 'right',
-                        layout: 'vertical',
-                        verticalAlign: 'middle',
-                        symbolHeight: 12,
-                        symbolWidth: 12,
-                        itemStyle: {
-                            fontSize: '12px'
-                        }
-                    },
-                    colorAxis: {
-                        dataClasses: [{
-                                from: 0,
-                                to: 0,
-                                color: '#001F5B',
-                                name: '0 (Low)'
-                            },
-                            {
-                                from: 1,
-                                to: 1,
-                                color: '#4258B1',
-                                name: '1 (Medium)'
-                            },
-                            {
-                                from: 2,
-                                to: 2,
-                                color: '#84b0e3',
-                                name: '2 (High)'
+                            align: 'right',
+                            layout: 'vertical',
+                            verticalAlign: 'middle',
+                            symbolHeight: 12,
+                            symbolWidth: 12,
+                            itemStyle: {
+                                fontSize: '12px'
                             }
-                        ]
-                    }
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching data:', status, error);
-            },
+                        },
+                        colorAxis: {
+                            dataClasses: [{
+                                    from: 0,
+                                    to: 0,
+                                    color: '#001F5B',
+                                    name: '0 (Low)'
+                                },
+                                {
+                                    from: 1,
+                                    to: 1,
+                                    color: '#4258B1',
+                                    name: '1 (Medium)'
+                                },
+                                {
+                                    from: 2,
+                                    to: 2,
+                                    color: '#84b0e3',
+                                    name: '2 (High)'
+                                }
+                            ]
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', status, error);
+                },
+            });
         });
+
     });
 
 
@@ -1202,7 +1224,6 @@
                 </div>
             </div>
             <div class="row">
-                <!-- KAPAL CLIENT -->
                 <div class="col-md-6" style="margin-top: 20px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <h5 style="font-size:20px;">Data of Client Ship:</h5>
@@ -1295,7 +1316,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- <div class="row">
+                        <div class="row">
                             <div class="col-md-12" style="border-radius: 10px; padding: 15px;">
                                 <h5 style="font-size: 20px; color: #000080; font-weight: bold;">Vessel Name Client</h5>
                                 <div class="row">
@@ -1307,7 +1328,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> -->
+                        </div>
                     </div>
                 </div>
 
@@ -1404,7 +1425,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- <div class="row">
+                        <div class="row">
                             <div class="col-md-12" style="border-radius: 10px; padding: 15px;">
                                 <h5 style="font-size: 20px; color: #000080; font-weight: bold;">Vessel Name</h5>
                                 <div class="row">
@@ -1416,17 +1437,39 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> -->
+                        </div>
                     </div>
                 </div>
-
             </div>
-            <div class="row" style="margin-top: 12px;">
+            <div class="row" style="margin-top: 20px;">
+                <h2 style="text-align: center; font-family: calibri; font-size: 20px;">HEATMAP</h2>
+                <div class="col-md-6">
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <label>Select Vessel:</label>
+                        <div style="width: 200px; margin: 10px auto;">
+                            <select name="vessel" id="vesselType" class="form-control">
+                                <option value=""> - Select -</option>
+                                <option value="All">All</option>
+                                <option value="OwnShip">Own Ship</option>
+                                <option value="Client">Client</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <label>Select Vessel Type:</label>
+                        <div style="width: 200px; margin: 10px auto;">
+                            <select name="vessel" id="vesselTypeCategory" class="form-control" disabled>
+                                <?php echo $TypeVessel; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-md-12">
                     <div id="idDivHeatMap"></div>
                 </div>
             </div>
-
             <div class="row" style="margin-top: 12px;">
                 <div class="col-md-12 text-center">
                     <h3 style="font-weight: bold;">Select Top School By:</h3>
@@ -1618,9 +1661,11 @@
                                 <thead>
                                     <tr style="background-color: #16839B;color: #FFF;height:40px;">
                                         <th style="vertical-align: middle; width:3%;text-align:center;">No</th>
-                                        <th style="vertical-align: middle; width:25%;text-align:center;">Vessel Name
+                                        <th style="vertical-align: middle; width:25%;text-align:center;">Vessel
+                                            Name
                                         </th>
-                                        <th style="vertical-align: middle; width:10%;text-align:center;">Total Crew
+                                        <th style="vertical-align: middle; width:10%;text-align:center;">Total
+                                            Crew
                                         </th>
                                     </tr>
                                 </thead>
@@ -1640,9 +1685,11 @@
                                     <thead>
                                         <tr style="background-color: #16839B;color: #FFF;height:40px;">
                                             <th style="vertical-align: middle; width:3%;text-align:center;">No</th>
-                                            <th style="vertical-align: middle; width:60%;text-align:center;">Crew Name
+                                            <th style="vertical-align: middle; width:60%;text-align:center;">Crew
+                                                Name
                                             </th>
-                                            <th style="vertical-align: middle; width:37%;text-align:center;">Posisi</th>
+                                            <th style="vertical-align: middle; width:37%;text-align:center;">Posisi
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody id="idBodyModalCrewDetail">
