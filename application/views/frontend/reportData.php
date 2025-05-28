@@ -656,10 +656,129 @@
         }
     }
 
-
     function ViewPrintCrewEvaluation(idPerson) {
         window.open("<?php echo base_url('report/exportPDFCrewEvaluation'); ?>/" + idPerson + "/",
             "_blank");
+    }
+
+    $(document).ready(function() {
+        $('#btnListCrew').on('click', function() {
+            $('#idTbodylistCrewNewModal').empty();
+            $('#idTbodylistCrewPickUp').empty();
+            $('#idTbodyDraftCrew').empty();
+            $('#idTbodyRejectedCrew').empty();
+        });
+
+        $('#btnReady').click(function() {
+            $('#collapseOne').collapse('toggle');
+            $('#collapsePickUp, #collapseDraft, #collapseRejected').collapse('hide');
+        });
+
+        $('#btnShowPickUp').click(function() {
+            $('#collapsePickUp').collapse('toggle');
+            $('#collapseOne, #collapseDraft, #collapseRejected').collapse('hide');
+        });
+
+        $('#btnShowDraftCrew').click(function() {
+            $('#collapseDraft').collapse('toggle');
+            $('#collapseOne, #collapsePickUp, #collapseRejected').collapse('hide');
+        });
+
+        $('#btnShowRejectedCrew').click(function() {
+            $('#collapseRejected').collapse('toggle');
+            $('#collapseOne, #collapsePickUp, #collapseDraft').collapse('hide');
+        });
+
+        $('#collapseOne').on('show.bs.collapse', function() {
+            if ($('#idTbodylistCrewNewModal').is(':empty')) {
+                $.ajax({
+                    url: '<?php echo base_url("report/getDataNewApplicent") ?>',
+                    type: 'GET',
+                    success: function(response) {
+                        $('#idTbodylistCrewNewModal').html(response);
+                    },
+                    error: function() {
+                        alert('Gagal mengambil data New Applicant.');
+                    }
+                });
+            }
+        });
+
+        $('#collapsePickUp').on('show.bs.collapse', function() {
+            if ($('#idTbodylistCrewPickUp').is(':empty')) {
+                $.ajax({
+                    url: '<?php echo base_url("report/getDataCrewPickUp") ?>',
+                    type: 'GET',
+                    success: function(response) {
+                        $('#idTbodylistCrewPickUp').html(response);
+                    },
+                    error: function() {
+                        alert('Gagal mengambil data Pick Up.');
+                    }
+                });
+            }
+        });
+
+        $('#collapseDraft').on('show.bs.collapse', function() {
+            if ($('#idTbodyDraftCrew').is(':empty')) {
+                $.ajax({
+                    url: '<?php echo base_url("report/getDataDraftCrew") ?>',
+                    type: 'GET',
+                    success: function(response) {
+                        $('#idTbodyDraftCrew').html(response);
+                    },
+                    error: function() {
+                        alert('Gagal mengambil data Draft Crew.');
+                    }
+                });
+            }
+        });
+
+        $('#collapseRejected').on('show.bs.collapse', function() {
+            if ($('#idTbodyRejectedCrew').is(':empty')) {
+                $.ajax({
+                    url: '<?php echo base_url("report/getDataRejectedCrew") ?>',
+                    type: 'GET',
+                    success: function(response) {
+                        $('#idTbodyRejectedCrew').html(response);
+                    },
+                    error: function() {
+                        alert('Gagal mengambil data Cancelled/Rejected Crew.');
+                    }
+                });
+            }
+        });
+    });
+
+    function pickUpData(applicantId) {
+        if (!confirm("Want to pick up this applicant?")) {
+            return;
+        }
+
+        $.ajax({
+            url: '<?php echo base_url("report/saveDataNewApplicent") ?>',
+            type: 'POST',
+            data: {
+                id: applicantId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.error) {
+                    alert("Gagal: " + response.error);
+                    return;
+                }
+                if (response.success) {
+                    alert(response.message);
+                    $('#row_' + applicantId).remove();
+                    $('#idTbodylistCrewNewModal tr').each(function(index) {
+                        $(this).find('td:first').text(index + 1);
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error caused by sistem: ' + error);
+            }
+        });
     }
     </script>
 </head>
@@ -762,6 +881,12 @@
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" id="btnPrintReport"
                                         disabled="disabled" data-toggle="modal" data-target="#crewEvaluationModal">
                                         <i class=" fa fa-print"></i> Report Evaluation
+                                    </button>
+                                </div>
+                                <div class="col-md-3" style="margin-top: 10px;">
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak" id="btnListCrew"
+                                        data-toggle="modal" data-target="#listCrewNewModal">
+                                        <i class="fa fa-print"></i> List Applicant
                                     </button>
                                 </div>
                             </div>
@@ -1064,6 +1189,145 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="listCrewNewModal" tabindex="-1" aria-labelledby="modalTitle">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 10px; background-color: #16839B;">
+                <h5 class="modal-title text-white">List Applicant</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-around mb-3">
+                    <button class="btn btn-outline-info" id="btnReady">
+                        <i class="fas fa-user-plus"></i> Data Ready
+                    </button>
+                    <button class="btn btn-outline-info" id="btnShowPickUp">
+                        <i class="fas fa-user-plus"></i> Pick Up
+                    </button>
+                    <button class="btn btn-outline-warning" id="btnShowDraftCrew">
+                        <i class="fas fa-clipboard-list"></i> Draft Crew
+                    </button>
+                    <button class="btn btn-outline-danger" id="btnShowRejectedCrew">
+                        <i class="fas fa-user-times"></i> Rejected Crew
+                    </button>
+                </div>
+
+                <div class="accordion" id="accordionCrewList">
+
+                    <!-- Data Ready -->
+                    <div class="card shadow-sm border-info mb-3">
+                        <div id="collapseOne" class="collapse" data-parent="#accordionCrewList">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered" style="font-size: 13px;">
+                                        <thead class="thead-dark text-center">
+                                            <tr style="background-color:#067780; color:white;">
+                                                <th>No</th>
+                                                <th>Email</th>
+                                                <th>Fullname</th>
+                                                <th>Born Place</th>
+                                                <th>Born Date</th>
+                                                <th>Phone</th>
+                                                <th>Position</th>
+                                                <th>Diploma</th>
+                                                <th>Experience</th>
+                                                <th>Vessel Type</th>
+                                                <th>Foreign Crew</th>
+                                                <th>Salary</th>
+                                                <th>Prev Join (Andhika)</th>
+                                                <th>CV</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="idTbodylistCrewNewModal"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pick Up -->
+                    <div class="card shadow-sm border-info mb-3">
+                        <div id="collapsePickUp" class="collapse" data-parent="#accordionCrewList">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered" style="font-size: 13px;">
+                                        <thead class="thead-dark text-center">
+                                            <tr style="background-color:#067780; color:white;">
+                                                <th>No</th>
+                                                <th>Email</th>
+                                                <th>Fullname</th>
+                                                <th>Born Place</th>
+                                                <th>Born Date</th>
+                                                <th>Phone</th>
+                                                <th>Position</th>
+                                                <th>Diploma</th>
+                                                <th>Experience</th>
+                                                <th>Vessel Type</th>
+                                                <th>Foreign Crew</th>
+                                                <th>Salary</th>
+                                                <th>Prev Join (Andhika)</th>
+                                                <th>CV</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="idTbodylistCrewPickUp"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Draft Crew -->
+                    <div class="card shadow-sm border-warning mb-3">
+                        <div id="collapseDraft" class="collapse" data-parent="#accordionCrewList">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" style="font-size: 13px;">
+                                        <thead class="thead-dark text-center">
+                                            <tr style="background-color:#067780; color:white;">
+                                                <th>No</th>
+                                                <th>Nama</th>
+                                                <th>Position</th>
+                                                <th>Draft Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="idTbodyDraftCrew"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rejected Crew -->
+                    <div class="card shadow-sm border-danger mb-3">
+                        <div id="collapseRejected" class="collapse" data-parent="#accordionCrewList">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" style="font-size: 13px;">
+                                        <thead class="thead-dark text-center">
+                                            <tr style="background-color:#067780; color:white;">
+                                                <th>No</th>
+                                                <th>Nama</th>
+                                                <th>Alasan</th>
+                                                <th>Tanggal</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="idTbodyRejectedCrew"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- end accordion -->
+            </div> <!-- end modal-body -->
         </div>
     </div>
 </div>

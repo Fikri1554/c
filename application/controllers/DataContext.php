@@ -195,7 +195,7 @@ class DataContext extends CI_Controller {
 	{
 		$opt = "<option value=''> - </option>";
 
-		$rsl = $this->MCrewscv->getData("*","mstrank","deletests = '0' AND urutan > 0","nmrank ASC");
+		$rsl = $this->MCrewscv->getData("*", "mstrank", "deletests = '0' AND urutan > 0", "urutan ASC, nmrank ASC");
 		foreach ($rsl as $key => $val)
 		{
 			if($typeVal == "name")

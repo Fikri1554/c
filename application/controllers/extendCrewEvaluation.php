@@ -9,6 +9,8 @@ class ExtendCrewEvaluation extends CI_Controller {
 		
 		$this->load->model('MCrewscv');
 		$this->load->helper(array('form', 'url')); 
+		$this->load->library('upload');
+		$this->load->library('../controllers/DataContext');
 	}
 	
     function getDataPage($idPerson, $personName, $rank, $vessel, $masterName, $chiefName, $chiefRank)
@@ -26,7 +28,74 @@ class ExtendCrewEvaluation extends CI_Controller {
 
 		$this->load->view('frontend/extendCrewEvaluation', $dataOut);
 	}
-	
+
+	function getFormNewApplicant()
+	{
+		$dataContext = new DataContext();
+		$dataOut = array();
+		$dataOut['optRank'] = $dataContext->getRankByOption("","name");
+		$this->load->view('frontend/formNewApplicant', $dataOut);
+	}
+
+	function saveNewApplicant()
+	{
+		$data = $_POST; 
+		$files = $_FILES;
+		$dataIns = array();
+
+		try {
+			if (empty($data['txtemail']) || !filter_var($data['txtemail'], FILTER_VALIDATE_EMAIL)) {
+				throw new Exception("Email tidak valid");
+			}
+
+			$dataIns['email'] = isset($data['txtemail']) ? $data['txtemail'] : '';
+			$dataIns['fullname'] = isset($data['txtnama']) ? $data['txtnama'] : '';
+			$dataIns['born_place'] = isset($data['txttempat_lahir']) ? $data['txttempat_lahir'] : '';
+			$dataIns['born_date'] = isset($data['txttanggal_lahir']) ? $data['txttanggal_lahir'] : '';
+			$dataIns['handphone'] = isset($data['txthandphone']) ? preg_replace('/[^0-9]/', '', $data['txthandphone']) : '';
+			$dataIns['position_applied'] = isset($data['position_applied']) ? $data['position_applied'] : '';
+			$dataIns['ijazah_terakhir'] = isset($data['ijazah_terakhir']) ? $data['ijazah_terakhir'] : '';
+			$dataIns['last_experience'] = isset($data['pengalaman_terakhir']) ? $data['pengalaman_terakhir'] : '';
+			$dataIns['last_salary'] = isset($data['last_salary']) ? $data['last_salary'] : '';
+			$dataIns['join_inAndhika'] = (isset($data['pernah_join']) && $data['pernah_join'] === 'Y') ? 'Y' : 'N';
+			$dataIns['pengalaman_jeniskapal'] = isset($data['kapal']) ? implode(', ', $data['kapal']) : '';
+			$dataIns['berlayardengancrewasing'] = isset($data['crew']) ? implode(', ', $data['crew']) : '';
+
+
+			$uploadDir = 'assets/uploads/CV_NewApplicant/';
+			if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+			$cvFileNames = array();
+			
+			if (!empty($files['cv_files']['tmp_name'][0])) {
+				foreach ($files['cv_files']['tmp_name'] as $index => $tmpName) {
+					$fileName = basename($files['cv_files']['name'][$index]);
+					$fileType = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+					$fileSize = $files['cv_files']['size'][$index];
+					$fileError = $files['cv_files']['error'][$index];
+
+					if ($fileError !== UPLOAD_ERR_OK) throw new Exception("Error upload file: $fileName");
+					if ($fileType !== 'pdf') throw new Exception("Hanya PDF yang diizinkan: $fileName");
+					if ($fileSize > 10 * 1024 * 1024) throw new Exception("File terlalu besar (maks 10MB): $fileName");
+
+					$newFileName = "NewApplicant_" . date('Ymd') . "_.$fileType";
+					if (move_uploaded_file($tmpName, $uploadDir . $newFileName)) {
+						$cvFileNames[] = $newFileName;
+					} else {
+						throw new Exception("Gagal menyimpan CV: $fileName");
+					}
+				}
+				$dataIns['new_cv'] = implode(', ', $cvFileNames);
+			} else {
+				throw new Exception("Harap unggah CV");
+			}
+
+			$this->MCrewscv->insData('new_applicant', $dataIns, 'aaaaa');
+			echo json_encode(array('status' => 'success', 'message' => 'Data tersimpan'));
+		} catch (Exception $e) {
+			echo json_encode(array('status' => 'error', 'message' => $e->getMessage()));
+		}
+	}
+
     function saveDataCrewEvaluation() {
 		$data = $_POST;
 		$dataIns = array();
@@ -507,7 +576,35 @@ class ExtendCrewEvaluation extends CI_Controller {
 			$imgName = 'approveSeafarer_'.base64_encode($id).'.jpg';
 		}
 		
-		$params['data'] = "http://apps.andhika.com/observasi/myLetter/viewLetter/".base64_encode($id); 
+		$params['data'] = "https://apps.andhika.com/crewcv/extendCrewEvaluation/fna".base64_encode($id); 
+		$params['level'] = 'H'; 
+		$params['size'] = 5;
+		$params['savename'] = FCPATH.$config['imagedir'].$imgName; 
+		$params['logo'] = "./assets/img/andhika.png";
+
+		$this->ciqrcode->generate($params); 
+
+    	return $imgName;
+	}
+
+	function createQRCodeFormRecruitment($id = "")
+	{
+		$config = array();
+		$this->load->library('ciqrcode');
+
+		$config['cacheable']	= true;
+		$config['cachedir']		= './assets/imgQRCodeCrewCV/';
+		$config['errorlog']		= './assets/imgQRCodeCrewCV/';
+		$config['imagedir']		= './assets/imgQRCodeCrewCV/';
+		$config['quality']		= true;
+		$config['size']			= '1024';
+		$config['black']		= array(224,255,255);
+		$config['white']		= array(0,0,128);
+		$this->ciqrcode->initialize($config);
+			
+		$imgName = base64_encode($id).'.jpg';
+		
+		$params['data'] = "https://apps.andhika.com/crewcv/extendCrewEvaluation/fna".base64_encode($id); 
 		$params['level'] = 'H'; 
 		$params['size'] = 5;
 		$params['savename'] = FCPATH.$config['imagedir'].$imgName; 

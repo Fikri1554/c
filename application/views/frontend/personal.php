@@ -296,6 +296,22 @@
         );
     }
 
+    $(document).ready(function() {
+        const searchValue = localStorage.getItem("notifSearchValue");
+        const searchType = localStorage.getItem("notifSearchType") || "id";
+
+        if (searchValue) {
+            $('#txtSearch').val(searchValue);
+            $('#slcSearch').val(searchType);
+            searchData();
+
+            localStorage.removeItem("notifSearchValue");
+            localStorage.removeItem("notifSearchType");
+        }
+    });
+
+
+
     function getDataProses(id) {
         $("#idLoading").show();
         $.post('<?php echo base_url("personal/getDataProses"); ?>', {
@@ -731,6 +747,30 @@
 
     function reloadPage() {
         window.location = "<?php echo base_url('personal/getData');?>";
+    }
+
+    function pickUpData(applicantId) {
+        $.ajax({
+            url: '<?php echo base_url("personal/getApplicantData") ?>',
+            type: 'POST',
+            data: {
+                id: applicantId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.error) {
+                    alert(response.error);
+                    return;
+                }
+                $('#txtEmail').val(response.email);
+                $('#txtFname').val(response.firstName);
+                $('#txtMname').val(response.middleName);
+                $('#txtLname').val(response.lastName);
+            },
+            error: function(xhr, status, error) {
+                alert('Terjadi kesalahan: ' + error);
+            }
+        });
     }
     </script>
 </head>

@@ -586,6 +586,22 @@
                 $('#vesselTypeCategory').prop('disabled', true).val("");
             } else if (selected === "All") {
                 $('#vesselTypeCategory').prop('disabled', true).val("");
+
+                $.ajax({
+                    url: '<?php echo base_url('dashboard/getCadangan'); ?>',
+                    type: 'POST',
+                    data: {
+                        vesselTypeCategory: "All"
+                    },
+                    dataType: "json",
+                    success: function(data) {
+                        renderHeatmap(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching data for All:', status, error);
+                    },
+                });
+
             } else if (selected === "Client") {
                 $('#vesselTypeCategory').prop('disabled', true).val("");
             } else {
@@ -597,9 +613,7 @@
             const vesselType = $('#vesselType').val();
             const vesselTypeCategory = $(this).val();
 
-            if (vesselType === "" || vesselTypeCategory === "") {
-                return;
-            }
+            if (vesselType === "" || vesselTypeCategory === "") return;
 
             $.ajax({
                 url: '<?php echo base_url('dashboard/getCadangan'); ?>',
@@ -609,118 +623,7 @@
                 },
                 dataType: "json",
                 success: function(data) {
-                    const columns = 6;
-                    data.sort((a, b) => {
-                        const colorOrder = {
-                            '#001F5B': 0,
-                            '#4258B1': 1,
-                            '#84b0e3': 2
-                        };
-                        return colorOrder[a.color] - colorOrder[b.color];
-                    });
-                    const heatmapData = data.map((item, index) => ({
-                        x: Math.floor(index / columns),
-                        y: (columns - 1) - (index % columns),
-                        value: item.total_onleave,
-                        onboard: item.total_onboard,
-                        rank: item.rank,
-                        category: item.category,
-                        color: item.color
-                    }));
-                    Highcharts.chart('idDivHeatMap', {
-                        chart: {
-                            type: 'heatmap',
-                            plotBorderWidth: 1,
-                            height: 500,
-                            width: 1150,
-                            backgroundColor: null
-                        },
-                        title: {
-                            text: null
-                        },
-                        xAxis: {
-                            labels: {
-                                enabled: false
-                            },
-                            title: null,
-                        },
-                        yAxis: {
-                            labels: {
-                                enabled: false
-                            },
-                            title: null,
-                        },
-                        tooltip: {
-                            formatter: function() {
-                                return `
-                                <b>${this.point.rank}</b><br>
-                                Crew Off-Duty: ${this.point.value}<br>
-                                Crew On-Duty: ${this.point.onboard}<br>
-                            `;
-                            },
-                        },
-                        series: [{
-                            borderWidth: 0.5,
-                            data: heatmapData.map((item) => ({
-                                x: item.x,
-                                y: item.y,
-                                value: item.value,
-                                onboard: item.onboard,
-                                rank: item.rank,
-                                color: item.color
-                            })),
-                            dataLabels: {
-                                enabled: true,
-                                formatter: function() {
-                                    return this.point.rank;
-                                },
-                                style: {
-                                    fontSize: '15px',
-                                    fontWeight: 'bold',
-                                    color: '#fff',
-                                    textOutline: 'none'
-                                },
-                            },
-                        }],
-                        credits: {
-                            enabled: false,
-                        },
-                        legend: {
-                            enabled: true,
-                            title: {
-                                text: 'Legend',
-                            },
-                            align: 'right',
-                            layout: 'vertical',
-                            verticalAlign: 'middle',
-                            symbolHeight: 12,
-                            symbolWidth: 12,
-                            itemStyle: {
-                                fontSize: '12px'
-                            }
-                        },
-                        colorAxis: {
-                            dataClasses: [{
-                                    from: 0,
-                                    to: 0,
-                                    color: '#001F5B',
-                                    name: '0 (Low)'
-                                },
-                                {
-                                    from: 1,
-                                    to: 1,
-                                    color: '#4258B1',
-                                    name: '1 (Medium)'
-                                },
-                                {
-                                    from: 2,
-                                    to: 2,
-                                    color: '#84b0e3',
-                                    name: '2 (High)'
-                                }
-                            ]
-                        }
-                    });
+                    renderHeatmap(data);
                 },
                 error: function(xhr, status, error) {
                     console.error('Error fetching data:', status, error);
@@ -728,9 +631,112 @@
             });
         });
 
+        function renderHeatmap(data) {
+            const columns = 6;
+            data.sort((a, b) => {
+                const colorOrder = {
+                    '#001F5B': 0,
+                    '#4258B1': 1,
+                    '#84b0e3': 2
+                };
+                return colorOrder[a.color] - colorOrder[b.color];
+            });
+
+            const heatmapData = data.map((item, index) => ({
+                x: Math.floor(index / columns),
+                y: (columns - 1) - (index % columns),
+                value: item.total_onleave,
+                onboard: item.total_onboard,
+                rank: item.rank,
+                category: item.category,
+                color: item.color
+            }));
+
+            Highcharts.chart('idDivHeatMap', {
+                chart: {
+                    type: 'heatmap',
+                    plotBorderWidth: 1,
+                    height: 500,
+                    width: 1150,
+                    backgroundColor: null
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    labels: {
+                        enabled: false
+                    },
+                    title: null
+                },
+                yAxis: {
+                    labels: {
+                        enabled: false
+                    },
+                    title: null
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.point.rank}</b><br>Crew Off-Duty: ${this.point.value}<br>Crew On-Duty: ${this.point.onboard}<br>`;
+                    },
+                },
+                series: [{
+                    borderWidth: 0.5,
+                    data: heatmapData,
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function() {
+                            return this.point.rank;
+                        },
+                        style: {
+                            fontSize: '15px',
+                            fontWeight: 'bold',
+                            color: '#fff',
+                            textOutline: 'none'
+                        },
+                    },
+                }],
+                credits: {
+                    enabled: false
+                },
+                legend: {
+                    enabled: true,
+                    title: {
+                        text: 'Legend'
+                    },
+                    align: 'right',
+                    layout: 'vertical',
+                    verticalAlign: 'middle',
+                    symbolHeight: 12,
+                    symbolWidth: 12,
+                    itemStyle: {
+                        fontSize: '12px'
+                    }
+                },
+                colorAxis: {
+                    dataClasses: [{
+                            from: 0,
+                            to: 0,
+                            color: '#001F5B',
+                            name: '0 (Low)'
+                        },
+                        {
+                            from: 1,
+                            to: 1,
+                            color: '#4258B1',
+                            name: '1 (Medium)'
+                        },
+                        {
+                            from: 2,
+                            to: 2,
+                            color: '#84b0e3',
+                            name: '2 (High)'
+                        }
+                    ]
+                }
+            });
+        }
     });
-
-
 
     $(document).ready(function() {
         $.ajax({
@@ -1441,8 +1447,10 @@
                     </div>
                 </div>
             </div>
+
             <div class="row" style="margin-top: 20px;">
-                <h2 style="text-align: center; font-family: calibri; font-size: 20px;">HEATMAP</h2>
+                <h2 style="text-align: center; font-family: calibri; font-size: 25px;">Ship's Crew Reserve (HEATMAP)
+                </h2>
                 <div class="col-md-6">
                     <div style="text-align: center; margin-bottom: 10px;">
                         <label>Select Vessel:</label>

@@ -330,7 +330,7 @@ class Dashboard extends CI_Controller {
 
 		print json_encode($dataOut);
 	}
-
+ 
 
 	function getDetailCrewOnBoard()
 	{
@@ -615,11 +615,16 @@ class Dashboard extends CI_Controller {
 
 	function getCadangan()
 	{
-		$data = $_POST;
-		$vesselTypeCategory = "";
-		
-		$vesselTypeCategory = $data['vesselTypeCategory'];
-		
+		$vesselTypeCategory = isset($_POST['vesselTypeCategory']) ? $_POST['vesselTypeCategory'] : 'All';
+
+		if (empty($vesselTypeCategory) || $vesselTypeCategory == 'All') {
+			$whereCrewType = "";
+			$whereCrewTypeOnboard = "";
+		} else {
+			$whereCrewType = "AND A.crew_vessel_type = '{$vesselTypeCategory}'";
+			$whereCrewTypeOnboard = "AND P.crew_vessel_type = '{$vesselTypeCategory}'";
+		}
+
 		$sql = "SELECT 
 					RANK.kdrank, 
 					RANK.nmrank, 
@@ -633,8 +638,8 @@ class Dashboard extends CI_Controller {
 							P.inaktif = '0' AND
 							Q.deletests = '0' AND 
 							Q.signoffdt = '0000-00-00' AND 
-							Q.signonrank = RANK.kdrank AND
-							P.crew_vessel_type = '{$vesselTypeCategory}'
+							Q.signonrank = RANK.kdrank
+							{$whereCrewTypeOnboard}
 					) AS total_onboard
 				FROM 
 					mstrank RANK
@@ -648,7 +653,7 @@ class Dashboard extends CI_Controller {
 					AND B.deletests = '0' 
 					AND A.inAktif = '0' 
 					AND A.inBlacklist = '0' 
-					AND A.crew_vessel_type = '{$vesselTypeCategory}'
+					{$whereCrewType}
 					AND B.idcontract IN (
 						SELECT MAX(idcontract) 
 						FROM tblcontract 
@@ -664,24 +669,23 @@ class Dashboard extends CI_Controller {
 
 		$result = $this->MCrewscv->getDataQuery($sql);
 		$data = array();
-		
+
 		foreach ($result as $row) {
 			$totalOnboard = $row->total_onboard;
 			$totalOnleave = $row->total_onleave;
 			$batasMedium = 1.5 * $totalOnboard;
- 
+
 			if ($totalOnleave <= $totalOnboard) {
 				$category = 'Low';
 				$color = '#001F5B';
 			} elseif ($totalOnleave > $totalOnboard && $totalOnleave <= $batasMedium) {
 				$category = 'Medium';
-				$color = '#4258B1';  
+				$color = '#4258B1';
 			} else {
 				$category = 'High';
-				$color = '#84b0e3';  
+				$color = '#84b0e3';
 			}
-			
-			
+
 			$data[] = array(
 				'rank' => $row->nmrank,
 				'total_onleave' => $totalOnleave,
@@ -689,11 +693,54 @@ class Dashboard extends CI_Controller {
 				'category' => $category,
 				'color' => $color
 			);
-			
 		}
 
 		header('Content-Type: application/json');
 		echo json_encode($data);
+	}
+
+	function getNotificationDetails()
+	{
+		$queryToMonth = $this->MCrewscv->getDataQuery("SELECT ADDDATE(CURDATE(), 30) AS datetomonth");
+		$rowToMonth = is_array($queryToMonth) && isset($queryToMonth[0]) ? $queryToMonth[0] : null;
+		$dueDate = ($rowToMonth && isset($rowToMonth->datetomonth)) ? $rowToMonth->datetomonth : date('Y-m-d');
+
+		$sql = "SELECT A.idperson, TRIM(CONCAT(D.fname,' ',D.mname,' ',D.lname)) AS fullName, 
+					C.nmvsl, B.certname, B.dispname, B.expdate
+				FROM tblcontract A
+				JOIN tblcertdoc B ON A.idperson = B.idperson
+				JOIN mstvessel C ON C.kdvsl = A.signonvsl
+				JOIN mstpersonal D ON D.idperson = A.idperson
+				WHERE A.signoffdt = '0000-00-00' 
+				AND A.deletests = 0 
+				AND B.expdate BETWEEN CURDATE() AND '$dueDate' 
+				AND B.expdate != '0000-00-00' 
+				AND B.deletests = 0 
+				ORDER BY B.expdate ASC";
+	
+
+		$result = $this->MCrewscv->getDataQuery($sql);
+		
+		$grouped = array();
+		foreach ($result as $row) {
+			$id = $row->idperson;
+			if (!isset($grouped[$id])) {
+				$grouped[$id] = array(
+					'idperson' => $id,
+					'fullName' => $row->fullName,
+					'nmvsl' => $row->nmvsl,
+					'certs' => array()
+				);
+			}
+			$grouped[$id]['certs'][] = array(
+				'dispname' => $row->dispname,
+				'expdate' => $row->expdate
+			);
+		}
+
+		$output = array_values($grouped);
+
+		echo json_encode($output);
 	}
 
 		

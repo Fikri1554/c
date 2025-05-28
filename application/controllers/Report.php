@@ -60,6 +60,159 @@ class Report extends CI_Controller {
 			print json_encode($dataOut);
 		}
 	}
+
+	function getDataNewApplicent()
+	{
+		$trListNewApplicant = "";
+		$no = 1;
+
+		$sql = "SELECT * FROM new_applicant WHERE deletests = '0' AND st_data = '0'"; // Data ready
+		$rsl = $this->MCrewscv->getDataQuery($sql);
+
+		foreach ($rsl as $val)
+		{
+			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
+			$btnAct = "<a href=\"$cvUrl\" target=\"_blank\" class=\"btn btn-sm btn-danger\">
+				<i class='fa fa-file-pdf-o'></i> View PDF
+			</a>";
+			
+			$btnAct .= "<button class=\"btn btn-primary btn-xs btn-block\" style=\"margin-top:5px;\" title=\"Refresh\" onclick=\"pickUpData('".$val->id."');\">Pick Up</button>";
+
+			$lblName = "<b><i>:: ".$val->fullname." ::</i></b>";
+			$btnAct .= "<button class=\"btn btn-success btn-xs btn-block\" style=\"margin-top:5px;\" title=\"Refresh\" onclick=\"draftCrew('".$val->id."','".$lblName."');\">
+				<i class=\"fas fa-clipboard-list\"></i> Draft Crew
+			</button>";
+
+
+			$trListNewApplicant .= "<tr id='row_$val->id'>";
+			$trListNewApplicant .= "<td class='text-center'>$no</td>";
+			$trListNewApplicant .= "<td>$val->email</td>";
+			$trListNewApplicant .= "<td>$val->fullname</td>";
+			$trListNewApplicant .= "<td>$val->born_place</td>";
+			$trListNewApplicant .= "<td>$val->born_date</td>";
+			$trListNewApplicant .= "<td>$val->handphone</td>";
+			$trListNewApplicant .= "<td>$val->position_applied</td>";
+			$trListNewApplicant .= "<td>$val->ijazah_terakhir</td>";
+			$trListNewApplicant .= "<td>$val->last_experience</td>";
+			$trListNewApplicant .= "<td>$val->pengalaman_jeniskapal</td>";
+			$trListNewApplicant .= "<td>$val->berlayardengancrewasing</td>";
+			$trListNewApplicant .= "<td>$val->last_salary</td>";
+			$trListNewApplicant .= "<td>$val->join_inAndhika</td>";
+			$trListNewApplicant .= "<td>$val->new_cv</td>";
+			$trListNewApplicant .= "<td class='text-center'>$btnAct</td>";
+			$trListNewApplicant .= "</tr>";
+
+			$no++;
+		}
+
+		echo $trListNewApplicant;
+	}
+
+	function getDataCrewPickUp() {
+		$trListDataCrewPickUp = "";
+		$no = 1;
+
+		$sql = "SELECT * FROM new_applicant WHERE deletests = '0' AND st_data = '1'"; // data pickup
+		$rsl = $this->MCrewscv->getDataQuery($sql);
+
+		foreach ($rsl as $val)
+		{
+			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
+			$btnAct = "<a href=\"$cvUrl\" target=\"_blank\" class=\"btn btn-sm btn-danger\">
+				<i class='fa fa-file-pdf-o'></i> View PDF
+			</a>";
+
+
+			$trListDataCrewPickUp .= "<tr id='row_$val->id'>";
+			$trListDataCrewPickUp .= "<td class='text-center'>$no</td>";
+			$trListDataCrewPickUp .= "<td>$val->email</td>";
+			$trListDataCrewPickUp .= "<td>$val->fullname</td>";
+			$trListDataCrewPickUp .= "<td>$val->born_place</td>";
+			$trListDataCrewPickUp .= "<td>$val->born_date</td>";
+			$trListDataCrewPickUp .= "<td>$val->handphone</td>";
+			$trListDataCrewPickUp .= "<td>$val->position_applied</td>";
+			$trListDataCrewPickUp .= "<td>$val->ijazah_terakhir</td>";
+			$trListDataCrewPickUp .= "<td>$val->last_experience</td>";
+			$trListDataCrewPickUp .= "<td>$val->pengalaman_jeniskapal</td>";
+			$trListDataCrewPickUp .= "<td>$val->berlayardengancrewasing</td>";
+			$trListDataCrewPickUp .= "<td>$val->last_salary</td>";
+			$trListDataCrewPickUp .= "<td>$val->join_inAndhika</td>";
+			$trListDataCrewPickUp .= "<td>$val->new_cv</td>";
+			$trListDataCrewPickUp .= "<td class='text-center'>$btnAct</td>";
+			$trListDataCrewPickUp .= "</tr>";
+
+			$no++;
+		}
+
+		echo $trListDataCrewPickUp;
+	}
+
+	function saveDataNewApplicent() {
+		$id = $this->input->post('id');
+	
+		$sql = "SELECT * FROM new_applicant WHERE id = '".$id."' AND deletests = '0'";
+		$data = $this->MCrewscv->getDataQuery($sql, array($id));
+	
+		if (empty($data)) {
+			echo json_encode(array('error' => 'Data tidak ditemukan'));
+			return;
+		}
+	
+		$applicant = $data[0];
+	
+		$checkSql = "SELECT * FROM mstpersonal WHERE email = '".$applicant->email."' AND deletests = '0'";
+		$check = $this->MCrewscv->getDataQuery($checkSql, array($applicant->email));
+	
+		if (!empty($check)) {
+			echo json_encode(array('error' => 'Email sudah terdaftar di data personal.'));
+			return;
+		}
+	
+		$lastIdSql = "SELECT idperson FROM mstpersonal WHERE idperson IS NOT NULL AND idperson != '' ORDER BY idperson DESC LIMIT 1";
+		$lastData = $this->MCrewscv->getDataQuery($lastIdSql);
+	
+		$newIdPerson = '000001'; 
+		if (!empty($lastData)) {
+			$lastIdPerson = $lastData[0]->idperson;
+			$numeric = intval($lastIdPerson) + 1;
+			$newIdPerson = str_pad($numeric, 6, '0', STR_PAD_LEFT);
+		}
+	
+		$parts = explode(' ', $applicant->fullname);
+		$count = count($parts);
+	
+		$firstName = $parts[0];
+		$middleName = ($count >= 2) ? $parts[1] : '';
+		$middleName .= ($count >= 3) ? ' ' . $parts[2] : '';
+		$lastName = ($count > 3) ? implode(' ', array_slice($parts, 3)) : '';
+	
+		$insertData = array(
+			'idperson'     => $newIdPerson,
+			'fname'        => $firstName,
+			'mname'        => $middleName,
+			'lname'        => $lastName,
+			'email'        => $applicant->email,
+			'mobileno'     => $applicant->handphone,
+			'dob'          => $applicant->born_date,
+			'pob'          => $applicant->born_place,
+			'applyfor'     => $applicant->position_applied,
+			'newapplicent' => '1',
+			'addusrdt'     => date('Y-m-d H:i:s')
+		);
+	
+		$this->MCrewscv->insData('mstpersonal', $insertData);
+	
+		// Tandai bahwa data sudah dipindahkan
+		$this->db->where('id', $id);
+		$this->db->update('new_applicant', array('st_data' => '1'));
+	
+		echo json_encode(array(
+			'success'  => true,
+			'message'  => 'Data berhasil dipindahkan ke data personal.',
+			'idperson' => $newIdPerson
+		));
+	}
+	
 	
 	function navReport($idPerson = "",$kdCmp = "")
 	{
